@@ -74,14 +74,15 @@ export const PodcastDetailPage: React.FC = () => {
     setIsPurchasing(true);
 
     try {
-      const { orderId, amount } = await createOrder({
+      const { orderId, amount, key } = await createOrder({
         amount: price,
         podcastId: podcast.id,
         type: 'purchase',
+        userId: user.id,
       });
 
       await initiatePayment({
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key,
         amount,
         currency: 'INR',
         name: 'TenderTalks',
@@ -137,7 +138,10 @@ export const PodcastDetailPage: React.FC = () => {
     try {
       const response = await fetch(`/api/podcasts/${podcast.id}/download`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Id': user.id,
+        },
       });
 
       if (!response.ok) {

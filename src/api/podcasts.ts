@@ -48,10 +48,13 @@ export async function getTags(): Promise<Tag[]> {
 }
 
 // Download podcast (for subscribers/purchasers)
-export async function downloadPodcast(podcastId: string): Promise<{ url: string; expiresAt: string }> {
+export async function downloadPodcast(podcastId: string, userId: string): Promise<{ url: string; expiresAt: string }> {
   const response = await fetch(`/api/podcasts/${podcastId}/download`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': userId,
+    },
   });
   
   if (!response.ok) {
@@ -63,17 +66,22 @@ export async function downloadPodcast(podcastId: string): Promise<{ url: string;
 }
 
 // Track play progress
-export async function updatePlayProgress(podcastId: string, progress: number, completed: boolean = false): Promise<void> {
+export async function updatePlayProgress(podcastId: string, progress: number, userId: string, completed: boolean = false): Promise<void> {
   await fetch('/api/podcasts/progress', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': userId,
+    },
     body: JSON.stringify({ podcastId, progress, completed }),
   });
 }
 
 // Get play history
-export async function getPlayHistory(): Promise<any[]> {
-  const response = await fetch('/api/users/history');
+export async function getPlayHistory(userId: string): Promise<any[]> {
+  const response = await fetch('/api/users/history', {
+    headers: { 'X-User-Id': userId },
+  });
   if (!response.ok) return [];
   return response.json();
 }

@@ -35,8 +35,11 @@ export const DownloadsPage: React.FC = () => {
   }, [user]);
 
   const fetchDownloads = async () => {
+    if (!user) return;
     try {
-      const response = await fetch('/api/users/downloads');
+      const response = await fetch('/api/users/downloads', {
+        headers: { 'X-User-Id': user.id },
+      });
       if (response.ok) {
         const data = await response.json();
         setDownloads(data);
@@ -56,10 +59,15 @@ export const DownloadsPage: React.FC = () => {
 
     setDownloadingId(podcastId);
 
+    if (!user) return;
+    
     try {
       const response = await fetch(`/api/podcasts/${podcastId}/download`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Id': user.id,
+        },
       });
 
       if (!response.ok) {
@@ -87,9 +95,11 @@ export const DownloadsPage: React.FC = () => {
   };
 
   const handleRemoveDownload = async (downloadId: string) => {
+    if (!user) return;
     try {
       await fetch(`/api/users/downloads/${downloadId}`, {
         method: 'DELETE',
+        headers: { 'X-User-Id': user.id },
       });
       setDownloads(downloads.filter(d => d.id !== downloadId));
       toast.success('Removed from downloads');

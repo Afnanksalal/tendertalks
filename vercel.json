@@ -3,8 +3,11 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/podcasts/:slug", "destination": "/api/podcasts/[slug]" },
+    { "source": "/api/admin/podcasts/:id/publish", "destination": "/api/admin/podcasts/[id]/publish" },
+    { "source": "/api/admin/podcasts/:id", "destination": "/api/admin/podcasts/[id]" },
     { "source": "/api/podcasts/:id/download", "destination": "/api/podcasts/[id]/download" },
+    { "source": "/api/podcasts/:slug", "destination": "/api/podcasts/[slug]" },
+    { "source": "/api/users/downloads/:id", "destination": "/api/users/downloads" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [

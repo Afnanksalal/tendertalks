@@ -25,7 +25,9 @@ export async function syncUser(data: {
 
 // Get user subscription status
 export async function getUserSubscription(userId: string) {
-  const response = await fetch(`${API_BASE}/subscription?userId=${userId}`);
+  const response = await fetch(`${API_BASE}/subscription`, {
+    headers: { 'X-User-Id': userId },
+  });
 
   if (!response.ok) {
     throw new Error('Failed to get subscription');
@@ -36,7 +38,9 @@ export async function getUserSubscription(userId: string) {
 
 // Get user purchases
 export async function getUserPurchases(userId: string) {
-  const response = await fetch(`${API_BASE}/purchases?userId=${userId}`);
+  const response = await fetch(`${API_BASE}/purchases`, {
+    headers: { 'X-User-Id': userId },
+  });
 
   if (!response.ok) {
     throw new Error('Failed to get purchases');
@@ -47,7 +51,9 @@ export async function getUserPurchases(userId: string) {
 
 // Get user downloads
 export async function getUserDownloads(userId: string) {
-  const response = await fetch(`${API_BASE}/downloads?userId=${userId}`);
+  const response = await fetch(`${API_BASE}/downloads`, {
+    headers: { 'X-User-Id': userId },
+  });
 
   if (!response.ok) {
     throw new Error('Failed to get downloads');
@@ -65,13 +71,46 @@ export async function updateUserProfile(
   }
 ) {
   const response = await fetch(`${API_BASE}/profile`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, ...data }),
+    method: 'PATCH',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': userId,
+    },
+    body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     throw new Error('Failed to update profile');
+  }
+
+  return response.json();
+}
+
+// Get play history
+export async function getPlayHistory(userId: string) {
+  const response = await fetch(`${API_BASE}/history`, {
+    headers: { 'X-User-Id': userId },
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  return response.json();
+}
+
+// Cancel subscription
+export async function cancelSubscription(userId: string) {
+  const response = await fetch(`${API_BASE}/subscription/cancel`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': userId,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to cancel subscription');
   }
 
   return response.json();
