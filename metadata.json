@@ -1,0 +1,11 @@
+{
+  "name": "TenderTalks",
+  "version": "1.0.0",
+  "description": "Premium podcast platform for AI, Tech & Future content. Stream exclusive audio & video, subscribe for unlimited access.",
+  "author": "TenderTalks",
+  "keywords": ["podcast", "streaming", "audio", "video", "subscription", "razorpay", "supabase"],
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

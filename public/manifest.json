@@ -1,0 +1,31 @@
+{
+  "name": "TenderTalks",
+  "short_name": "TenderTalks",
+  "description": "Premium podcast platform exploring AI, technology, and the future",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030014",
+  "theme_color": "#00F0FF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["entertainment", "education", "podcasts"],
+  "lang": "en",
+  "dir": "ltr"
+}
