@@ -7,10 +7,21 @@ const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client);
 
 export default async function handler(req: Request) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+  };
+
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers });
+  }
+
   if (req.method !== 'GET') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 
@@ -21,7 +32,7 @@ export default async function handler(req: Request) {
     if (!slug) {
       return new Response(JSON.stringify({ error: 'Slug required' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -44,7 +55,7 @@ export default async function handler(req: Request) {
     if (result.length === 0) {
       return new Response(JSON.stringify({ error: 'Podcast not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -62,22 +73,22 @@ export default async function handler(req: Request) {
       tags: podcastTagsResult.map((t) => t.tag),
     };
 
-    // Increment view count
-    await db
-      .update(podcasts)
+    // Increment view count (don't await to not block response)
+    db.update(podcasts)
       .set({ viewCount: (result[0].podcast.viewCount || 0) + 1 })
-      .where(eq(podcasts.id, result[0].podcast.id));
+      .where(eq(podcasts.id, result[0].podcast.id))
+      .catch(console.error);
 
     return new Response(JSON.stringify(podcast), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   } catch (error) {
     console.error('Error fetching podcast:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      { status: 500, headers }
+    );
   }
 }
 

@@ -4,25 +4,46 @@ import type { MerchItem } from '../db/schema';
 interface MerchState {
   items: MerchItem[];
   isLoading: boolean;
+  error: string | null;
   
-  fetchMerch: () => Promise<void>;
+  fetchMerch: (category?: string) => Promise<void>;
   getMerchBySlug: (slug: string) => MerchItem | undefined;
 }
 
 export const useMerchStore = create<MerchState>((set, get) => ({
   items: [],
   isLoading: false,
+  error: null,
 
-  fetchMerch: async () => {
-    set({ isLoading: true });
+  fetchMerch: async (category?: string) => {
+    set({ isLoading: true, error: null });
     try {
-      const response = await fetch('/api/merch');
-      if (!response.ok) throw new Error('Failed to fetch merch');
+      const params = new URLSearchParams();
+      if (category && category !== 'all') {
+        params.set('category', category);
+      }
+      
+      const url = `/api/merch${params.toString() ? `?${params}` : ''}`;
+      console.log('Fetching merch from:', url);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
-      set({ items: data, isLoading: false });
+      console.log('Fetched merch items:', data);
+      
+      set({ items: Array.isArray(data) ? data : [], isLoading: false });
     } catch (error) {
       console.error('Fetch merch error:', error);
-      set({ isLoading: false });
+      set({ 
+        items: [], 
+        isLoading: false, 
+        error: error instanceof Error ? error.message : 'Failed to fetch merch' 
+      });
     }
   },
 

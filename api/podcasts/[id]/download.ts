@@ -7,10 +7,21 @@ const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client);
 
 export default async function handler(req: Request) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+  };
+
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers });
+  }
+
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 
@@ -19,7 +30,7 @@ export default async function handler(req: Request) {
   if (!userId) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 
@@ -31,7 +42,7 @@ export default async function handler(req: Request) {
     if (!podcastId) {
       return new Response(JSON.stringify({ error: 'Podcast ID required' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -45,7 +56,7 @@ export default async function handler(req: Request) {
     if (!podcast) {
       return new Response(JSON.stringify({ error: 'Podcast not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -91,14 +102,14 @@ export default async function handler(req: Request) {
     if (!hasAccess) {
       return new Response(JSON.stringify({ error: 'Access denied. Purchase or subscribe to download.' }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
     if (!podcast.mediaUrl) {
       return new Response(JSON.stringify({ error: 'No media file available' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -117,17 +128,14 @@ export default async function handler(req: Request) {
         url: podcast.mediaUrl,
         expiresAt: expiresAt.toISOString(),
       }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      { status: 200, headers }
     );
   } catch (error) {
     console.error('Error processing download:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      { status: 500, headers }
+    );
   }
 }
 

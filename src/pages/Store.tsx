@@ -6,7 +6,7 @@ import { useCartStore } from '../stores/cartStore';
 import type { MerchItem } from '../db/schema';
 
 export const StorePage: React.FC = () => {
-  const { items: merch, fetchMerch, isLoading } = useMerchStore();
+  const { items: merch, fetchMerch, isLoading, error } = useMerchStore();
   const { addToCart } = useCartStore();
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -81,6 +81,18 @@ export const StorePage: React.FC = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <ShoppingBag className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <p className="text-red-400 text-lg mb-2">Failed to load products</p>
+            <p className="text-slate-500 text-sm mb-4">{error}</p>
+            <button 
+              onClick={() => fetchMerch()}
+              className="px-4 py-2 bg-neon-cyan/20 text-neon-cyan rounded-lg hover:bg-neon-cyan/30 transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         ) : filteredMerch.length === 0 ? (
           <div className="text-center py-20">
