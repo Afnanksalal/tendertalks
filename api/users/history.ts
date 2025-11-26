@@ -1,17 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { playHistory, podcasts } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -37,23 +37,23 @@ export default async function handler(req: Request) {
   try {
     const result = await db
       .select({
-        id: playHistory.id,
-        progress: playHistory.progress,
-        completed: playHistory.completed,
-        lastPlayedAt: playHistory.lastPlayedAt,
+        id: schema.playHistory.id,
+        progress: schema.playHistory.progress,
+        completed: schema.playHistory.completed,
+        lastPlayedAt: schema.playHistory.lastPlayedAt,
         podcast: {
-          id: podcasts.id,
-          title: podcasts.title,
-          slug: podcasts.slug,
-          thumbnailUrl: podcasts.thumbnailUrl,
-          duration: podcasts.duration,
-          mediaType: podcasts.mediaType,
+          id: schema.podcasts.id,
+          title: schema.podcasts.title,
+          slug: schema.podcasts.slug,
+          thumbnailUrl: schema.podcasts.thumbnailUrl,
+          duration: schema.podcasts.duration,
+          mediaType: schema.podcasts.mediaType,
         },
       })
-      .from(playHistory)
-      .innerJoin(podcasts, eq(playHistory.podcastId, podcasts.id))
-      .where(eq(playHistory.userId, userId))
-      .orderBy(desc(playHistory.lastPlayedAt))
+      .from(schema.playHistory)
+      .innerJoin(schema.podcasts, eq(schema.playHistory.podcastId, schema.podcasts.id))
+      .where(eq(schema.playHistory.userId, userId))
+      .orderBy(desc(schema.playHistory.lastPlayedAt))
       .limit(50);
 
     return new Response(JSON.stringify(result), { status: 200, headers });

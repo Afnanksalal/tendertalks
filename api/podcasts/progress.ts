@@ -1,17 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { playHistory } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -45,31 +45,28 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Check if entry exists
     const [existing] = await db
       .select()
-      .from(playHistory)
-      .where(and(eq(playHistory.userId, userId), eq(playHistory.podcastId, podcastId)))
+      .from(schema.playHistory)
+      .where(and(eq(schema.playHistory.userId, userId), eq(schema.playHistory.podcastId, podcastId)))
       .limit(1);
 
     if (existing) {
-      // Update existing entry
       const [updated] = await db
-        .update(playHistory)
+        .update(schema.playHistory)
         .set({
           progress: progress ?? existing.progress,
           completed: completed ?? existing.completed,
           lastPlayedAt: new Date(),
         })
-        .where(eq(playHistory.id, existing.id))
+        .where(eq(schema.playHistory.id, existing.id))
         .returning();
 
       return new Response(JSON.stringify(updated), { status: 200, headers });
     }
 
-    // Create new entry
     const [created] = await db
-      .insert(playHistory)
+      .insert(schema.playHistory)
       .values({
         userId,
         podcastId,

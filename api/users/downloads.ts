@@ -1,17 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { downloads, podcasts } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -32,22 +32,22 @@ export default async function handler(req: Request) {
     try {
       const result = await db
         .select({
-          id: downloads.id,
-          downloadedAt: downloads.downloadedAt,
-          expiresAt: downloads.expiresAt,
+          id: schema.downloads.id,
+          downloadedAt: schema.downloads.downloadedAt,
+          expiresAt: schema.downloads.expiresAt,
           podcast: {
-            id: podcasts.id,
-            title: podcasts.title,
-            slug: podcasts.slug,
-            thumbnailUrl: podcasts.thumbnailUrl,
-            duration: podcasts.duration,
-            mediaType: podcasts.mediaType,
+            id: schema.podcasts.id,
+            title: schema.podcasts.title,
+            slug: schema.podcasts.slug,
+            thumbnailUrl: schema.podcasts.thumbnailUrl,
+            duration: schema.podcasts.duration,
+            mediaType: schema.podcasts.mediaType,
           },
         })
-        .from(downloads)
-        .innerJoin(podcasts, eq(downloads.podcastId, podcasts.id))
-        .where(eq(downloads.userId, userId))
-        .orderBy(desc(downloads.downloadedAt));
+        .from(schema.downloads)
+        .innerJoin(schema.podcasts, eq(schema.downloads.podcastId, schema.podcasts.id))
+        .where(eq(schema.downloads.userId, userId))
+        .orderBy(desc(schema.downloads.downloadedAt));
 
       return new Response(JSON.stringify(result), { status: 200, headers });
     } catch (error) {
@@ -61,11 +61,9 @@ export default async function handler(req: Request) {
 
   if (req.method === 'DELETE') {
     try {
-      // Extract download ID from path: /api/users/downloads/:id
       const pathParts = url.pathname.split('/');
       const downloadId = pathParts[pathParts.length - 1];
       
-      // If the last part is 'downloads', there's no ID
       if (!downloadId || downloadId === 'downloads') {
         return new Response(JSON.stringify({ error: 'Download ID required' }), {
           status: 400,
@@ -73,10 +71,9 @@ export default async function handler(req: Request) {
         });
       }
 
-      // Only delete if it belongs to the user
       await db
-        .delete(downloads)
-        .where(and(eq(downloads.id, downloadId), eq(downloads.userId, userId)));
+        .delete(schema.downloads)
+        .where(and(eq(schema.downloads.id, downloadId), eq(schema.downloads.userId, userId)));
 
       return new Response(JSON.stringify({ success: true }), { status: 200, headers });
     } catch (error) {

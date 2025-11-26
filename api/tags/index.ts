@@ -1,16 +1,16 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { tags } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -25,7 +25,7 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const result = await db.select().from(tags);
+    const result = await db.select().from(schema.tags);
 
     return new Response(JSON.stringify(result), {
       status: 200,

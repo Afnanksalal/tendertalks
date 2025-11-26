@@ -1,14 +1,13 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { purchases, subscriptions, pricingPlans } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
-// Verify Razorpay signature using Web Crypto API
 async function verifySignature(
   orderId: string,
   paymentId: string,
@@ -84,7 +83,6 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Verify signature
     const isValid = await verifySignature(
       razorpay_order_id,
       razorpay_payment_id,
@@ -92,12 +90,11 @@ export default async function handler(req: Request) {
     );
 
     if (!isValid) {
-      // Update purchase as failed if it's a purchase
       if (type === 'purchase') {
         await db
-          .update(purchases)
+          .update(schema.purchases)
           .set({ status: 'failed', updatedAt: new Date() })
-          .where(eq(purchases.razorpayOrderId, razorpay_order_id));
+          .where(eq(schema.purchases.razorpayOrderId, razorpay_order_id));
       }
 
       return new Response(JSON.stringify({ error: 'Invalid payment signature' }), {
@@ -107,16 +104,15 @@ export default async function handler(req: Request) {
     }
 
     if (type === 'purchase' && podcastId) {
-      // Update purchase as completed
       const [purchase] = await db
-        .update(purchases)
+        .update(schema.purchases)
         .set({
           status: 'completed',
           razorpayPaymentId: razorpay_payment_id,
           razorpaySignature: razorpay_signature,
           updatedAt: new Date(),
         })
-        .where(eq(purchases.razorpayOrderId, razorpay_order_id))
+        .where(eq(schema.purchases.razorpayOrderId, razorpay_order_id))
         .returning();
 
       return new Response(JSON.stringify({ success: true, purchase }), {
@@ -124,11 +120,10 @@ export default async function handler(req: Request) {
         headers,
       });
     } else if (type === 'subscription' && planId) {
-      // Get plan details
       const [plan] = await db
         .select()
-        .from(pricingPlans)
-        .where(eq(pricingPlans.id, planId))
+        .from(schema.pricingPlans)
+        .where(eq(schema.pricingPlans.id, planId))
         .limit(1);
 
       if (!plan) {
@@ -138,7 +133,6 @@ export default async function handler(req: Request) {
         });
       }
 
-      // Calculate subscription period
       const now = new Date();
       const periodEnd = new Date(now);
       if (plan.interval === 'year') {
@@ -147,17 +141,15 @@ export default async function handler(req: Request) {
         periodEnd.setMonth(periodEnd.getMonth() + 1);
       }
 
-      // Cancel existing active subscription
       await db
-        .update(subscriptions)
+        .update(schema.subscriptions)
         .set({ status: 'cancelled', cancelledAt: now, updatedAt: now })
         .where(
-          and(eq(subscriptions.userId, userId), eq(subscriptions.status, 'active'))
+          and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active'))
         );
 
-      // Create new subscription
       const [subscription] = await db
-        .insert(subscriptions)
+        .insert(schema.subscriptions)
         .values({
           userId,
           planId,

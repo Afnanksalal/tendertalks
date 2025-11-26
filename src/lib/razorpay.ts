@@ -108,11 +108,14 @@ export async function createOrder(data: {
   podcastId?: string;
   planId?: string;
   type: 'purchase' | 'subscription';
-  userId?: string;
+  userId: string;
 }): Promise<{ orderId: string; amount: number; currency: string; key: string }> {
   const response = await fetch('/api/payments/create-order', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': data.userId,
+    },
     body: JSON.stringify(data),
   });
 
@@ -133,7 +136,10 @@ export async function verifyPayment(data: RazorpayResponse & {
 }): Promise<{ success: boolean }> {
   const response = await fetch('/api/payments/verify', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': data.userId,
+    },
     body: JSON.stringify(data),
   });
 

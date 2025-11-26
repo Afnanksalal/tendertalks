@@ -1,10 +1,10 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { podcasts, downloads, subscriptions, purchases, pricingPlans } from '../../../src/db/schema';
+import * as schema from '../../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
@@ -36,7 +36,6 @@ export default async function handler(req: Request) {
 
   try {
     const url = new URL(req.url);
-    // Path: /api/podcasts/[slug]/download
     const pathParts = url.pathname.split('/').filter(Boolean);
     const slug = pathParts[pathParts.length - 2];
 
@@ -47,11 +46,10 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Get podcast by slug
     const [podcast] = await db
       .select()
-      .from(podcasts)
-      .where(eq(podcasts.slug, slug))
+      .from(schema.podcasts)
+      .where(eq(schema.podcasts.slug, slug))
       .limit(1);
 
     if (!podcast) {
@@ -61,35 +59,32 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Check if user has access
     let hasAccess = podcast.isFree;
 
     if (!hasAccess) {
-      // Check subscription with download permission
       const [subscription] = await db
         .select({
-          subscription: subscriptions,
-          plan: pricingPlans,
+          subscription: schema.subscriptions,
+          plan: schema.pricingPlans,
         })
-        .from(subscriptions)
-        .innerJoin(pricingPlans, eq(subscriptions.planId, pricingPlans.id))
-        .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, 'active')))
+        .from(schema.subscriptions)
+        .innerJoin(schema.pricingPlans, eq(schema.subscriptions.planId, schema.pricingPlans.id))
+        .where(and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active')))
         .limit(1);
 
       if (subscription && subscription.plan.allowDownloads) {
         hasAccess = true;
       }
 
-      // Check purchase
       if (!hasAccess) {
         const [purchase] = await db
           .select()
-          .from(purchases)
+          .from(schema.purchases)
           .where(
             and(
-              eq(purchases.userId, userId),
-              eq(purchases.podcastId, podcast.id),
-              eq(purchases.status, 'completed')
+              eq(schema.purchases.userId, userId),
+              eq(schema.purchases.podcastId, podcast.id),
+              eq(schema.purchases.status, 'completed')
             )
           )
           .limit(1);
@@ -114,11 +109,10 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Record download
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 day expiry
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
-    await db.insert(downloads).values({
+    await db.insert(schema.downloads).values({
       userId,
       podcastId: podcast.id,
       expiresAt,

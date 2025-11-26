@@ -1,10 +1,10 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { merchOrders, merchOrderItems, merchItems } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 const RAZORPAY_KEY_ID = process.env.VITE_RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
@@ -14,7 +14,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -39,12 +39,11 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Verify stock availability
     const itemIds = items.map((i: any) => i.merchItemId);
     const merchData = await db
       .select()
-      .from(merchItems)
-      .where(inArray(merchItems.id, itemIds));
+      .from(schema.merchItems)
+      .where(inArray(schema.merchItems.id, itemIds));
 
     for (const item of items) {
       const merch = merchData.find(m => m.id === item.merchItemId);
@@ -56,7 +55,6 @@ export default async function handler(req: Request) {
       }
     }
 
-    // Create Razorpay order
     const orderData = {
       amount: Math.round(total * 100),
       currency: 'INR',
@@ -78,9 +76,8 @@ export default async function handler(req: Request) {
 
     const razorpayOrder = await response.json();
 
-    // Create order in database
     const [order] = await db
-      .insert(merchOrders)
+      .insert(schema.merchOrders)
       .values({
         userId,
         status: 'pending',
@@ -95,8 +92,7 @@ export default async function handler(req: Request) {
       })
       .returning();
 
-    // Create order items
-    await db.insert(merchOrderItems).values(
+    await db.insert(schema.merchOrderItems).values(
       items.map((item: any) => ({
         orderId: order.id,
         merchItemId: item.merchItemId,

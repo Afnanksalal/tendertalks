@@ -1,10 +1,10 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { podcasts, categories, users, tags, podcastTags } from '../../../src/db/schema';
+import * as schema from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
@@ -27,7 +27,6 @@ export default async function handler(req: Request) {
 
   try {
     const url = new URL(req.url);
-    // Path: /api/podcasts/[slug]
     const pathParts = url.pathname.split('/').filter(Boolean);
     const slug = pathParts[pathParts.length - 1];
 
@@ -40,18 +39,18 @@ export default async function handler(req: Request) {
 
     const result = await db
       .select({
-        podcast: podcasts,
-        category: categories,
+        podcast: schema.podcasts,
+        category: schema.categories,
         creator: {
-          id: users.id,
-          name: users.name,
-          avatarUrl: users.avatarUrl,
+          id: schema.users.id,
+          name: schema.users.name,
+          avatarUrl: schema.users.avatarUrl,
         },
       })
-      .from(podcasts)
-      .leftJoin(categories, eq(podcasts.categoryId, categories.id))
-      .leftJoin(users, eq(podcasts.createdBy, users.id))
-      .where(eq(podcasts.slug, slug))
+      .from(schema.podcasts)
+      .leftJoin(schema.categories, eq(schema.podcasts.categoryId, schema.categories.id))
+      .leftJoin(schema.users, eq(schema.podcasts.createdBy, schema.users.id))
+      .where(eq(schema.podcasts.slug, slug))
       .limit(1);
 
     if (result.length === 0) {
@@ -61,12 +60,11 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Get tags
     const podcastTagsResult = await db
-      .select({ tag: tags })
-      .from(podcastTags)
-      .innerJoin(tags, eq(podcastTags.tagId, tags.id))
-      .where(eq(podcastTags.podcastId, result[0].podcast.id));
+      .select({ tag: schema.tags })
+      .from(schema.podcastTags)
+      .innerJoin(schema.tags, eq(schema.podcastTags.tagId, schema.tags.id))
+      .where(eq(schema.podcastTags.podcastId, result[0].podcast.id));
 
     const podcast = {
       ...result[0].podcast,
@@ -75,10 +73,10 @@ export default async function handler(req: Request) {
       tags: podcastTagsResult.map((t) => t.tag),
     };
 
-    // Increment view count (don't await to not block response)
-    db.update(podcasts)
+    // Increment view count (fire and forget)
+    db.update(schema.podcasts)
       .set({ viewCount: (result[0].podcast.viewCount || 0) + 1 })
-      .where(eq(podcasts.id, result[0].podcast.id))
+      .where(eq(schema.podcasts.id, result[0].podcast.id))
       .catch(console.error);
 
     return new Response(JSON.stringify(podcast), {

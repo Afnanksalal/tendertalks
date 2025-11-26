@@ -1,16 +1,15 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { purchases, pricingPlans, podcasts } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
 export default async function handler(req: Request) {
-  // CORS headers
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
@@ -51,15 +50,14 @@ export default async function handler(req: Request) {
     let receipt = '';
 
     if (type === 'purchase' && podcastId) {
-      // Check if already purchased
       const existing = await db
         .select()
-        .from(purchases)
+        .from(schema.purchases)
         .where(
           and(
-            eq(purchases.userId, userId),
-            eq(purchases.podcastId, podcastId),
-            eq(purchases.status, 'completed')
+            eq(schema.purchases.userId, userId),
+            eq(schema.purchases.podcastId, podcastId),
+            eq(schema.purchases.status, 'completed')
           )
         )
         .limit(1);
@@ -71,11 +69,10 @@ export default async function handler(req: Request) {
         });
       }
 
-      // Get podcast price
       const [podcast] = await db
         .select()
-        .from(podcasts)
-        .where(eq(podcasts.id, podcastId))
+        .from(schema.podcasts)
+        .where(eq(schema.podcasts.id, podcastId))
         .limit(1);
 
       if (!podcast) {
@@ -95,11 +92,10 @@ export default async function handler(req: Request) {
       finalAmount = parseFloat(podcast.price || '0');
       receipt = `purchase_${podcastId.slice(0, 8)}_${Date.now()}`;
     } else if (type === 'subscription' && planId) {
-      // Get plan price
       const [plan] = await db
         .select()
-        .from(pricingPlans)
-        .where(eq(pricingPlans.id, planId))
+        .from(schema.pricingPlans)
+        .where(eq(schema.pricingPlans.id, planId))
         .limit(1);
 
       if (!plan) {
@@ -125,9 +121,8 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Create Razorpay order
     const orderData = {
-      amount: Math.round(finalAmount * 100), // Convert to paise
+      amount: Math.round(finalAmount * 100),
       currency,
       receipt,
     };
@@ -149,9 +144,8 @@ export default async function handler(req: Request) {
 
     const razorpayOrder = await razorpayResponse.json();
 
-    // Create pending purchase record if it's a purchase
     if (type === 'purchase' && podcastId) {
-      await db.insert(purchases).values({
+      await db.insert(schema.purchases).values({
         userId,
         podcastId,
         amount: finalAmount.toString(),

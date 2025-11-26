@@ -1,9 +1,8 @@
-import React, { useEffect, Suspense, lazy } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './stores/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Loader2 } from 'lucide-react';
 
 // Layout
 import { Navbar } from './components/layout/Navbar';
@@ -11,30 +10,28 @@ import { Footer } from './components/layout/Footer';
 import { CustomCursor } from './components/CustomCursor';
 import { CartDrawer } from './components/cart/CartDrawer';
 
-// Pages - Import all directly for simplicity and reliability
+// Pages
 import { HomePage } from './pages/Home';
 import { BrowsePage } from './pages/Browse';
 import { PodcastDetailPage } from './pages/PodcastDetail';
 import { PricingPage } from './pages/Pricing';
 import { DashboardPage } from './pages/Dashboard';
 import { StorePage } from './pages/Store';
-// @ts-ignore - TypeScript may need restart
 import { SettingsPage } from './pages/Settings';
-// @ts-ignore - TypeScript may need restart
 import { DownloadsPage } from './pages/Downloads';
 import { AuthCallback } from './pages/AuthCallback';
+
+// Legal Pages
+import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicy';
+import { TermsOfServicePage } from './pages/legal/TermsOfService';
+import { RefundPolicyPage } from './pages/legal/RefundPolicy';
 
 // Admin pages
 import { AdminLayout, AdminOverview } from './pages/admin/AdminDashboard';
 import { PodcastManager } from './pages/admin/PodcastManager';
 import { PodcastEditor } from './pages/admin/PodcastEditor';
-
-// Loading fallback
-const PageLoader = () => (
-  <div className="min-h-screen bg-[#030014] flex items-center justify-center">
-    <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
-  </div>
-);
+import { UsersManager } from './pages/admin/UsersManager';
+import { PaymentsManager } from './pages/admin/PaymentsManager';
 
 function App() {
   const { initialize } = useAuthStore();
@@ -47,13 +44,10 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <div className="min-h-screen bg-[#030014] text-white">
-          {/* Custom Cursor - Desktop Only */}
           <CustomCursor />
-          
           <Navbar />
           
           <Routes>
-            {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/browse" element={<BrowsePage />} />
             <Route path="/podcast/:slug" element={<PodcastDetailPage />} />
@@ -61,23 +55,25 @@ function App() {
             <Route path="/store" element={<StorePage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             
-            {/* User Routes */}
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/refund-policy" element={<RefundPolicyPage />} />
+            
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/downloads" element={<DownloadsPage />} />
             
-            {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />
               <Route path="podcasts" element={<PodcastManager />} />
               <Route path="podcasts/new" element={<PodcastEditor />} />
               <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
+              <Route path="users" element={<UsersManager />} />
+              <Route path="payments" element={<PaymentsManager />} />
             </Route>
           </Routes>
 
           <Footer />
-          
-          {/* Cart Drawer */}
           <CartDrawer />
           
           <Toaster
@@ -91,18 +87,8 @@ function App() {
                 borderRadius: '12px',
                 padding: '12px 16px',
               },
-              success: {
-                iconTheme: {
-                  primary: '#00FF94',
-                  secondary: '#1e293b',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#FF0055',
-                  secondary: '#1e293b',
-                },
-              },
+              success: { iconTheme: { primary: '#00FF94', secondary: '#1e293b' } },
+              error: { iconTheme: { primary: '#FF0055', secondary: '#1e293b' } },
             }}
           />
         </div>

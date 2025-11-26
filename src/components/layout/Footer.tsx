@@ -88,7 +88,7 @@ export const Footer: React.FC = () => {
               {[
                 { name: 'Terms of Service', path: '/terms' },
                 { name: 'Privacy Policy', path: '/privacy' },
-                { name: 'Refund Policy', path: '/refund' },
+                { name: 'Refund Policy', path: '/refund-policy' },
               ].map(link => (
                 <li key={link.path}>
                   <Link 

@@ -1,10 +1,10 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { merchOrders, merchOrderItems, merchItems } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
@@ -43,7 +43,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -68,7 +68,6 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Verify signature
     const isValid = await verifySignature(
       razorpay_order_id,
       razorpay_payment_id,
@@ -77,9 +76,9 @@ export default async function handler(req: Request) {
 
     if (!isValid) {
       await db
-        .update(merchOrders)
+        .update(schema.merchOrders)
         .set({ status: 'cancelled', updatedAt: new Date() })
-        .where(eq(merchOrders.razorpayOrderId, razorpay_order_id));
+        .where(eq(schema.merchOrders.razorpayOrderId, razorpay_order_id));
 
       return new Response(JSON.stringify({ error: 'Invalid signature' }), {
         status: 400,
@@ -87,15 +86,14 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Update order status
     const [order] = await db
-      .update(merchOrders)
+      .update(schema.merchOrders)
       .set({
         status: 'paid',
         razorpayPaymentId: razorpay_payment_id,
         updatedAt: new Date(),
       })
-      .where(eq(merchOrders.razorpayOrderId, razorpay_order_id))
+      .where(eq(schema.merchOrders.razorpayOrderId, razorpay_order_id))
       .returning();
 
     if (!order) {
@@ -105,28 +103,27 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Update stock quantities
     const orderItems = await db
       .select()
-      .from(merchOrderItems)
-      .where(eq(merchOrderItems.orderId, order.id));
+      .from(schema.merchOrderItems)
+      .where(eq(schema.merchOrderItems.orderId, order.id));
 
     for (const item of orderItems) {
       const [merch] = await db
         .select()
-        .from(merchItems)
-        .where(eq(merchItems.id, item.merchItemId));
+        .from(schema.merchItems)
+        .where(eq(schema.merchItems.id, item.merchItemId));
 
       if (merch && merch.stockQuantity !== null) {
         const newStock = Math.max(0, merch.stockQuantity - item.quantity);
         await db
-          .update(merchItems)
+          .update(schema.merchItems)
           .set({
             stockQuantity: newStock,
             inStock: newStock > 0,
             updatedAt: new Date(),
           })
-          .where(eq(merchItems.id, item.merchItemId));
+          .where(eq(schema.merchItems.id, item.merchItemId));
       }
     }
 

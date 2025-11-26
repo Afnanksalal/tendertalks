@@ -1,17 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { newsletterSubscribers } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -36,20 +36,18 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Check if already subscribed
     const existing = await db
       .select()
-      .from(newsletterSubscribers)
-      .where(eq(newsletterSubscribers.email, email.toLowerCase()))
+      .from(schema.newsletterSubscribers)
+      .where(eq(schema.newsletterSubscribers.email, email.toLowerCase()))
       .limit(1);
 
     if (existing.length > 0) {
       if (existing[0].unsubscribedAt) {
-        // Re-subscribe
         await db
-          .update(newsletterSubscribers)
+          .update(schema.newsletterSubscribers)
           .set({ unsubscribedAt: null, subscribedAt: new Date() })
-          .where(eq(newsletterSubscribers.email, email.toLowerCase()));
+          .where(eq(schema.newsletterSubscribers.email, email.toLowerCase()));
       }
       return new Response(JSON.stringify({ success: true, message: 'Subscribed!' }), {
         status: 200,
@@ -57,8 +55,7 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Subscribe
-    await db.insert(newsletterSubscribers).values({
+    await db.insert(schema.newsletterSubscribers).values({
       email: email.toLowerCase(),
     });
 

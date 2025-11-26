@@ -1,17 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { users, type User } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
   };
 
   if (req.method === 'OPTIONS') {
@@ -29,7 +29,6 @@ export default async function handler(req: Request) {
     const body = await req.json();
     const { id, email, name, avatarUrl } = body;
 
-    // Validate required fields
     if (!id) {
       return new Response(JSON.stringify({ error: 'User ID is required' }), {
         status: 400,
@@ -44,7 +43,6 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
       return new Response(JSON.stringify({ error: 'Invalid user ID format' }), {
@@ -53,33 +51,30 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Check if user exists
     const existing = await db
       .select()
-      .from(users)
-      .where(eq(users.id, id))
+      .from(schema.users)
+      .where(eq(schema.users.id, id))
       .limit(1);
 
-    let user: User;
+    let user: schema.User;
 
     if (existing.length > 0) {
-      // Update existing user - preserve role
       const [updated] = await db
-        .update(users)
+        .update(schema.users)
         .set({
           email,
           name: name || existing[0].name,
           avatarUrl: avatarUrl || existing[0].avatarUrl,
           updatedAt: new Date(),
         })
-        .where(eq(users.id, id))
+        .where(eq(schema.users.id, id))
         .returning();
 
       user = updated;
     } else {
-      // Create new user
       const [newUser] = await db
-        .insert(users)
+        .insert(schema.users)
         .values({
           id,
           email,
@@ -98,11 +93,8 @@ export default async function handler(req: Request) {
     });
   } catch (error) {
     console.error('Error syncing user:', error);
-    
-    // Check for specific database errors
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     
-    // Handle duplicate email error
     if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
       return new Response(
         JSON.stringify({ error: 'A user with this email already exists' }),

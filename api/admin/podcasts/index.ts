@@ -1,12 +1,11 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { podcasts, users } from '../../../src/db/schema';
+import * as schema from '../../../src/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
-// Helper to generate slug
 function generateSlug(title: string): string {
   return title
     .toLowerCase()
@@ -20,7 +19,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -36,8 +35,7 @@ export default async function handler(req: Request) {
     });
   }
 
-  // Verify admin role
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
   if (!user || user.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Admin access required' }), {
       status: 403,
@@ -51,13 +49,13 @@ export default async function handler(req: Request) {
       const status = url.searchParams.get('status');
       const limit = parseInt(url.searchParams.get('limit') || '50');
 
-      let query = db.select().from(podcasts);
+      let query = db.select().from(schema.podcasts);
       
       if (status) {
-        query = query.where(eq(podcasts.status, status as any)) as any;
+        query = query.where(eq(schema.podcasts.status, status as any)) as any;
       }
 
-      const result = await query.orderBy(desc(podcasts.createdAt)).limit(limit);
+      const result = await query.orderBy(desc(schema.podcasts.createdAt)).limit(limit);
 
       return new Response(JSON.stringify(result), { status: 200, headers });
     } catch (error) {
@@ -96,7 +94,7 @@ export default async function handler(req: Request) {
       const slug = generateSlug(title);
 
       const [podcast] = await db
-        .insert(podcasts)
+        .insert(schema.podcasts)
         .values({
           title,
           slug,

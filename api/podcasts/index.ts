@@ -1,17 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { podcasts, categories, users } from '../../src/db/schema';
+import * as schema from '../../src/db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -33,37 +33,37 @@ export default async function handler(req: Request) {
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    const conditions = [eq(podcasts.status, 'published')];
+    const conditions = [eq(schema.podcasts.status, 'published')];
 
     if (categoryId) {
-      conditions.push(eq(podcasts.categoryId, categoryId));
+      conditions.push(eq(schema.podcasts.categoryId, categoryId));
     }
 
     if (isFree !== null && isFree !== '') {
-      conditions.push(eq(podcasts.isFree, isFree === 'true'));
+      conditions.push(eq(schema.podcasts.isFree, isFree === 'true'));
     }
 
     if (search) {
       conditions.push(
-        sql`(${podcasts.title} ILIKE ${`%${search}%`} OR ${podcasts.description} ILIKE ${`%${search}%`})`
+        sql`(${schema.podcasts.title} ILIKE ${`%${search}%`} OR ${schema.podcasts.description} ILIKE ${`%${search}%`})`
       );
     }
 
     const result = await db
       .select({
-        podcast: podcasts,
-        category: categories,
+        podcast: schema.podcasts,
+        category: schema.categories,
         creator: {
-          id: users.id,
-          name: users.name,
-          avatarUrl: users.avatarUrl,
+          id: schema.users.id,
+          name: schema.users.name,
+          avatarUrl: schema.users.avatarUrl,
         },
       })
-      .from(podcasts)
-      .leftJoin(categories, eq(podcasts.categoryId, categories.id))
-      .leftJoin(users, eq(podcasts.createdBy, users.id))
+      .from(schema.podcasts)
+      .leftJoin(schema.categories, eq(schema.podcasts.categoryId, schema.categories.id))
+      .leftJoin(schema.users, eq(schema.podcasts.createdBy, schema.users.id))
       .where(and(...conditions))
-      .orderBy(desc(podcasts.publishedAt))
+      .orderBy(desc(schema.podcasts.publishedAt))
       .limit(limit)
       .offset(offset);
 

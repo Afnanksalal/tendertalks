@@ -1,17 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { podcasts, users } from '../../../src/db/schema';
+import * as schema from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client);
+const db = drizzle(sql_client, { schema });
 
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -27,8 +27,7 @@ export default async function handler(req: Request) {
     });
   }
 
-  // Verify admin role
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
   if (!user || user.role !== 'admin') {
     return new Response(JSON.stringify({ error: 'Admin access required' }), {
       status: 403,
@@ -51,8 +50,8 @@ export default async function handler(req: Request) {
     try {
       const [podcast] = await db
         .select()
-        .from(podcasts)
-        .where(eq(podcasts.id, podcastId))
+        .from(schema.podcasts)
+        .where(eq(schema.podcasts.id, podcastId))
         .limit(1);
 
       if (!podcast) {
@@ -104,9 +103,9 @@ export default async function handler(req: Request) {
       if (status !== undefined) updateData.status = status;
 
       const [updated] = await db
-        .update(podcasts)
+        .update(schema.podcasts)
         .set(updateData)
-        .where(eq(podcasts.id, podcastId))
+        .where(eq(schema.podcasts.id, podcastId))
         .returning();
 
       return new Response(JSON.stringify(updated), { status: 200, headers });
@@ -121,7 +120,7 @@ export default async function handler(req: Request) {
 
   if (req.method === 'DELETE') {
     try {
-      await db.delete(podcasts).where(eq(podcasts.id, podcastId));
+      await db.delete(schema.podcasts).where(eq(schema.podcasts.id, podcastId));
 
       return new Response(JSON.stringify({ success: true }), { status: 200, headers });
     } catch (error) {
