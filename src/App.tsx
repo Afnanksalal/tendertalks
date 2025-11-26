@@ -32,6 +32,7 @@ import { PodcastManager } from './pages/admin/PodcastManager';
 import { PodcastEditor } from './pages/admin/PodcastEditor';
 import { UsersManager } from './pages/admin/UsersManager';
 import { PaymentsManager } from './pages/admin/PaymentsManager';
+import { RefundsManager } from './pages/admin/RefundsManager';
 
 function App() {
   const { initialize } = useAuthStore();
@@ -70,6 +71,7 @@ function App() {
               <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
               <Route path="users" element={<UsersManager />} />
               <Route path="payments" element={<PaymentsManager />} />
+              <Route path="refunds" element={<RefundsManager />} />
             </Route>
           </Routes>
 

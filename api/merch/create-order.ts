@@ -6,7 +6,7 @@ import { eq, inArray } from 'drizzle-orm';
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
 
-const RAZORPAY_KEY_ID = process.env.VITE_RAZORPAY_KEY_ID!;
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
 export default async function handler(req: Request) {
@@ -61,17 +61,36 @@ export default async function handler(req: Request) {
       receipt: `merch_${Date.now()}`,
     };
 
+    // Validate Razorpay credentials
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      console.error('Missing Razorpay credentials');
+      return new Response(JSON.stringify({ error: 'Payment gateway not configured' }), {
+        status: 500,
+        headers,
+      });
+    }
+
+    const authString = `${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`;
+    const base64Auth = typeof btoa !== 'undefined' 
+      ? btoa(authString) 
+      : Buffer.from(authString).toString('base64');
+
     const response = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+        Authorization: `Basic ${base64Auth}`,
       },
       body: JSON.stringify(orderData),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create Razorpay order');
+      const errorText = await response.text();
+      console.error('Razorpay order creation failed:', response.status, errorText);
+      return new Response(JSON.stringify({ error: 'Failed to create payment order', details: errorText }), {
+        status: 500,
+        headers,
+      });
     }
 
     const razorpayOrder = await response.json();

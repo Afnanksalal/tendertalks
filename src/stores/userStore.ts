@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import type { Purchase, Subscription, PricingPlan } from '../db/schema';
 import { useAuthStore } from './authStore';
+import type { SubscriptionWithDetails } from '../api/subscriptions';
 
 interface UserStoreState {
   purchases: any[];
-  subscription: (Subscription & { plan?: PricingPlan }) | null;
+  subscription: SubscriptionWithDetails | null;
   pricingPlans: PricingPlan[];
   isLoading: boolean;
   
@@ -15,6 +16,7 @@ interface UserStoreState {
   hasPurchased: (podcastId: string) => boolean;
   hasActiveSubscription: () => boolean;
   canAccessPodcast: (podcastId: string, isFree: boolean) => boolean;
+  clearSubscription: () => void;
 }
 
 // Default plans for fallback
@@ -153,8 +155,10 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
   hasActiveSubscription: () => {
     const { subscription } = get();
     if (!subscription) return false;
+    // Active or pending_downgrade both have access
+    const validStatuses = ['active', 'pending_downgrade'];
     return (
-      subscription.status === 'active' &&
+      validStatuses.includes(subscription.status) &&
       new Date(subscription.currentPeriodEnd) > new Date()
     );
   },
@@ -163,5 +167,9 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
     if (isFree) return true;
     if (get().hasActiveSubscription()) return true;
     return get().hasPurchased(podcastId);
+  },
+
+  clearSubscription: () => {
+    set({ subscription: null });
   },
 }));

@@ -52,9 +52,17 @@ export const CartDrawer: React.FC = () => {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to create order');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to create order');
+      }
 
-      const { orderId, amount, key } = await response.json();
+      const { orderId, amount, key } = data;
+      
+      if (!key) {
+        throw new Error('Payment gateway configuration error');
+      }
 
       await initiatePayment({
         key,

@@ -6,7 +6,8 @@ export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
 export const podcastTypeEnum = pgEnum('podcast_type', ['audio', 'video']);
 export const podcastStatusEnum = pgEnum('podcast_status', ['draft', 'scheduled', 'live', 'published', 'archived']);
 export const purchaseStatusEnum = pgEnum('purchase_status', ['pending', 'completed', 'failed', 'refunded']);
-export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'cancelled', 'expired', 'paused']);
+export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'cancelled', 'expired', 'paused', 'pending_downgrade']);
+export const refundStatusEnum = pgEnum('refund_status', ['pending', 'approved', 'processed', 'rejected']);
 export const merchCategoryEnum = pgEnum('merch_category', ['clothing', 'accessories', 'digital']);
 export const orderStatusEnum = pgEnum('order_status', ['pending', 'paid', 'shipped', 'delivered', 'cancelled']);
 
@@ -90,9 +91,51 @@ export const subscriptions = pgTable('subscriptions', {
   status: subscriptionStatusEnum('status').default('active').notNull(),
   razorpaySubscriptionId: text('razorpay_subscription_id'),
   razorpayPaymentId: text('razorpay_payment_id'),
+  razorpayOrderId: text('razorpay_order_id'),
+  amount: decimal('amount', { precision: 10, scale: 2 }),
+  currency: text('currency').default('INR'),
   currentPeriodStart: timestamp('current_period_start').notNull(),
   currentPeriodEnd: timestamp('current_period_end').notNull(),
   cancelledAt: timestamp('cancelled_at'),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false),
+  pendingPlanId: uuid('pending_plan_id').references(() => pricingPlans.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Payment History (for all transactions)
+export const paymentHistory = pgTable('payment_history', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  type: text('type').notNull(), // 'subscription', 'purchase', 'merch', 'upgrade', 'downgrade'
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  currency: text('currency').default('INR').notNull(),
+  status: text('status').default('pending').notNull(), // 'pending', 'completed', 'failed', 'refunded'
+  razorpayOrderId: text('razorpay_order_id'),
+  razorpayPaymentId: text('razorpay_payment_id'),
+  razorpaySignature: text('razorpay_signature'),
+  metadata: text('metadata'), // JSON string for additional data
+  refId: uuid('ref_id'), // Reference to subscription/purchase/order
+  refType: text('ref_type'), // 'subscription', 'purchase', 'merch_order'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Refund Requests
+export const refundRequests = pgTable('refund_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  paymentHistoryId: uuid('payment_history_id').references(() => paymentHistory.id),
+  subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
+  purchaseId: uuid('purchase_id').references(() => purchases.id),
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  currency: text('currency').default('INR').notNull(),
+  reason: text('reason'),
+  status: refundStatusEnum('status').default('pending').notNull(),
+  razorpayRefundId: text('razorpay_refund_id'),
+  processedBy: uuid('processed_by').references(() => users.id),
+  processedAt: timestamp('processed_at'),
+  adminNotes: text('admin_notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -205,6 +248,19 @@ export const podcastsRelations = relations(podcasts, ({ one, many }) => ({
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   user: one(users, { fields: [subscriptions.userId], references: [users.id] }),
   plan: one(pricingPlans, { fields: [subscriptions.planId], references: [pricingPlans.id] }),
+  pendingPlan: one(pricingPlans, { fields: [subscriptions.pendingPlanId], references: [pricingPlans.id] }),
+}));
+
+export const paymentHistoryRelations = relations(paymentHistory, ({ one }) => ({
+  user: one(users, { fields: [paymentHistory.userId], references: [users.id] }),
+}));
+
+export const refundRequestsRelations = relations(refundRequests, ({ one }) => ({
+  user: one(users, { fields: [refundRequests.userId], references: [users.id] }),
+  processedByUser: one(users, { fields: [refundRequests.processedBy], references: [users.id] }),
+  subscription: one(subscriptions, { fields: [refundRequests.subscriptionId], references: [subscriptions.id] }),
+  purchase: one(purchases, { fields: [refundRequests.purchaseId], references: [purchases.id] }),
+  paymentHistoryEntry: one(paymentHistory, { fields: [refundRequests.paymentHistoryId], references: [paymentHistory.id] }),
 }));
 
 export const purchasesRelations = relations(purchases, ({ one }) => ({
@@ -235,3 +291,5 @@ export type Purchase = typeof purchases.$inferSelect;
 export type MerchItem = typeof merchItems.$inferSelect;
 export type MerchOrder = typeof merchOrders.$inferSelect;
 export type Download = typeof downloads.$inferSelect;
+export type PaymentHistory = typeof paymentHistory.$inferSelect;
+export type RefundRequest = typeof refundRequests.$inferSelect;

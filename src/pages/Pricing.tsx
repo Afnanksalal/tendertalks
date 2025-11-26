@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Zap, Loader2, Download, Wifi, Headphones } from 'lucide-react';
+import { Check, Star, Zap, Loader2, Download, Wifi, Headphones, ArrowUp, ArrowDown } from 'lucide-react';
 import { useUserStore } from '../stores/userStore';
 import { useAuthStore } from '../stores/authStore';
 import { AuthModal } from '../components/auth/AuthModal';
-import { initiatePayment, createOrder } from '../lib/razorpay';
+import { initiatePayment, loadRazorpayScript } from '../lib/razorpay';
+import { createSubscription, verifySubscription, changeSubscription } from '../api/subscriptions';
 import toast from 'react-hot-toast';
 
 export const PricingPage: React.FC = () => {
-  const { pricingPlans, fetchPricingPlans, subscription, hasActiveSubscription } = useUserStore();
+  const { pricingPlans, fetchPricingPlans, subscription, hasActiveSubscription, fetchSubscription } = useUserStore();
   const { user } = useAuthStore();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     fetchPricingPlans();
-  }, [fetchPricingPlans]);
+    if (user) {
+      fetchSubscription();
+    }
+  }, [fetchPricingPlans, fetchSubscription, user]);
 
   const handleSubscribe = async (planId: string) => {
     if (!user) {
@@ -26,7 +30,10 @@ export const PricingPage: React.FC = () => {
     const plan = pricingPlans.find((p) => p.id === planId);
     if (!plan) return;
 
-    if (parseFloat(plan.price) === 0) {
+    const planPrice = parseFloat(plan.price);
+
+    // Free plan
+    if (planPrice === 0) {
       toast.success('You already have access to free content!');
       return;
     }
@@ -34,59 +41,114 @@ export const PricingPage: React.FC = () => {
     setLoadingPlan(planId);
 
     try {
-      const { orderId, amount, key } = await createOrder({
-        amount: parseFloat(plan.price),
-        currency: plan.currency,
-        planId,
-        type: 'subscription',
-        userId: user.id,
-      });
+      // Check if user has active subscription (upgrade/downgrade)
+      if (hasActiveSubscription() && subscription) {
+        const currentPrice = parseFloat(subscription.plan?.price || '0');
+        const isUpgrade = planPrice > currentPrice;
 
-      await initiatePayment({
-        key,
-        amount,
-        currency: plan.currency,
-        name: 'TenderTalks',
-        description: `${plan.name} Subscription`,
-        order_id: orderId,
-        prefill: {
-          name: user.name || '',
-          email: user.email,
-        },
-        theme: { color: '#00F0FF' },
-        handler: async (response) => {
-          try {
-            await fetch('/api/payments/verify', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'X-User-Id': user.id,
-              },
-              body: JSON.stringify({
+        const result = await changeSubscription(user.id, planId);
+
+        if (!result.requiresPayment) {
+          // Downgrade scheduled or upgrade with full credit
+          toast.success(result.message);
+          await fetchSubscription();
+          setLoadingPlan(null);
+          return;
+        }
+
+        // Upgrade requires payment
+        await loadRazorpayScript();
+        await initiatePayment({
+          key: result.key!,
+          amount: result.amount!,
+          currency: result.currency!,
+          name: 'TenderTalks',
+          description: `Upgrade to ${result.planName}`,
+          order_id: result.orderId!,
+          prefill: { name: user.name || '', email: user.email },
+          theme: { color: '#00F0FF' },
+          handler: async (response) => {
+            try {
+              await verifySubscription(user.id, {
                 ...response,
-                type: 'subscription',
                 planId,
-                userId: user.id,
-              }),
-            });
-            toast.success('Subscription activated!');
-            window.location.reload();
-          } catch {
-            toast.error('Payment verification failed');
-          }
-        },
-        modal: {
-          ondismiss: () => setLoadingPlan(null),
-        },
-      });
+                action: 'upgrade',
+              });
+              toast.success('Upgraded successfully!');
+              await fetchSubscription();
+            } catch {
+              toast.error('Payment verification failed');
+            }
+          },
+          modal: { ondismiss: () => setLoadingPlan(null) },
+        });
+      } else {
+        // New subscription
+        const result = await createSubscription(user.id, planId);
+
+        if (result.isFree || result.success) {
+          toast.success('Subscription activated!');
+          await fetchSubscription();
+          setLoadingPlan(null);
+          return;
+        }
+
+        await loadRazorpayScript();
+        await initiatePayment({
+          key: result.key!,
+          amount: result.amount!,
+          currency: result.currency!,
+          name: 'TenderTalks',
+          description: `${result.planName} Subscription`,
+          order_id: result.orderId!,
+          prefill: { name: user.name || '', email: user.email },
+          theme: { color: '#00F0FF' },
+          handler: async (response) => {
+            try {
+              await verifySubscription(user.id, {
+                ...response,
+                planId,
+                action: 'new',
+              });
+              toast.success('Subscription activated!');
+              await fetchSubscription();
+            } catch {
+              toast.error('Payment verification failed');
+            }
+          },
+          modal: { ondismiss: () => setLoadingPlan(null) },
+        });
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to initiate payment');
+      toast.error(error.message || 'Failed to process subscription');
     } finally {
       setLoadingPlan(null);
     }
   };
 
-  const plans = pricingPlans;
+  const getButtonState = (plan: typeof pricingPlans[0]) => {
+    const isCurrentPlan = subscription?.planId === plan.id;
+    const planPrice = parseFloat(plan.price);
+    const currentPrice = parseFloat(subscription?.plan?.price || '0');
+    
+    if (isCurrentPlan) {
+      return { text: 'Current Plan', disabled: true, icon: null, variant: 'current' };
+    }
+    
+    if (planPrice === 0) {
+      return { text: 'Start Free', disabled: false, icon: null, variant: 'free' };
+    }
+
+    if (hasActiveSubscription() && subscription) {
+      if (planPrice > currentPrice) {
+        return { text: 'Upgrade', disabled: false, icon: ArrowUp, variant: 'upgrade' };
+      } else {
+        return { text: 'Downgrade', disabled: false, icon: ArrowDown, variant: 'downgrade' };
+      }
+    }
+
+    return { text: 'Subscribe', disabled: false, icon: Zap, variant: 'subscribe' };
+  };
 
   return (
     <div className="min-h-screen bg-[#030014] pt-24 md:pt-32 pb-20 px-4 relative overflow-hidden">
@@ -124,24 +186,45 @@ export const PricingPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-12 p-4 bg-neon-green/10 border border-neon-green/30 rounded-xl text-center"
+            className="mb-12 p-4 bg-neon-green/10 border border-neon-green/30 rounded-xl"
           >
-            <p className="text-neon-green font-medium">
-              You're subscribed to <strong>{subscription.plan?.name}</strong>
-              {subscription.currentPeriodEnd && (
-                <span className="text-slate-400 ml-2">
-                  · Renews {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                </span>
-              )}
-            </p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p className="text-neon-green font-medium">
+                  You're subscribed to <strong>{subscription.plan?.name}</strong>
+                  {subscription.cancelAtPeriodEnd && (
+                    <span className="text-amber-400 ml-2">(Cancels at period end)</span>
+                  )}
+                  {subscription.pendingPlan && (
+                    <span className="text-amber-400 ml-2">
+                      → Switching to {subscription.pendingPlan.name} on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                    </span>
+                  )}
+                </p>
+                <p className="text-slate-400 text-sm mt-1">
+                  {subscription.daysRemaining} days remaining · 
+                  {subscription.canRequestRefund && (
+                    <span className="text-neon-cyan ml-1">
+                      Refund eligible for {subscription.daysUntilRefundExpires} more days
+                    </span>
+                  )}
+                </p>
+              </div>
+              <a 
+                href="/settings" 
+                className="text-sm text-neon-cyan hover:underline whitespace-nowrap"
+              >
+                Manage Subscription →
+              </a>
+            </div>
           </motion.div>
         )}
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
-          {plans.map((plan, idx) => {
+          {pricingPlans.map((plan, idx) => {
             const isRecommended = plan.slug === 'pro' || plan.name.toLowerCase() === 'pro';
-            const isCurrentPlan = subscription?.planId === plan.id;
+            const buttonState = getButtonState(plan);
             const price = parseFloat(plan.price);
 
             return (
@@ -167,7 +250,7 @@ export const PricingPage: React.FC = () => {
                 )}
 
                 {/* Current Plan Badge */}
-                {isCurrentPlan && (
+                {subscription?.planId === plan.id && (
                   <div className="absolute top-4 right-4">
                     <span className="px-2 py-1 bg-neon-green/20 text-neon-green text-xs font-bold rounded">
                       Current
@@ -226,23 +309,23 @@ export const PricingPage: React.FC = () => {
                 {/* CTA Button */}
                 <button
                   onClick={() => handleSubscribe(plan.id)}
-                  disabled={isCurrentPlan || loadingPlan !== null}
+                  disabled={buttonState.disabled || loadingPlan !== null}
                   className={`w-full py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isRecommended
+                    buttonState.variant === 'upgrade'
+                      ? 'bg-neon-green text-black hover:bg-neon-green/90'
+                      : buttonState.variant === 'downgrade'
+                      ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
+                      : isRecommended
                       ? 'bg-neon-cyan text-black hover:bg-neon-cyan/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]'
                       : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
                   }`}
                 >
                   {loadingPlan === plan.id ? (
                     <Loader2 size={20} className="animate-spin mx-auto" />
-                  ) : isCurrentPlan ? (
-                    'Current Plan'
-                  ) : price === 0 ? (
-                    'Start Free'
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      Subscribe
-                      {isRecommended && <Zap size={16} fill="currentColor" />}
+                      {buttonState.text}
+                      {buttonState.icon && <buttonState.icon size={16} />}
                     </span>
                   )}
                 </button>

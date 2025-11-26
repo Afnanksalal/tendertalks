@@ -3,7 +3,7 @@ import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Mic2, Users, CreditCard, Settings, 
-  Plus, BarChart3, Loader2, TrendingUp, Calendar
+  Plus, BarChart3, Loader2, TrendingUp, Calendar, RotateCcw
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -12,6 +12,7 @@ const sidebarLinks = [
   { name: 'Podcasts', path: '/admin/podcasts', icon: Mic2 },
   { name: 'Users', path: '/admin/users', icon: Users },
   { name: 'Payments', path: '/admin/payments', icon: CreditCard },
+  { name: 'Refunds', path: '/admin/refunds', icon: RotateCcw },
 ];
 
 export const AdminLayout: React.FC = () => {
