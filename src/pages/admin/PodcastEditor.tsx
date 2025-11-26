@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Loader2, Upload } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { FileUpload } from '../../components/ui/FileUpload';
 import { usePodcastStore } from '../../stores/podcastStore';
 import { useAuthStore } from '../../stores/authStore';
+import { uploadFile, STORAGE_BUCKETS } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 
 interface PodcastFormData {
@@ -16,17 +15,17 @@ interface PodcastFormData {
   isFree: boolean;
   price: string;
   categoryId: string;
-  tagIds: string[];
-  thumbnailFile?: File;
-  mediaFile?: File;
-  scheduledAt?: string;
+  isDownloadable: boolean;
+  thumbnailUrl: string;
+  mediaUrl: string;
+  duration: number;
 }
 
 export const PodcastEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { categories, tags, fetchCategories, fetchTags, createPodcast, updatePodcast, currentPodcast, fetchPodcastBySlug } = usePodcastStore();
+  const { user, isAdmin } = useAuthStore();
+  const { categories, fetchCategories, createPodcast, updatePodcast, currentPodcast } = usePodcastStore();
 
   const isEditing = !!id;
 
@@ -37,16 +36,25 @@ export const PodcastEditor: React.FC = () => {
     isFree: false,
     price: '0',
     categoryId: '',
-    tagIds: [],
+    isDownloadable: false,
+    thumbnailUrl: '',
+    mediaUrl: '',
+    duration: 0,
   });
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (!isAdmin) {
+      navigate('/');
+      return;
+    }
     fetchCategories();
-    fetchTags();
-  }, [fetchCategories, fetchTags]);
+  }, [fetchCategories, isAdmin, navigate]);
 
   useEffect(() => {
     if (isEditing && currentPodcast) {
@@ -57,7 +65,10 @@ export const PodcastEditor: React.FC = () => {
         isFree: currentPodcast.isFree,
         price: currentPodcast.price || '0',
         categoryId: currentPodcast.categoryId || '',
-        tagIds: [],
+        isDownloadable: currentPodcast.isDownloadable,
+        thumbnailUrl: currentPodcast.thumbnailUrl || '',
+        mediaUrl: currentPodcast.mediaUrl || '',
+        duration: currentPodcast.duration || 0,
       });
       if (currentPodcast.thumbnailUrl) {
         setThumbnailPreview(currentPodcast.thumbnailUrl);
@@ -72,13 +83,32 @@ export const PodcastEditor: React.FC = () => {
     }
   };
 
-  const handleThumbnailSelect = (file: File) => {
-    handleChange('thumbnailFile', file);
-    setThumbnailPreview(URL.createObjectURL(file));
+  const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+      setThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
+    }
   };
 
-  const handleMediaSelect = (file: File) => {
-    handleChange('mediaFile', file);
+  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const isAudio = file.type.startsWith('audio/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isAudio && !isVideo) {
+        toast.error('Please select an audio or video file');
+        return;
+      }
+      
+      setMediaFile(file);
+      handleChange('mediaType', isVideo ? 'video' : 'audio');
+    }
   };
 
   const validate = (): boolean => {
@@ -93,8 +123,8 @@ export const PodcastEditor: React.FC = () => {
     if (!formData.isFree && (!formData.price || parseFloat(formData.price) <= 0)) {
       newErrors.price = 'Price is required for paid content';
     }
-    if (!isEditing && !formData.mediaFile) {
-      newErrors.mediaFile = 'Media file is required';
+    if (!isEditing && !mediaFile && !formData.mediaUrl) {
+      newErrors.media = 'Media file is required';
     }
 
     setErrors(newErrors);
@@ -105,50 +135,78 @@ export const PodcastEditor: React.FC = () => {
     e.preventDefault();
 
     if (!validate()) return;
-    if (!user) return;
+    if (!user) {
+      toast.error('You must be logged in');
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
-      const data = new FormData();
-      data.append('title', formData.title);
-      data.append('description', formData.description);
-      data.append('mediaType', formData.mediaType);
-      data.append('isFree', String(formData.isFree));
-      data.append('price', formData.price);
-      data.append('createdBy', user.id);
-      
-      if (formData.categoryId) {
-        data.append('categoryId', formData.categoryId);
-      }
-      if (formData.tagIds.length > 0) {
-        data.append('tagIds', JSON.stringify(formData.tagIds));
-      }
-      if (formData.thumbnailFile) {
-        data.append('thumbnail', formData.thumbnailFile);
-      }
-      if (formData.mediaFile) {
-        data.append('media', formData.mediaFile);
-      }
-      if (publish) {
-        data.append('status', 'published');
+      let thumbnailUrl = formData.thumbnailUrl;
+      let mediaUrl = formData.mediaUrl;
+
+      // Upload thumbnail if selected
+      if (thumbnailFile) {
+        setUploadProgress('Uploading thumbnail...');
+        const path = `${user.id}/${Date.now()}-${thumbnailFile.name}`;
+        const { url, error } = await uploadFile(STORAGE_BUCKETS.THUMBNAILS, path, thumbnailFile, { upsert: true });
+        
+        if (error) {
+          throw new Error('Failed to upload thumbnail');
+        }
+        thumbnailUrl = url;
       }
 
+      // Upload media if selected
+      if (mediaFile) {
+        setUploadProgress('Uploading media file...');
+        const path = `${user.id}/${Date.now()}-${mediaFile.name}`;
+        const { url, error } = await uploadFile(STORAGE_BUCKETS.PODCASTS, path, mediaFile, { upsert: true });
+        
+        if (error) {
+          throw new Error('Failed to upload media file');
+        }
+        mediaUrl = url;
+      }
+
+      setUploadProgress('Saving podcast...');
+
+      const podcastData = {
+        title: formData.title,
+        description: formData.description,
+        mediaType: formData.mediaType,
+        isFree: formData.isFree,
+        price: formData.isFree ? '0' : formData.price,
+        categoryId: formData.categoryId || undefined,
+        isDownloadable: formData.isDownloadable,
+        thumbnailUrl,
+        mediaUrl,
+        duration: formData.duration,
+        status: publish ? 'published' : 'draft',
+      };
+
       if (isEditing && id) {
-        await updatePodcast(id, data);
+        await updatePodcast(id, podcastData);
         toast.success('Podcast updated!');
       } else {
-        await createPodcast(data);
+        await createPodcast(podcastData);
         toast.success(publish ? 'Podcast published!' : 'Podcast saved as draft!');
       }
 
       navigate('/admin/podcasts');
     } catch (error: any) {
+      console.error('Submit error:', error);
       toast.error(error.message || 'Failed to save podcast');
     } finally {
       setIsSubmitting(false);
+      setUploadProgress('');
     }
   };
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -241,6 +299,14 @@ export const PodcastEditor: React.FC = () => {
                     </select>
                   </div>
                 </div>
+
+                <Input
+                  label="Duration (seconds)"
+                  type="number"
+                  placeholder="3600"
+                  value={formData.duration.toString()}
+                  onChange={(e) => handleChange('duration', parseInt(e.target.value) || 0)}
+                />
               </div>
             </div>
 
@@ -249,27 +315,62 @@ export const PodcastEditor: React.FC = () => {
               <h3 className="text-lg font-bold text-white mb-4">Media Files</h3>
               
               <div className="space-y-4">
-                <FileUpload
-                  label="Thumbnail Image"
-                  type="image"
-                  onFileSelect={handleThumbnailSelect}
-                  onFileRemove={() => {
-                    handleChange('thumbnailFile', undefined);
-                    setThumbnailPreview('');
-                  }}
-                  preview={thumbnailPreview}
-                  helperText="Recommended: 1280x720px (16:9)"
-                />
+                {/* Thumbnail */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                    Thumbnail Image
+                  </label>
+                  <div className="flex items-start gap-4">
+                    {thumbnailPreview && (
+                      <img 
+                        src={thumbnailPreview} 
+                        alt="Thumbnail preview" 
+                        className="w-32 h-20 object-cover rounded-lg"
+                      />
+                    )}
+                    <label className="flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors">
+                      <Upload size={24} className="text-slate-400 mb-2" />
+                      <span className="text-sm text-slate-400">Click to upload thumbnail</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleThumbnailSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
 
-                <FileUpload
-                  label={`${formData.mediaType === 'video' ? 'Video' : 'Audio'} File`}
-                  type={formData.mediaType}
-                  onFileSelect={handleMediaSelect}
-                  onFileRemove={() => handleChange('mediaFile', undefined)}
-                  error={errors.mediaFile}
-                  helperText="Max file size: 500MB"
-                  maxSize={500 * 1024 * 1024}
-                />
+                {/* Media File */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                    {formData.mediaType === 'video' ? 'Video' : 'Audio'} File
+                  </label>
+                  <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                    errors.media ? 'border-red-500' : 'border-white/10'
+                  }`}>
+                    <Upload size={24} className="text-slate-400 mb-2" />
+                    <span className="text-sm text-slate-400">
+                      {mediaFile ? mediaFile.name : 'Click to upload media file'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="audio/*,video/*"
+                      onChange={handleMediaSelect}
+                      className="hidden"
+                    />
+                  </label>
+                  {errors.media && (
+                    <p className="mt-1.5 text-sm text-red-400">{errors.media}</p>
+                  )}
+                  <p className="mt-1 text-xs text-slate-500">Or enter URL directly:</p>
+                  <Input
+                    placeholder="https://example.com/media.mp3"
+                    value={formData.mediaUrl}
+                    onChange={(e) => handleChange('mediaUrl', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -316,38 +417,27 @@ export const PodcastEditor: React.FC = () => {
                     error={errors.price}
                   />
                 )}
-              </div>
-            </div>
 
-            {/* Tags */}
-            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => {
-                      const newTags = formData.tagIds.includes(tag.id)
-                        ? formData.tagIds.filter((t) => t !== tag.id)
-                        : [...formData.tagIds, tag.id];
-                      handleChange('tagIds', newTags);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                      formData.tagIds.includes(tag.id)
-                        ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30'
-                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                    }`}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isDownloadable}
+                    onChange={(e) => handleChange('isDownloadable', e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 bg-slate-800 text-neon-cyan focus:ring-neon-cyan/50"
+                  />
+                  <span className="text-sm text-slate-300">Allow downloads</span>
+                </label>
               </div>
             </div>
 
             {/* Actions */}
             <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
               <div className="space-y-3">
+                {uploadProgress && (
+                  <div className="text-sm text-neon-cyan text-center mb-2">
+                    {uploadProgress}
+                  </div>
+                )}
                 <Button
                   type="button"
                   className="w-full"

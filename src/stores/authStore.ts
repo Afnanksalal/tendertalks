@@ -30,7 +30,15 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
+          set({ isLoading: true });
+          
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('Session error:', error);
+            set({ session: null, user: null, isAdmin: false, isLoading: false });
+            return;
+          }
           
           if (session?.user) {
             const userData = await syncUserToDatabase(session.user);
@@ -46,15 +54,28 @@ export const useAuthStore = create<AuthState>()(
 
           // Listen for auth changes
           supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state changed:', event);
+            
             if (event === 'SIGNED_OUT') {
               set({ session: null, user: null, isAdmin: false });
-            } else if (session?.user) {
-              const userData = await syncUserToDatabase(session.user);
-              set({ 
-                session, 
-                user: userData, 
-                isAdmin: userData?.role === 'admin' 
-              });
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              if (session?.user) {
+                const userData = await syncUserToDatabase(session.user);
+                set({ 
+                  session, 
+                  user: userData, 
+                  isAdmin: userData?.role === 'admin' 
+                });
+              }
+            } else if (event === 'USER_UPDATED') {
+              if (session?.user) {
+                const userData = await syncUserToDatabase(session.user);
+                set({ 
+                  session, 
+                  user: userData, 
+                  isAdmin: userData?.role === 'admin' 
+                });
+              }
             }
           });
         } catch (error) {
@@ -68,6 +89,10 @@ export const useAuthStore = create<AuthState>()(
           provider: 'google',
           options: {
             redirectTo: `${window.location.origin}/auth/callback`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
           },
         });
         if (error) throw error;
@@ -78,7 +103,14 @@ export const useAuthStore = create<AuthState>()(
           email,
           password,
         });
-        if (error) throw error;
+        
+        if (error) {
+          // Provide user-friendly error messages
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error('Invalid email or password');
+          }
+          throw error;
+        }
         
         if (data.user) {
           const userData = await syncUserToDatabase(data.user);
@@ -91,21 +123,48 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signUpWithEmail: async (email: string, password: string, name: string) => {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { name },
+            data: { 
+              name,
+              full_name: name,
+            },
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
-        if (error) throw error;
+        
+        if (error) {
+          if (error.message.includes('already registered')) {
+            throw new Error('An account with this email already exists');
+          }
+          throw error;
+        }
+
+        // If email confirmation is disabled, user is signed in immediately
+        if (data.user && data.session) {
+          const userData = await syncUserToDatabase(data.user);
+          set({ 
+            session: data.session, 
+            user: userData, 
+            isAdmin: userData?.role === 'admin' 
+          });
+        }
+        
+        // Return indication that confirmation email was sent
+        if (data.user && !data.session) {
+          throw new Error('Please check your email to confirm your account');
+        }
       },
 
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         set({ user: null, session: null, isAdmin: false });
+        
+        // Clear persisted storage
+        localStorage.removeItem('auth-storage');
       },
 
       updateProfile: async (data: Partial<User>) => {
@@ -137,13 +196,16 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user }),
+      partialize: (state) => ({ 
+        user: state.user,
+        isAdmin: state.isAdmin,
+      }),
     }
   )
 );
 
-// Sync Supabase Auth user to our database
-async function syncUserToDatabase(supabaseUser: SupabaseUser): Promise<User | null> {
+// Sync Supabase Auth user to our Neon database
+async function syncUserToDatabase(supabaseUser: SupabaseUser): Promise<User> {
   try {
     const response = await fetch('/api/users/sync', {
       method: 'POST',
@@ -151,37 +213,42 @@ async function syncUserToDatabase(supabaseUser: SupabaseUser): Promise<User | nu
       body: JSON.stringify({
         id: supabaseUser.id,
         email: supabaseUser.email,
-        name: supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.full_name,
-        avatarUrl: supabaseUser.user_metadata?.avatar_url,
+        name: supabaseUser.user_metadata?.name || 
+              supabaseUser.user_metadata?.full_name ||
+              supabaseUser.email?.split('@')[0],
+        avatarUrl: supabaseUser.user_metadata?.avatar_url ||
+                   supabaseUser.user_metadata?.picture,
       }),
     });
 
     if (!response.ok) {
-      console.error('Failed to sync user');
-      // Return a minimal user object if sync fails
-      return {
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        name: supabaseUser.user_metadata?.name || null,
-        avatarUrl: supabaseUser.user_metadata?.avatar_url || null,
-        role: 'user',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Failed to sync user:', errorData);
+      
+      // Return a fallback user object
+      return createFallbackUser(supabaseUser);
     }
 
-    return response.json();
+    const user = await response.json();
+    return user;
   } catch (error) {
     console.error('User sync error:', error);
-    // Return a minimal user object if sync fails
-    return {
-      id: supabaseUser.id,
-      email: supabaseUser.email || '',
-      name: supabaseUser.user_metadata?.name || null,
-      avatarUrl: supabaseUser.user_metadata?.avatar_url || null,
-      role: 'user',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    return createFallbackUser(supabaseUser);
   }
+}
+
+// Create a fallback user object when sync fails
+function createFallbackUser(supabaseUser: SupabaseUser): User {
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    name: supabaseUser.user_metadata?.name || 
+          supabaseUser.user_metadata?.full_name ||
+          supabaseUser.email?.split('@')[0] || null,
+    avatarUrl: supabaseUser.user_metadata?.avatar_url ||
+               supabaseUser.user_metadata?.picture || null,
+    role: 'user',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 }

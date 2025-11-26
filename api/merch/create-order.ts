@@ -10,10 +10,21 @@ const RAZORPAY_KEY_ID = process.env.VITE_RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
 export default async function handler(req: Request) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+  };
+
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers });
+  }
+
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 
@@ -24,7 +35,7 @@ export default async function handler(req: Request) {
     if (!userId || !items || items.length === 0) {
       return new Response(JSON.stringify({ error: 'Invalid request' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -40,7 +51,7 @@ export default async function handler(req: Request) {
       if (!merch || !merch.inStock) {
         return new Response(JSON.stringify({ error: `${merch?.name || 'Item'} is out of stock` }), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
+          headers,
         });
       }
     }
@@ -99,17 +110,15 @@ export default async function handler(req: Request) {
         orderId: razorpayOrder.id,
         amount: razorpayOrder.amount,
         dbOrderId: order.id,
+        key: RAZORPAY_KEY_ID,
       }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      { status: 200, headers }
     );
   } catch (error) {
     console.error('Error creating merch order:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 }

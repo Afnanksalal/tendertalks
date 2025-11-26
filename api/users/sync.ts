@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { users } from '../../src/db/schema';
+import { users, type User } from '../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
@@ -11,7 +11,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -29,8 +29,25 @@ export default async function handler(req: Request) {
     const body = await req.json();
     const { id, email, name, avatarUrl } = body;
 
-    if (!id || !email) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+    // Validate required fields
+    if (!id) {
+      return new Response(JSON.stringify({ error: 'User ID is required' }), {
+        status: 400,
+        headers,
+      });
+    }
+
+    if (!email) {
+      return new Response(JSON.stringify({ error: 'Email is required' }), {
+        status: 400,
+        headers,
+      });
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return new Response(JSON.stringify({ error: 'Invalid user ID format' }), {
         status: 400,
         headers,
       });
@@ -43,10 +60,10 @@ export default async function handler(req: Request) {
       .where(eq(users.id, id))
       .limit(1);
 
-    let user;
+    let user: User;
 
     if (existing.length > 0) {
-      // Update existing user
+      // Update existing user - preserve role
       const [updated] = await db
         .update(users)
         .set({
@@ -66,8 +83,8 @@ export default async function handler(req: Request) {
         .values({
           id,
           email,
-          name,
-          avatarUrl,
+          name: name || null,
+          avatarUrl: avatarUrl || null,
           role: 'user',
         })
         .returning();
@@ -81,8 +98,20 @@ export default async function handler(req: Request) {
     });
   } catch (error) {
     console.error('Error syncing user:', error);
+    
+    // Check for specific database errors
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    
+    // Handle duplicate email error
+    if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
+      return new Response(
+        JSON.stringify({ error: 'A user with this email already exists' }),
+        { status: 409, headers }
+      );
+    }
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers }
     );
   }

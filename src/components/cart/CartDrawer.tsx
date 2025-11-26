@@ -51,10 +51,10 @@ export const CartDrawer: React.FC = () => {
 
       if (!response.ok) throw new Error('Failed to create order');
 
-      const { orderId, amount } = await response.json();
+      const { orderId, amount, key } = await response.json();
 
       await initiatePayment({
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key,
         amount,
         currency: 'INR',
         name: 'TenderTalks Store',
