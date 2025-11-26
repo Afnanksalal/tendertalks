@@ -37,7 +37,10 @@ export const CartDrawer: React.FC = () => {
       // Create order
       const response = await fetch('/api/merch/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Id': user.id,
+        },
         body: JSON.stringify({
           userId: user.id,
           items: items.map((item) => ({
@@ -69,7 +72,10 @@ export const CartDrawer: React.FC = () => {
           try {
             await fetch('/api/merch/verify-payment', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'X-User-Id': user.id,
+              },
               body: JSON.stringify({
                 ...paymentResponse,
                 orderId,

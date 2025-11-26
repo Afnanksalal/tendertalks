@@ -51,18 +51,18 @@ export const DownloadsPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (podcastId: string, title: string) => {
+  const handleDownload = async (item: DownloadItem) => {
     if (!hasActiveSubscription() && !subscription?.plan?.allowDownloads) {
       toast.error('Upgrade your plan to download content');
       return;
     }
 
-    setDownloadingId(podcastId);
+    setDownloadingId(item.podcast.id);
 
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/podcasts/${podcastId}/download`, {
+      const response = await fetch(`/api/podcasts/${item.podcast.slug}/download`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ export const DownloadsPage: React.FC = () => {
       // Trigger download
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${title}.mp3`;
+      link.download = `${item.podcast.title}.${item.podcast.mediaType === 'video' ? 'mp4' : 'mp3'}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -236,7 +236,7 @@ export const DownloadsPage: React.FC = () => {
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleDownload(item.podcast.id, item.podcast.title)}
+                      onClick={() => handleDownload(item)}
                       disabled={downloadingId === item.podcast.id}
                       className="p-2 text-slate-400 hover:text-neon-cyan hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
                       title="Re-download"

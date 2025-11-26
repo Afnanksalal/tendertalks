@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { podcasts, categories, users, tags, podcastTags } from '../../src/db/schema';
+import { podcasts, categories, users, tags, podcastTags } from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
@@ -11,7 +11,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -27,7 +27,9 @@ export default async function handler(req: Request) {
 
   try {
     const url = new URL(req.url);
-    const slug = url.pathname.split('/').pop();
+    // Path: /api/podcasts/[slug]
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    const slug = pathParts[pathParts.length - 1];
 
     if (!slug) {
       return new Response(JSON.stringify({ error: 'Slug required' }), {

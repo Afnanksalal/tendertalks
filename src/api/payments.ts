@@ -8,16 +8,20 @@ export async function createOrder(data: {
   podcastId?: string;
   planId?: string;
   type: 'purchase' | 'subscription';
-}): Promise<{ orderId: string; amount: number; currency: string }> {
+  userId: string;
+}): Promise<{ orderId: string; amount: number; currency: string; key: string }> {
   const response = await fetch('/api/payments/create-order', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': data.userId,
+    },
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to create order');
+    const error = await response.json().catch(() => ({ error: 'Failed to create order' }));
+    throw new Error(error.error || error.message || 'Failed to create order');
   }
 
   return response.json();
@@ -31,30 +35,39 @@ export async function verifyPayment(data: {
   type: 'purchase' | 'subscription';
   podcastId?: string;
   planId?: string;
+  userId: string;
 }): Promise<{ success: boolean }> {
   const response = await fetch('/api/payments/verify', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': data.userId,
+    },
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
-    throw new Error('Payment verification failed');
+    const error = await response.json().catch(() => ({ error: 'Payment verification failed' }));
+    throw new Error(error.error || 'Payment verification failed');
   }
 
   return response.json();
 }
 
 // Get user purchases
-export async function getUserPurchases(): Promise<Purchase[]> {
-  const response = await fetch('/api/users/purchases');
+export async function getUserPurchases(userId: string): Promise<Purchase[]> {
+  const response = await fetch('/api/users/purchases', {
+    headers: { 'X-User-Id': userId },
+  });
   if (!response.ok) return [];
   return response.json();
 }
 
 // Get user subscription
-export async function getUserSubscription(): Promise<(Subscription & { plan?: PricingPlan }) | null> {
-  const response = await fetch('/api/users/subscription');
+export async function getUserSubscription(userId: string): Promise<(Subscription & { plan?: PricingPlan }) | null> {
+  const response = await fetch('/api/users/subscription', {
+    headers: { 'X-User-Id': userId },
+  });
   if (!response.ok) return null;
   return response.json();
 }
@@ -67,14 +80,18 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
 }
 
 // Cancel subscription
-export async function cancelSubscription(): Promise<{ success: boolean }> {
+export async function cancelSubscription(userId: string): Promise<{ success: boolean }> {
   const response = await fetch('/api/users/subscription/cancel', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': userId,
+    },
   });
 
   if (!response.ok) {
-    throw new Error('Failed to cancel subscription');
+    const error = await response.json().catch(() => ({ error: 'Failed to cancel subscription' }));
+    throw new Error(error.error || 'Failed to cancel subscription');
   }
 
   return response.json();

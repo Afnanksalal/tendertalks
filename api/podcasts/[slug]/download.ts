@@ -11,7 +11,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -36,21 +36,22 @@ export default async function handler(req: Request) {
 
   try {
     const url = new URL(req.url);
-    const pathParts = url.pathname.split('/');
-    const podcastId = pathParts[pathParts.length - 2];
+    // Path: /api/podcasts/[slug]/download
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    const slug = pathParts[pathParts.length - 2];
 
-    if (!podcastId) {
-      return new Response(JSON.stringify({ error: 'Podcast ID required' }), {
+    if (!slug) {
+      return new Response(JSON.stringify({ error: 'Podcast slug required' }), {
         status: 400,
         headers,
       });
     }
 
-    // Get podcast
+    // Get podcast by slug
     const [podcast] = await db
       .select()
       .from(podcasts)
-      .where(eq(podcasts.id, podcastId))
+      .where(eq(podcasts.slug, slug))
       .limit(1);
 
     if (!podcast) {
@@ -87,7 +88,7 @@ export default async function handler(req: Request) {
           .where(
             and(
               eq(purchases.userId, userId),
-              eq(purchases.podcastId, podcastId),
+              eq(purchases.podcastId, podcast.id),
               eq(purchases.status, 'completed')
             )
           )
@@ -119,7 +120,7 @@ export default async function handler(req: Request) {
 
     await db.insert(downloads).values({
       userId,
-      podcastId,
+      podcastId: podcast.id,
       expiresAt,
     });
 

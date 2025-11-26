@@ -58,7 +58,10 @@ export const PricingPage: React.FC = () => {
           try {
             await fetch('/api/payments/verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'X-User-Id': user.id,
+              },
               body: JSON.stringify({
                 ...response,
                 type: 'subscription',

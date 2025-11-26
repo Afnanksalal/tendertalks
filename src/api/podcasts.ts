@@ -48,8 +48,8 @@ export async function getTags(): Promise<Tag[]> {
 }
 
 // Download podcast (for subscribers/purchasers)
-export async function downloadPodcast(podcastId: string, userId: string): Promise<{ url: string; expiresAt: string }> {
-  const response = await fetch(`/api/podcasts/${podcastId}/download`, {
+export async function downloadPodcast(slug: string, userId: string): Promise<{ url: string; expiresAt: string }> {
+  const response = await fetch(`/api/podcasts/${slug}/download`, {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
@@ -58,8 +58,8 @@ export async function downloadPodcast(podcastId: string, userId: string): Promis
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get download link');
+    const error = await response.json().catch(() => ({ error: 'Failed to get download link' }));
+    throw new Error(error.error || error.message || 'Failed to get download link');
   }
   
   return response.json();

@@ -97,7 +97,10 @@ export const PodcastDetailPage: React.FC = () => {
           try {
             await fetch('/api/payments/verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'X-User-Id': user.id,
+              },
               body: JSON.stringify({
                 ...response,
                 type: 'purchase',
@@ -136,7 +139,7 @@ export const PodcastDetailPage: React.FC = () => {
     setIsDownloading(true);
 
     try {
-      const response = await fetch(`/api/podcasts/${podcast.id}/download`, {
+      const response = await fetch(`/api/podcasts/${podcast.slug}/download`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
