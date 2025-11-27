@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Upload, Music, Video, Image, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Music, Video, Image, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { usePodcastStore } from '../../stores/podcastStore';
@@ -275,24 +275,24 @@ export const PodcastEditor: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
         <button
           onClick={() => navigate('/admin/podcasts')}
           className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
         >
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-2xl font-display font-bold text-white">
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-white">
           {isEditing ? 'Edit Podcast' : 'Create New Podcast'}
         </h1>
       </div>
 
       <form onSubmit={(e) => handleSubmit(e, false)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Basic Info */}
-            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
+            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6">
               <h3 className="text-lg font-bold text-white mb-4">Basic Information</h3>
               
               <div className="space-y-4">
@@ -539,15 +539,20 @@ export const PodcastEditor: React.FC = () => {
                   />
                 )}
 
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isDownloadable}
-                    onChange={(e) => handleChange('isDownloadable', e.target.checked)}
-                    className="w-4 h-4 rounded border-white/20 bg-slate-800 text-neon-cyan focus:ring-neon-cyan/50"
-                  />
-                  <span className="text-sm text-slate-300">Allow downloads</span>
-                </label>
+                <div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isDownloadable}
+                      onChange={(e) => handleChange('isDownloadable', e.target.checked)}
+                      className="w-4 h-4 rounded border-white/20 bg-slate-800 text-neon-cyan focus:ring-neon-cyan/50"
+                    />
+                    <span className="text-sm text-slate-300">Allow downloads</span>
+                  </label>
+                  <p className="text-xs text-slate-500 mt-1 ml-7">
+                    Free users can download this content. Premium users can always download.
+                  </p>
+                </div>
               </div>
             </div>
 

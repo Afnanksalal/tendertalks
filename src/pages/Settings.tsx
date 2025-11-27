@@ -3,7 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   User, Mail, Camera, Loader2, CreditCard, Calendar, 
-  AlertTriangle, RefreshCw, XCircle, ArrowRight, Clock
+  AlertTriangle, RefreshCw, ArrowRight, Clock
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useUserStore } from '../stores/userStore';
@@ -275,11 +275,26 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <CreditCard className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400 mb-4">No active subscription</p>
+              <div className="p-4 bg-slate-800/50 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-neon-green/20 flex items-center justify-center">
+                      <CreditCard size={18} className="text-neon-green" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">Free Plan</p>
+                      <p className="text-slate-400 text-sm">Access to free content</p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-neon-green/20 text-neon-green">
+                    Active
+                  </span>
+                </div>
+                <p className="text-slate-400 text-sm mb-4">
+                  Upgrade to unlock premium content, downloads, and more features.
+                </p>
                 <Link to="/pricing">
-                  <Button>View Plans</Button>
+                  <Button size="sm">Upgrade Plan</Button>
                 </Link>
               </div>
             )}

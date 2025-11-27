@@ -260,11 +260,11 @@ export const PodcastDetailPage: React.FC = () => {
           Back
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Thumbnail / Player */}
-            <div className={`relative aspect-video rounded-2xl overflow-hidden mb-6 ${
+            <div className={`relative aspect-video rounded-xl lg:rounded-2xl overflow-hidden mb-4 lg:mb-6 ${
               podcast.mediaType === 'video' ? 'bg-neon-purple/5' : 'bg-neon-cyan/5'
             }`}>
               {podcast.thumbnailUrl ? (
@@ -407,11 +407,11 @@ export const PodcastDetailPage: React.FC = () => {
             )}
 
             {/* Title & Description */}
-            <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white mb-3 lg:mb-4">
               {podcast.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400 mb-6">
+            <div className="flex flex-wrap items-center gap-3 lg:gap-4 text-sm text-slate-400 mb-4 lg:mb-6">
               {podcast.duration && (
                 <span className="flex items-center gap-1">
                   <Clock size={16} />
@@ -478,7 +478,7 @@ export const PodcastDetailPage: React.FC = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-slate-900/50 border border-white/10 rounded-2xl p-6">
+            <div className="lg:sticky lg:top-24 bg-slate-900/50 border border-white/10 rounded-xl lg:rounded-2xl p-5 lg:p-6">
               {hasAccess ? (
                 <div className="text-center">
                   <div className="w-16 h-16 rounded-full bg-neon-green/20 flex items-center justify-center mx-auto mb-4">

@@ -246,34 +246,34 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
               </div>
 
               {/* Control Buttons */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     onClick={togglePlay}
-                    className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback"
                   >
                     {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                   </button>
                   <button
                     onClick={() => skip(-10)}
-                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-1.5 sm:p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback"
                   >
-                    <SkipBack size={18} />
+                    <SkipBack size={16} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
                   <button
                     onClick={() => skip(10)}
-                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-1.5 sm:p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback"
                   >
-                    <SkipForward size={18} />
+                    <SkipForward size={16} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
-                  <span className="text-white/70 text-sm ml-2">
+                  <span className="text-white/70 text-xs sm:text-sm ml-1 sm:ml-2 whitespace-nowrap">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {/* Volume */}
-                  <div className="flex items-center gap-1 group">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {/* Volume - hidden on mobile */}
+                  <div className="hidden sm:flex items-center gap-1 group">
                     <button
                       onClick={toggleMute}
                       className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -291,10 +291,18 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     />
                   </div>
 
+                  {/* Mute button on mobile */}
+                  <button
+                    onClick={toggleMute}
+                    className="sm:hidden p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback"
+                  >
+                    {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  </button>
+
                   {/* Playback Speed */}
                   <button
                     onClick={changePlaybackRate}
-                    className="px-2 py-1 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-sm font-mono"
+                    className="px-1.5 sm:px-2 py-1 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-xs sm:text-sm font-mono touch-feedback"
                   >
                     {playbackRate}x
                   </button>
@@ -303,9 +311,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                   {type === 'video' && (
                     <button
                       onClick={toggleFullscreen}
-                      className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                      className="p-1.5 sm:p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback"
                     >
-                      {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                      {isFullscreen ? <Minimize size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Maximize size={16} className="sm:w-[18px] sm:h-[18px]" />}
                     </button>
                   )}
                 </div>

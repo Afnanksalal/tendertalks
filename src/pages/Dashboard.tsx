@@ -52,22 +52,24 @@ export const DashboardPage: React.FC = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    hasActiveSubscription() ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-slate-800 text-slate-400'
+                    hasActiveSubscription() ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-neon-green/20 text-neon-green'
                   }`}>
                     <Crown size={24} />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Subscription</h3>
                     <p className="text-sm text-slate-400">
-                      {subscription ? subscription.plan?.name : 'No active subscription'}
+                      {subscription ? subscription.plan?.name : 'Free Plan'}
                     </p>
                   </div>
                 </div>
-                {hasActiveSubscription() && (
-                  <span className="px-3 py-1 bg-neon-green/20 text-neon-green text-xs font-bold rounded-full">
-                    Active
-                  </span>
-                )}
+                <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                  hasActiveSubscription() 
+                    ? 'bg-neon-cyan/20 text-neon-cyan' 
+                    : 'bg-neon-green/20 text-neon-green'
+                }`}>
+                  {hasActiveSubscription() ? 'Premium' : 'Free'}
+                </span>
               </div>
 
               {subscription && hasActiveSubscription() ? (
@@ -261,9 +263,9 @@ export const DashboardPage: React.FC = () => {
                   <span className="text-white font-bold">{purchases.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-sm">Subscription</span>
-                  <span className={`font-bold ${hasActiveSubscription() ? 'text-neon-green' : 'text-slate-500'}`}>
-                    {hasActiveSubscription() ? 'Active' : 'None'}
+                  <span className="text-slate-400 text-sm">Plan</span>
+                  <span className={`font-bold ${hasActiveSubscription() ? 'text-neon-cyan' : 'text-neon-green'}`}>
+                    {subscription?.plan?.name || 'Free'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">

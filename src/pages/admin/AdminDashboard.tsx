@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Mic2, Users, CreditCard, Settings,
   Plus, Loader2, TrendingUp, Calendar, RotateCcw,
-  Package, Tag, Receipt, AlertCircle, ArrowUpRight, ArrowDownRight
+  Package, Tag, Receipt, AlertCircle, ArrowUpRight, ArrowDownRight,
+  Menu, X, ChevronDown
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -24,6 +25,15 @@ const sidebarLinks = [
 export const AdminLayout: React.FC = () => {
   const { user, isAdmin, isLoading } = useAuthStore();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Get current page name for mobile header
+  const currentPage = sidebarLinks.find(link => link.path === location.pathname)?.name || 'Admin';
 
   if (isLoading) {
     return (
@@ -38,7 +48,8 @@ export const AdminLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#030014] flex">
+    <div className="min-h-screen bg-[#030014] flex flex-col lg:flex-row">
+      {/* Desktop Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-white/5 pt-20 hidden lg:block overflow-y-auto">
         <div className="p-4">
           <Link to="/admin/podcasts/new"
@@ -60,7 +71,65 @@ export const AdminLayout: React.FC = () => {
           })}
         </nav>
       </aside>
-      <main className="flex-1 lg:ml-64 pt-20 pb-10 px-4 lg:px-8">
+
+      {/* Mobile Admin Header */}
+      <div className="lg:hidden fixed top-16 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-lg border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="flex items-center gap-2 text-white font-medium"
+          >
+            <Menu size={20} className="text-slate-400" />
+            <span>{currentPage}</span>
+            <ChevronDown size={16} className={`text-slate-400 transition-transform ${mobileMenuOpen ? 'rotate-180' : ''}`} />
+          </button>
+          <Link
+            to="/admin/podcasts/new"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-neon-cyan text-slate-900 text-sm font-bold rounded-lg"
+          >
+            <Plus size={16} /> New
+          </Link>
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden border-t border-white/5"
+            >
+              <nav className="p-2 max-h-[60vh] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-1">
+                  {sidebarLinks.map((link) => {
+                    const isActive = location.pathname === link.path;
+                    const Icon = link.icon;
+                    return (
+                      <Link
+                        key={link.path}
+                        to={link.path}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                          isActive 
+                            ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' 
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        <Icon size={16} />
+                        {link.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-64 pt-32 lg:pt-20 pb-10 px-4 lg:px-8">
         <Outlet />
       </main>
     </div>

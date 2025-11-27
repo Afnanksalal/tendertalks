@@ -95,11 +95,11 @@ export default function PlansManager() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-display font-bold text-white flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-3">
           <Tag className="text-neon-purple" /> Pricing Plans
         </h1>
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 w-full sm:w-auto justify-center">
           <Plus size={18} /> Add Plan
         </Button>
       </div>
@@ -167,17 +167,19 @@ export default function PlansManager() {
       <div className="grid gap-4">
         {plans.map((plan, idx) => (
           <motion.div key={plan.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-            className={`bg-slate-900/50 border border-white/10 rounded-xl p-5 ${!plan.isActive ? 'opacity-60' : ''}`}>
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="text-lg font-bold text-white">{plan.name}</h3>
-                <p className="text-slate-400 text-sm">{plan.description}</p>
+            className={`bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5 ${!plan.isActive ? 'opacity-60' : ''}`}>
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-bold text-white">{plan.name}</h3>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${plan.isActive ? 'bg-neon-green/20 text-neon-green' : 'bg-slate-700 text-slate-400'}`}>
+                    {plan.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <p className="text-slate-400 text-sm mt-1">{plan.description}</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-display font-bold text-white">₹{parseFloat(plan.price).toLocaleString()}<span className="text-sm text-slate-400 font-normal">/{plan.interval}</span></p>
-                <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${plan.isActive ? 'bg-neon-green/20 text-neon-green' : 'bg-slate-700 text-slate-400'}`}>
-                  {plan.isActive ? 'Active' : 'Inactive'}
-                </span>
+              <div className="sm:text-right">
+                <p className="text-xl sm:text-2xl font-display font-bold text-white">₹{parseFloat(plan.price).toLocaleString()}<span className="text-sm text-slate-400 font-normal">/{plan.interval}</span></p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -190,10 +192,10 @@ export default function PlansManager() {
               {plan.allowOffline && <span className="bg-neon-purple/10 text-neon-purple px-2 py-1 rounded text-xs">Offline</span>}
             </div>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => startEdit(plan)} className="flex items-center gap-1">
+              <Button variant="secondary" size="sm" onClick={() => startEdit(plan)} className="flex items-center gap-1 flex-1 sm:flex-none justify-center">
                 <Edit2 size={14} /> Edit
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(plan.id)} className="flex items-center gap-1 text-red-400 hover:bg-red-500/10">
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(plan.id)} className="flex items-center gap-1 flex-1 sm:flex-none justify-center text-red-400 hover:bg-red-500/10">
                 <Trash2 size={14} /> Delete
               </Button>
             </div>

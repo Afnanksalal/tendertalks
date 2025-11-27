@@ -65,44 +65,51 @@ export default async function handler(req: Request) {
       });
     }
 
-    let hasAccess = podcast.isFree;
+    // Check subscription for download permissions
+    const [subscription] = await db
+      .select({
+        subscription: schema.subscriptions,
+        plan: schema.pricingPlans,
+      })
+      .from(schema.subscriptions)
+      .innerJoin(schema.pricingPlans, eq(schema.subscriptions.planId, schema.pricingPlans.id))
+      .where(and(
+        eq(schema.subscriptions.userId, userId), 
+        eq(schema.subscriptions.status, 'active')
+      ))
+      .limit(1);
 
-    if (!hasAccess) {
-      const [subscription] = await db
-        .select({
-          subscription: schema.subscriptions,
-          plan: schema.pricingPlans,
-        })
-        .from(schema.subscriptions)
-        .innerJoin(schema.pricingPlans, eq(schema.subscriptions.planId, schema.pricingPlans.id))
-        .where(and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active')))
-        .limit(1);
+    const planAllowsDownloads = subscription?.plan?.allowDownloads || false;
 
-      if (subscription && subscription.plan.allowDownloads) {
-        hasAccess = true;
+    // Check if user has purchased this podcast
+    const [purchase] = await db
+      .select()
+      .from(schema.purchases)
+      .where(
+        and(
+          eq(schema.purchases.userId, userId),
+          eq(schema.purchases.podcastId, podcast.id),
+          eq(schema.purchases.status, 'completed')
+        )
+      )
+      .limit(1);
+
+    const hasPurchased = !!purchase;
+    const hasContentAccess = podcast.isFree || hasPurchased || !!subscription;
+
+    // Determine if download is allowed:
+    // 1. Plan allows downloads AND user has content access
+    // 2. OR podcast is explicitly marked as downloadable AND user has content access
+    const canDownload = hasContentAccess && (planAllowsDownloads || podcast.isDownloadable);
+
+    if (!canDownload) {
+      if (!hasContentAccess) {
+        return new Response(JSON.stringify({ error: 'Access denied. Purchase or subscribe to access this content.' }), {
+          status: 403,
+          headers,
+        });
       }
-
-      if (!hasAccess) {
-        const [purchase] = await db
-          .select()
-          .from(schema.purchases)
-          .where(
-            and(
-              eq(schema.purchases.userId, userId),
-              eq(schema.purchases.podcastId, podcast.id),
-              eq(schema.purchases.status, 'completed')
-            )
-          )
-          .limit(1);
-
-        if (purchase) {
-          hasAccess = true;
-        }
-      }
-    }
-
-    if (!hasAccess) {
-      return new Response(JSON.stringify({ error: 'Access denied. Purchase or subscribe to download.' }), {
+      return new Response(JSON.stringify({ error: 'Downloads not available for this content. Upgrade your plan for unlimited downloads.' }), {
         status: 403,
         headers,
       });
