@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, Package, Save, X, Loader2, AlertTriangle, Upload, 
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Select } from '../../components/ui/Select';
 import { uploadMerchImage } from '../../lib/storage';
 import toast from 'react-hot-toast';
 
@@ -227,15 +228,15 @@ export default function ProductsManager() {
                 <Package size={14} className="text-neon-purple" />
                 Category
               </label>
-              <select
+              <Select
                 value={formData.category}
-                onChange={e => setFormData({...formData, category: e.target.value as any})}
-                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer"
-              >
-                <option value="clothing">👕 Clothing</option>
-                <option value="accessories">🎧 Accessories</option>
-                <option value="digital">💾 Digital</option>
-              </select>
+                onChange={(value) => setFormData({...formData, category: value as any})}
+                options={[
+                  { value: 'clothing', label: '👕 Clothing' },
+                  { value: 'accessories', label: '🎧 Accessories' },
+                  { value: 'digital', label: '💾 Digital' },
+                ]}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300 flex items-center gap-2">

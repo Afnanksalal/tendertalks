@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Music, Video, Image, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { usePodcastStore } from '../../stores/podcastStore';
 import { useAuthStore } from '../../stores/authStore';
 import { uploadFile, STORAGE_BUCKETS } from '../../lib/supabase';
@@ -389,25 +390,18 @@ export const PodcastEditor: React.FC = () => {
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">
                       Category
                     </label>
-                    <div className="relative">
-                      <select
-                        value={formData.categoryId}
-                        onChange={(e) => handleChange('categoryId', e.target.value)}
-                        className="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 focus:border-neon-cyan/50 transition-all"
-                      >
-                        <option value="" className="bg-slate-900 text-slate-400">Select category</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id} className="bg-slate-900 text-white py-2">
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+                    <Select
+                      value={formData.categoryId}
+                      onChange={(value) => handleChange('categoryId', value)}
+                      placeholder="Select category"
+                      options={[
+                        { value: '', label: 'Select category' },
+                        ...categories.map((cat) => ({
+                          value: cat.id,
+                          label: cat.name,
+                        })),
+                      ]}
+                    />
                   </div>
                 </div>
 

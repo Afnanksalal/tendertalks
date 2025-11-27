@@ -164,7 +164,7 @@ export const AdminLayout: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-24 sm:pt-28 lg:pt-28 pb-28 lg:pb-10 px-4 sm:px-5 lg:px-8">
+      <main className="flex-1 lg:ml-64 pt-32 sm:pt-36 lg:pt-32 pb-28 lg:pb-10 px-4 sm:px-5 lg:px-8">
         <Outlet />
       </main>
     </div>

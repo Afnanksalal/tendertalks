@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Receipt, Download, Search, ExternalLink, RefreshCw, Loader2, TrendingUp, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
-import { Button } from '../../components/ui/Button';
+import { Select } from '../../components/ui/Select';
+import { DatePicker } from '../../components/ui/DatePicker';
 
 interface Payment {
   id: string;
@@ -134,36 +135,38 @@ export default function InvoicesManager() {
           </div>
           {/* Filters - Grid on mobile */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="relative">
-              <select value={filters.type} onChange={e => setFilters({...filters, type: e.target.value})} 
-                className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer pr-8">
-                <option value="all">All Types</option>
-                <option value="subscription">Subscription</option>
-                <option value="subscription_renewal">Renewal</option>
-                <option value="purchase">Purchase</option>
-                <option value="merch">Merch</option>
-              </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-            <div className="relative">
-              <select value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})} 
-                className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer pr-8">
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
-              </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-            <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} 
-              className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none [color-scheme:dark]" />
-            <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} 
-              className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none [color-scheme:dark]" />
+            <Select
+              value={filters.type}
+              onChange={(value) => setFilters({...filters, type: value})}
+              options={[
+                { value: 'all', label: 'All Types' },
+                { value: 'subscription', label: 'Subscription' },
+                { value: 'subscription_renewal', label: 'Renewal' },
+                { value: 'purchase', label: 'Purchase' },
+                { value: 'merch', label: 'Merch' },
+              ]}
+            />
+            <Select
+              value={filters.status}
+              onChange={(value) => setFilters({...filters, status: value})}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'failed', label: 'Failed' },
+                { value: 'refunded', label: 'Refunded' },
+              ]}
+            />
+            <DatePicker
+              value={filters.startDate}
+              onChange={(value) => setFilters({...filters, startDate: value})}
+              placeholder="Start date"
+            />
+            <DatePicker
+              value={filters.endDate}
+              onChange={(value) => setFilters({...filters, endDate: value})}
+              placeholder="End date"
+            />
           </div>
         </div>
       </motion.div>

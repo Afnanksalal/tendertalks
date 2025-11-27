@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, Tag, Save, X, Check, Loader2, AlertTriangle } from
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { Select } from '../../components/ui/Select';
 
 interface PricingPlan {
   id: string;
@@ -135,12 +136,15 @@ export default function PlansManager() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
               <label className="text-xs sm:text-sm font-medium text-slate-300">Billing</label>
-              <select value={formData.interval} onChange={e => setFormData({...formData, interval: e.target.value})} 
-                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer">
-                <option value="month">Monthly</option>
-                <option value="year">Yearly</option>
-                <option value="lifetime">Lifetime</option>
-              </select>
+              <Select
+                value={formData.interval}
+                onChange={(value) => setFormData({...formData, interval: value})}
+                options={[
+                  { value: 'month', label: 'Monthly' },
+                  { value: 'year', label: 'Yearly' },
+                  { value: 'lifetime', label: 'Lifetime' },
+                ]}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs sm:text-sm font-medium text-slate-300">Sort Order</label>
