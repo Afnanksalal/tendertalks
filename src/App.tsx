@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/react';
 import { useAuthStore } from './stores/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -112,6 +113,7 @@ function App() {
               error: { iconTheme: { primary: '#FF0055', secondary: '#1e293b' } },
             }}
           />
+          <Analytics />
         </div>
       </BrowserRouter>
     </ErrorBoundary>
