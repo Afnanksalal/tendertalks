@@ -143,7 +143,8 @@ export default async function handler(req: Request) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+          'Accept': 'application/json',
+          'Authorization': `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
         },
         body: JSON.stringify(orderData),
       });

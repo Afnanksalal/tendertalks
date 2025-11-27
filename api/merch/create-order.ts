@@ -130,7 +130,8 @@ export default async function handler(req: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${encodedAuth}`,
+        'Accept': 'application/json',
+        'Authorization': `Basic ${encodedAuth}`,
       },
       body: JSON.stringify(orderData),
     });
