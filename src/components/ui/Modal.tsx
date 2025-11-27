@@ -18,6 +18,14 @@ const sizes = {
   full: 'max-w-[95vw]',
 };
 
+const mobileSizes = {
+  sm: 'max-w-[calc(100vw-32px)]',
+  md: 'max-w-[calc(100vw-32px)]',
+  lg: 'max-w-[calc(100vw-32px)]',
+  xl: 'max-w-[calc(100vw-32px)]',
+  full: 'max-w-[calc(100vw-16px)]',
+};
+
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
@@ -61,21 +69,24 @@ export const Modal: React.FC<ModalProps> = ({
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
           />
 
-          {/* Modal Container - Centered with safe area */}
-          <div className="fixed inset-0 z-[101] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          {/* Modal Container - Centered on all screens */}
+          <div 
+            className="fixed inset-0 z-[101] flex items-center justify-center p-4 sm:p-6"
+            onClick={onClose}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className={`w-full ${sizes[size]} my-auto max-w-[calc(100vw-24px)]`}
+              className={`w-full ${mobileSizes[size]} sm:${sizes[size]}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="bg-slate-900 border border-white/10 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
                 {/* Header */}
                 {title && (
-                  <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5">
-                    <h2 className="text-base sm:text-lg font-semibold text-white pr-2">{title}</h2>
+                  <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex-shrink-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-white pr-2 truncate">{title}</h2>
                     <button
                       onClick={onClose}
                       className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback flex-shrink-0"
@@ -86,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
                 )}
 
                 {/* Content */}
-                <div className="p-4 sm:p-6 max-h-[65vh] overflow-y-auto">{children}</div>
+                <div className="p-4 sm:p-6 overflow-y-auto flex-1">{children}</div>
               </div>
             </motion.div>
           </div>

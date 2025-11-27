@@ -92,12 +92,14 @@ export default function InvoicesManager() {
           <span className="hidden sm:inline">Invoices & Payments</span>
           <span className="sm:hidden">Invoices</span>
         </h1>
-        <div className="flex gap-1.5 sm:gap-2">
-          <Button variant="secondary" size="sm" onClick={fetchPayments} className="flex items-center gap-1 px-2 sm:px-3"><RefreshCw size={14} /></Button>
-          <Button variant="secondary" size="sm" onClick={exportCSV} className="flex items-center gap-1 px-2 sm:px-3">
+        <div className="flex gap-2">
+          <button onClick={fetchPayments} className="p-2.5 bg-slate-800 border border-white/10 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+            <RefreshCw size={16} />
+          </button>
+          <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm">
             <Download size={14} />
             <span className="hidden sm:inline">Export</span>
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -131,27 +133,37 @@ export default function InvoicesManager() {
               className="w-full bg-slate-800/50 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white placeholder-slate-500 text-sm focus:border-neon-cyan/50 focus:outline-none" />
           </div>
           {/* Filters - Grid on mobile */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
-            <select value={filters.type} onChange={e => setFilters({...filters, type: e.target.value})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none">
-              <option value="all">All Types</option>
-              <option value="subscription">Subscription</option>
-              <option value="subscription_renewal">Renewal</option>
-              <option value="purchase">Purchase</option>
-              <option value="merch">Merch</option>
-            </select>
-            <select value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none">
-              <option value="all">All Status</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-              <option value="refunded">Refunded</option>
-            </select>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <select value={filters.type} onChange={e => setFilters({...filters, type: e.target.value})} 
+                className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer pr-8">
+                <option value="all">All Types</option>
+                <option value="subscription">Subscription</option>
+                <option value="subscription_renewal">Renewal</option>
+                <option value="purchase">Purchase</option>
+                <option value="merch">Merch</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+            <div className="relative">
+              <select value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})} 
+                className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer pr-8">
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
             <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none" />
+              className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none [color-scheme:dark]" />
             <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none" />
+              className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:border-neon-cyan/50 focus:outline-none [color-scheme:dark]" />
           </div>
         </div>
       </motion.div>

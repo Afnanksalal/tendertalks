@@ -269,33 +269,27 @@ export default function ProductsManager() {
           </div>
 
           {/* Toggle Switches */}
-          <div className="flex flex-wrap gap-6 pt-2">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={formData.inStock}
-                  onChange={e => setFormData({...formData, inStock: e.target.checked})}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-neon-green/30 transition-colors"></div>
-                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-slate-400 rounded-full transition-all peer-checked:translate-x-5 peer-checked:bg-neon-green"></div>
-              </div>
-              <span className="text-sm text-slate-300 group-hover:text-white transition-colors">In Stock</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={e => setFormData({...formData, isActive: e.target.checked})}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-neon-cyan/30 transition-colors"></div>
-                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-slate-400 rounded-full transition-all peer-checked:translate-x-5 peer-checked:bg-neon-cyan"></div>
-              </div>
-              <span className="text-sm text-slate-300 group-hover:text-white transition-colors">Active (visible in store)</span>
-            </label>
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/5">
+              <span className="text-sm text-slate-300">In Stock</span>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, inStock: !formData.inStock})}
+                className={`relative w-11 h-6 rounded-full transition-colors ${formData.inStock ? 'bg-neon-green' : 'bg-slate-600'}`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${formData.inStock ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/5">
+              <span className="text-sm text-slate-300">Active (visible in store)</span>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, isActive: !formData.isActive})}
+                className={`relative w-11 h-6 rounded-full transition-colors ${formData.isActive ? 'bg-neon-cyan' : 'bg-slate-600'}`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${formData.isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
           </div>
 
           {/* Submit Button */}

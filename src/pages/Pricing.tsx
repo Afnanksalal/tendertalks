@@ -66,9 +66,6 @@ export const PricingPage: React.FC = () => {
     try {
       // Check if user has active subscription (upgrade/downgrade)
       if (hasActiveSubscription() && subscription) {
-        const currentPrice = parseFloat(subscription.plan?.price || '0');
-        const isUpgrade = planPrice > currentPrice;
-
         const result = await changeSubscription(user.id, planId);
 
         if (!result.requiresPayment) {
@@ -343,7 +340,7 @@ export const PricingPage: React.FC = () => {
                 <button
                   onClick={() => handleSubscribe(plan.id)}
                   disabled={buttonState.disabled || loadingPlan !== null}
-                  className={`w-full py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-feedback ${
                     buttonState.variant === 'upgrade'
                       ? 'bg-neon-green text-black hover:bg-neon-green/90'
                       : buttonState.variant === 'downgrade'

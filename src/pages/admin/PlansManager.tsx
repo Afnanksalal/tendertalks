@@ -109,65 +109,118 @@ export default function PlansManager() {
         </Button>
       </div>
 
-      {showForm && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
-          <div className="flex justify-between items-center mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-bold text-white">{editingId ? 'Edit' : 'New'} Plan</h2>
-            <button onClick={resetForm} className="text-slate-400 hover:text-white"><X size={18} /></button>
+      {/* Plan Form Modal */}
+      <Modal
+        isOpen={showForm}
+        onClose={resetForm}
+        title={editingId ? 'Edit Plan' : 'Add New Plan'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          {/* Name & Price */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium text-slate-300">Plan Name *</label>
+              <input placeholder="e.g., Pro" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium text-slate-300">Price (₹) *</label>
+              <input placeholder="299" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
+            </div>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              <input placeholder="Plan Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
-                className="bg-slate-800/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
-              <input placeholder="Price" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 
-                className="bg-slate-800/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
+
+          {/* Interval & Sort Order */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium text-slate-300">Billing</label>
               <select value={formData.interval} onChange={e => setFormData({...formData, interval: e.target.value})} 
-                className="bg-slate-800/50 border border-white/10 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white focus:border-neon-cyan/50 focus:outline-none">
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer">
                 <option value="month">Monthly</option>
                 <option value="year">Yearly</option>
                 <option value="lifetime">Lifetime</option>
               </select>
             </div>
-            <textarea placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={2}
-              className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none resize-none" />
-            
-            <div>
-              <label className="block text-sm text-slate-400 mb-2">Features</label>
-              <div className="flex gap-2 mb-3">
-                <input placeholder="Add a feature..." value={featureInput} onChange={e => setFeatureInput(e.target.value)} 
-                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-                  className="flex-1 bg-slate-800/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" />
-                <Button type="button" variant="secondary" onClick={addFeature}>Add</Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-1.5">
+              <label className="text-xs sm:text-sm font-medium text-slate-300">Sort Order</label>
+              <input placeholder="0" type="number" value={formData.sortOrder} onChange={e => setFormData({...formData, sortOrder: parseInt(e.target.value) || 0})} 
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-neon-cyan/50 focus:outline-none" />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1.5">
+            <label className="text-xs sm:text-sm font-medium text-slate-300">Description</label>
+            <textarea placeholder="Describe this plan..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={2}
+              className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none resize-none" />
+          </div>
+          
+          {/* Features */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300">Features</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input placeholder="Add a feature..." value={featureInput} onChange={e => setFeatureInput(e.target.value)} 
+                onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                className="flex-1 bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2.5 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none text-sm min-w-0" />
+              <Button type="button" variant="secondary" size="sm" onClick={addFeature} className="w-full sm:w-auto flex-shrink-0">Add</Button>
+            </div>
+            {formData.features.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 max-h-28 sm:max-h-32 overflow-y-auto p-1">
                 {formData.features.map((f, i) => (
-                  <span key={i} className="bg-slate-800 border border-white/10 px-3 py-1 rounded-full text-sm text-slate-300 flex items-center gap-2">
-                    <Check size={12} className="text-neon-green" /> {f}
-                    <button type="button" onClick={() => setFormData({...formData, features: formData.features.filter((_, idx) => idx !== i)})} className="text-slate-500 hover:text-red-400">&times;</button>
+                  <span key={i} className="bg-slate-800 border border-white/10 px-2 py-1 rounded-full text-xs text-slate-300 flex items-center gap-1 max-w-full">
+                    <Check size={10} className="text-neon-green flex-shrink-0" />
+                    <span className="truncate">{f}</span>
+                    <button type="button" onClick={() => setFormData({...formData, features: formData.features.filter((_, idx) => idx !== i)})} className="text-slate-500 hover:text-red-400 ml-0.5 flex-shrink-0">&times;</button>
                   </span>
                 ))}
               </div>
-            </div>
+            )}
+          </div>
 
-            <div className="flex flex-wrap gap-6">
-              <input placeholder="Sort Order" type="number" value={formData.sortOrder} onChange={e => setFormData({...formData, sortOrder: parseInt(e.target.value) || 0})} 
-                className="w-24 bg-slate-800/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-neon-cyan/50 focus:outline-none" />
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={formData.allowDownloads} onChange={e => setFormData({...formData, allowDownloads: e.target.checked})} className="w-4 h-4 rounded" /> Allow Downloads
-              </label>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={formData.allowOffline} onChange={e => setFormData({...formData, allowOffline: e.target.checked})} className="w-4 h-4 rounded" /> Allow Offline
-              </label>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} className="w-4 h-4 rounded" /> Active
-              </label>
+          {/* Toggle Switches */}
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
+              <span className="text-xs sm:text-sm text-slate-300">Allow Downloads</span>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, allowDownloads: !formData.allowDownloads})}
+                className={`relative w-10 h-5 sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 ${formData.allowDownloads ? 'bg-neon-cyan' : 'bg-slate-600'}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow transition-transform ${formData.allowDownloads ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
             </div>
-            <Button type="submit" isLoading={saving} className="w-full flex items-center justify-center gap-2">
-              <Save size={18} /> {editingId ? 'Update' : 'Create'} Plan
+            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
+              <span className="text-xs sm:text-sm text-slate-300">Allow Offline</span>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, allowOffline: !formData.allowOffline})}
+                className={`relative w-10 h-5 sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 ${formData.allowOffline ? 'bg-neon-purple' : 'bg-slate-600'}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow transition-transform ${formData.allowOffline ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
+              <span className="text-xs sm:text-sm text-slate-300">Active</span>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, isActive: !formData.isActive})}
+                className={`relative w-10 h-5 sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 ${formData.isActive ? 'bg-neon-green' : 'bg-slate-600'}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow transition-transform ${formData.isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <div className="flex gap-3 pt-4 border-t border-white/10">
+            <Button type="button" variant="ghost" onClick={resetForm} className="flex-1">Cancel</Button>
+            <Button type="submit" isLoading={saving} className="flex-1 flex items-center justify-center gap-2">
+              <Save size={16} /> {editingId ? 'Update' : 'Create'}
             </Button>
-          </form>
-        </motion.div>
-      )}
+          </div>
+        </form>
+      </Modal>
 
       <div className="grid gap-4">
         {plans.map((plan, idx) => (

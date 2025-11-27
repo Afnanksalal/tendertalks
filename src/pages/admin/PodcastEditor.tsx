@@ -552,43 +552,33 @@ export const PodcastEditor: React.FC = () => {
               <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Pricing</h3>
               
               <div className="space-y-4">
-                {/* Free/Paid Toggle Switch */}
-                <div className="relative">
-                  <div className="flex bg-slate-800/80 rounded-xl p-1 border border-white/10">
+                {/* Free/Paid Toggle */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Content Type</label>
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => handleChange('isFree', true)}
-                      className={`relative flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 z-10 ${
+                      className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                         formData.isFree
-                          ? 'text-slate-900'
-                          : 'text-slate-400 hover:text-slate-300'
+                          ? 'bg-neon-green/20 text-neon-green border border-neon-green/30'
+                          : 'bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700'
                       }`}
                     >
-                      <span className="relative z-10">Free</span>
+                      Free
                     </button>
                     <button
                       type="button"
                       onClick={() => handleChange('isFree', false)}
-                      className={`relative flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 z-10 ${
+                      className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                         !formData.isFree
-                          ? 'text-slate-900'
-                          : 'text-slate-400 hover:text-slate-300'
+                          ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30'
+                          : 'bg-slate-800 text-slate-400 border border-white/10 hover:bg-slate-700'
                       }`}
                     >
-                      <span className="relative z-10">Paid</span>
+                      Paid
                     </button>
-                    {/* Sliding indicator */}
-                    <div
-                      className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg transition-all duration-200 ease-out ${
-                        formData.isFree 
-                          ? 'left-1 bg-neon-green shadow-lg shadow-neon-green/30' 
-                          : 'left-[calc(50%+2px)] bg-amber-400 shadow-lg shadow-amber-400/30'
-                      }`}
-                    />
                   </div>
-                  <p className="text-xs text-slate-500 mt-2 text-center">
-                    {formData.isFree ? 'Anyone can access this content' : 'Users must pay to access'}
-                  </p>
                 </div>
 
                 {!formData.isFree && (
@@ -603,30 +593,24 @@ export const PodcastEditor: React.FC = () => {
                 )}
 
                 {/* Downloads Toggle */}
-                <div className="pt-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-medium text-slate-300">Allow Downloads</span>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Free users can download
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleChange('isDownloadable', !formData.isDownloadable)}
-                      className={`relative w-12 h-7 rounded-full transition-all duration-200 ${
-                        formData.isDownloadable
-                          ? 'bg-neon-cyan shadow-lg shadow-neon-cyan/30'
-                          : 'bg-slate-700'
-                      }`}
-                    >
-                      <div
-                        className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-200 ${
-                          formData.isDownloadable ? 'left-6' : 'left-1'
-                        }`}
-                      />
-                    </button>
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/5">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <span className="text-sm font-medium text-slate-300 block">Downloads</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Allow users to download</p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('isDownloadable', !formData.isDownloadable)}
+                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                      formData.isDownloadable ? 'bg-neon-cyan' : 'bg-slate-600'
+                    }`}
+                  >
+                    <div
+                      className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                        formData.isDownloadable ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>

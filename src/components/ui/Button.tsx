@@ -41,7 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
         inline-flex items-center justify-center gap-2 font-semibold rounded-xl
         transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
         focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
-        active:scale-[0.98]
+        active:scale-[0.98] touch-feedback
         ${variants[variant]}
         ${sizes[size]}
         ${className}
