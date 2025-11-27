@@ -59,7 +59,7 @@ export default async function handler(req: Request) {
     const canRequestRefund = isWithinRefundWindow && parseFloat(plan.price) > 0;
 
     // Get pending plan if downgrade scheduled
-    let pendingPlan = null;
+    let pendingPlan: typeof plan | null = null;
     if (subscription.pendingPlanId) {
       const [pp] = await db.select().from(schema.pricingPlans)
         .where(eq(schema.pricingPlans.id, subscription.pendingPlanId))

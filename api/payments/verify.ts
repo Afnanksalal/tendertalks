@@ -63,6 +63,21 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing payment details' }), { status: 400, headers });
     }
 
+    // Idempotency check - prevent double processing
+    if (type === 'purchase') {
+      const [existingPurchase] = await db.select().from(schema.purchases)
+        .where(eq(schema.purchases.razorpayOrderId, razorpay_order_id))
+        .limit(1);
+      
+      if (existingPurchase && existingPurchase.status === 'completed') {
+        return new Response(JSON.stringify({ 
+          success: true, 
+          purchase: existingPurchase,
+          message: 'Payment already processed'
+        }), { status: 200, headers });
+      }
+    }
+
     const isValid = await verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
     const now = new Date();
 

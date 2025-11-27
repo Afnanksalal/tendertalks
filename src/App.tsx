@@ -19,6 +19,7 @@ import { DashboardPage } from './pages/Dashboard';
 import { StorePage } from './pages/Store';
 import { SettingsPage } from './pages/Settings';
 import { DownloadsPage } from './pages/Downloads';
+import { BillingPage } from './pages/Billing';
 import { AuthCallback } from './pages/AuthCallback';
 
 // Legal Pages
@@ -33,6 +34,11 @@ import { PodcastEditor } from './pages/admin/PodcastEditor';
 import { UsersManager } from './pages/admin/UsersManager';
 import { PaymentsManager } from './pages/admin/PaymentsManager';
 import { RefundsManager } from './pages/admin/RefundsManager';
+import ProductsManager from './pages/admin/ProductsManager';
+import PlansManager from './pages/admin/PlansManager';
+import SettingsManager from './pages/admin/SettingsManager';
+import SubscriptionsManager from './pages/admin/SubscriptionsManager';
+import InvoicesManager from './pages/admin/InvoicesManager';
 
 function App() {
   const { initialize } = useAuthStore();
@@ -62,6 +68,7 @@ function App() {
             
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/billing" element={<BillingPage />} />
             <Route path="/downloads" element={<DownloadsPage />} />
             
             <Route path="/admin" element={<AdminLayout />}>
@@ -71,7 +78,12 @@ function App() {
               <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
               <Route path="users" element={<UsersManager />} />
               <Route path="payments" element={<PaymentsManager />} />
+              <Route path="invoices" element={<InvoicesManager />} />
               <Route path="refunds" element={<RefundsManager />} />
+              <Route path="products" element={<ProductsManager />} />
+              <Route path="plans" element={<PlansManager />} />
+              <Route path="subscriptions" element={<SubscriptionsManager />} />
+              <Route path="settings" element={<SettingsManager />} />
             </Route>
           </Routes>
 

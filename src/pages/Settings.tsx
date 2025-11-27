@@ -300,6 +300,15 @@ export const SettingsPage: React.FC = () => {
                   {user.role}
                 </span>
               </div>
+              <div className="flex items-center justify-between py-3 border-b border-white/5">
+                <div>
+                  <p className="text-white font-medium">Billing & Payments</p>
+                  <p className="text-sm text-slate-400">View payment history and refund requests</p>
+                </div>
+                <Link to="/billing">
+                  <Button variant="outline" size="sm">View History</Button>
+                </Link>
+              </div>
               <div className="flex items-center justify-between py-3">
                 <div>
                   <p className="text-white font-medium">Member Since</p>

@@ -1,0 +1,63 @@
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import * as schema from '../../../src/db/schema';
+import { eq, asc } from 'drizzle-orm';
+
+const sql_client = neon(process.env.DATABASE_URL!);
+const db = drizzle(sql_client, { schema });
+
+async function verifyAdmin(userId: string) {
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+  return user?.role === 'admin';
+}
+
+export default async function handler(req: Request) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
+  };
+
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers });
+  }
+
+  const userId = req.headers.get('x-user-id');
+  if (!userId || !(await verifyAdmin(userId))) {
+    return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers });
+  }
+
+  try {
+    if (req.method === 'GET') {
+      const categories = await db.select().from(schema.categories).orderBy(asc(schema.categories.name));
+      return new Response(JSON.stringify(categories), { status: 200, headers });
+    }
+
+    if (req.method === 'POST') {
+      const body = await req.json();
+      const { name, description } = body;
+
+      if (!name) {
+        return new Response(JSON.stringify({ error: 'Name is required' }), { status: 400, headers });
+      }
+
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+      const [category] = await db.insert(schema.categories).values({
+        name,
+        slug,
+        description: description || '',
+      }).returning();
+
+      return new Response(JSON.stringify(category), { status: 201, headers });
+    }
+
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
+  } catch (error) {
+    console.error('Admin categories error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+  }
+}
+
+export const config = { runtime: 'edge' };

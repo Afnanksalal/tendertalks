@@ -121,11 +121,11 @@ export const DashboardPage: React.FC = () => {
                 <span className="text-sm text-slate-300">Store</span>
               </Link>
               <Link
-                to="/settings"
+                to="/billing"
                 className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
               >
                 <Settings size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                <span className="text-sm text-slate-300">Settings</span>
+                <span className="text-sm text-slate-300">Billing</span>
               </Link>
             </motion.div>
 

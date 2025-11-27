@@ -68,6 +68,19 @@ export default async function handler(req: Request) {
       });
     }
 
+    // Idempotency check - prevent double processing
+    const [existingOrder] = await db.select().from(schema.merchOrders)
+      .where(eq(schema.merchOrders.razorpayOrderId, razorpay_order_id))
+      .limit(1);
+    
+    if (existingOrder && existingOrder.status === 'paid') {
+      return new Response(JSON.stringify({ 
+        success: true, 
+        order: existingOrder,
+        message: 'Payment already processed'
+      }), { status: 200, headers });
+    }
+
     const isValid = await verifySignature(
       razorpay_order_id,
       razorpay_payment_id,
@@ -125,6 +138,19 @@ export default async function handler(req: Request) {
           })
           .where(eq(schema.merchItems.id, item.merchItemId));
       }
+    }
+
+    // Update payment history
+    try {
+      await db.update(schema.paymentHistory)
+        .set({
+          status: 'completed',
+          razorpayPaymentId: razorpay_payment_id,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+    } catch (e) {
+      console.warn('Payment history update failed:', e);
     }
 
     return new Response(JSON.stringify({ success: true, order }), {
