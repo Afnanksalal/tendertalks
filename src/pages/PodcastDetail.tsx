@@ -267,22 +267,39 @@ export const PodcastDetailPage: React.FC = () => {
             <div className={`relative aspect-video rounded-xl lg:rounded-2xl overflow-hidden mb-4 lg:mb-6 ${
               podcast.mediaType === 'video' ? 'bg-neon-purple/5' : 'bg-neon-cyan/5'
             }`}>
-              {podcast.thumbnailUrl ? (
-                <img
-                  src={podcast.thumbnailUrl}
-                  alt={podcast.title}
-                  className="w-full h-full object-cover"
+              {/* Video Player - shown when playing video */}
+              {hasAccess && podcast.mediaUrl && showPlayer && podcast.mediaType === 'video' ? (
+                <video
+                  ref={mediaRef as React.RefObject<HTMLVideoElement>}
+                  src={podcast.mediaUrl}
+                  poster={podcast.thumbnailUrl || undefined}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onEnded={() => setIsPlaying(false)}
+                  className="w-full h-full object-contain bg-black"
+                  controls={false}
                 />
               ) : (
-                <div className={`w-full h-full flex items-center justify-center ${
-                  podcast.mediaType === 'video' ? 'bg-neon-purple/10' : 'bg-neon-cyan/10'
-                }`}>
-                  {podcast.mediaType === 'video' ? (
-                    <Video size={64} className="text-neon-purple/30" />
+                /* Thumbnail - shown when not playing or for audio */
+                <>
+                  {podcast.thumbnailUrl ? (
+                    <img
+                      src={podcast.thumbnailUrl}
+                      alt={podcast.title}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <Music size={64} className="text-neon-cyan/30" />
+                    <div className={`w-full h-full flex items-center justify-center ${
+                      podcast.mediaType === 'video' ? 'bg-neon-purple/10' : 'bg-neon-cyan/10'
+                    }`}>
+                      {podcast.mediaType === 'video' ? (
+                        <Video size={64} className="text-neon-purple/30" />
+                      ) : (
+                        <Music size={64} className="text-neon-cyan/30" />
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
               )}
               
               {/* Media Type Badge */}
@@ -298,52 +315,53 @@ export const PodcastDetailPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              {/* Overlay - only show when not playing video or for audio */}
+              {!(showPlayer && podcast.mediaType === 'video' && isPlaying) && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              )}
 
-              {/* Play Button */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                {hasAccess ? (
-                  <button
-                    onClick={togglePlay}
-                    className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-neon-cyan hover:text-black hover:scale-110 transition-all touch-feedback"
-                  >
-                    {isPlaying ? (
-                      <Pause size={32} fill="currentColor" />
-                    ) : (
-                      <Play size={32} fill="currentColor" className="ml-1" />
-                    )}
-                  </button>
-                ) : (
-                  <div className="text-center">
-                    <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-4 mx-auto">
-                      <Lock size={32} />
+              {/* Play Button - show when not playing or paused */}
+              {(!showPlayer || !isPlaying || podcast.mediaType === 'audio') && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {hasAccess ? (
+                    <button
+                      onClick={togglePlay}
+                      className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-neon-cyan hover:text-black hover:scale-110 transition-all touch-feedback"
+                    >
+                      {isPlaying ? (
+                        <Pause size={32} fill="currentColor" />
+                      ) : (
+                        <Play size={32} fill="currentColor" className="ml-1" />
+                      )}
+                    </button>
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-4 mx-auto">
+                        <Lock size={32} />
+                      </div>
+                      <p className="text-white font-medium">Premium Content</p>
                     </div>
-                    <p className="text-white font-medium">Premium Content</p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
-              {/* Hidden Media Element */}
-              {hasAccess && podcast.mediaUrl && showPlayer && (
-                podcast.mediaType === 'video' ? (
-                  <video
-                    ref={mediaRef as React.RefObject<HTMLVideoElement>}
-                    src={podcast.mediaUrl}
-                    onTimeUpdate={handleTimeUpdate}
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onEnded={() => setIsPlaying(false)}
-                    className="hidden"
-                  />
-                ) : (
-                  <audio
-                    ref={mediaRef as React.RefObject<HTMLAudioElement>}
-                    src={podcast.mediaUrl}
-                    onTimeUpdate={handleTimeUpdate}
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onEnded={() => setIsPlaying(false)}
-                  />
-                )
+              {/* Click to pause for video when playing */}
+              {showPlayer && isPlaying && podcast.mediaType === 'video' && (
+                <div 
+                  className="absolute inset-0 cursor-pointer"
+                  onClick={togglePlay}
+                />
+              )}
+
+              {/* Audio Element - hidden, only for audio playback */}
+              {hasAccess && podcast.mediaUrl && showPlayer && podcast.mediaType === 'audio' && (
+                <audio
+                  ref={mediaRef as React.RefObject<HTMLAudioElement>}
+                  src={podcast.mediaUrl}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onEnded={() => setIsPlaying(false)}
+                />
               )}
             </div>
 
@@ -354,6 +372,21 @@ export const PodcastDetailPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 p-4 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl"
               >
+                {/* Now Playing Info for Audio */}
+                {podcast.mediaType === 'audio' && podcast.thumbnailUrl && (
+                  <div className="flex items-center gap-4 mb-4 pb-4 border-b border-white/10">
+                    <img 
+                      src={podcast.thumbnailUrl} 
+                      alt={podcast.title}
+                      className="w-14 h-14 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-white font-medium truncate">{podcast.title}</h4>
+                      <p className="text-slate-400 text-sm">Now Playing</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Progress Bar */}
                 <div
                   ref={progressRef}
@@ -379,7 +412,9 @@ export const PodcastDetailPage: React.FC = () => {
                     </button>
                     <button
                       onClick={togglePlay}
-                      className="w-12 h-12 rounded-full bg-neon-cyan text-black flex items-center justify-center hover:scale-105 transition-transform"
+                      className={`w-12 h-12 rounded-full flex items-center justify-center hover:scale-105 transition-transform ${
+                        podcast.mediaType === 'video' ? 'bg-neon-purple text-white' : 'bg-neon-cyan text-black'
+                      }`}
                     >
                       {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-0.5" />}
                     </button>
@@ -401,6 +436,22 @@ export const PodcastDetailPage: React.FC = () => {
                     >
                       {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                     </button>
+                    {/* Fullscreen for video */}
+                    {podcast.mediaType === 'video' && mediaRef.current && (
+                      <button
+                        onClick={() => {
+                          const video = mediaRef.current as HTMLVideoElement;
+                          if (video.requestFullscreen) {
+                            video.requestFullscreen();
+                          }
+                        }}
+                        className="p-2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>

@@ -97,12 +97,7 @@ export const PodcastEditor: React.FC = () => {
     if (type !== formData.mediaType) {
       setMediaFile(null);
       handleChange('mediaUrl', '');
-      // Clear thumbnail only when switching FROM video TO audio
-      if (type === 'audio') {
-        setThumbnailFile(null);
-        setThumbnailPreview('');
-        handleChange('thumbnailUrl', '');
-      }
+      // Keep thumbnail when switching types - it's useful for both
     }
     handleChange('mediaType', type);
   };
@@ -182,10 +177,8 @@ export const PodcastEditor: React.FC = () => {
     if (!isEditing && !mediaFile && !formData.mediaUrl) {
       newErrors.media = `${formData.mediaType === 'video' ? 'Video' : 'Audio'} file is required`;
     }
-    // Thumbnail required for video
-    if (formData.mediaType === 'video' && !thumbnailFile && !formData.thumbnailUrl) {
-      newErrors.thumbnail = 'Thumbnail is required for video content';
-    }
+    // Thumbnail recommended but not required
+    // (removed requirement - thumbnails are optional for both audio and video)
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -242,7 +235,7 @@ export const PodcastEditor: React.FC = () => {
         price: formData.isFree ? '0' : formData.price,
         categoryId: formData.categoryId || undefined,
         isDownloadable: formData.isDownloadable,
-        thumbnailUrl: formData.mediaType === 'video' ? thumbnailUrl : '', // Only save thumbnail for video
+        thumbnailUrl, // Save thumbnail for both audio and video
         mediaUrl,
         duration: formData.duration,
         status: publish ? 'published' : 'draft',
@@ -391,49 +384,48 @@ export const PodcastEditor: React.FC = () => {
               </h3>
               
               <div className="space-y-4">
-                {/* Thumbnail - Only for Video */}
-                {isVideo && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                      Thumbnail Image <span className="text-red-400">*</span>
-                    </label>
-                    <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                      {thumbnailPreview && (
-                        <div className="relative w-full sm:w-auto">
-                          <img 
-                            src={thumbnailPreview} 
-                            alt="Thumbnail preview" 
-                            className="w-full sm:w-40 h-32 sm:h-24 object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={clearThumbnail}
-                            className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      )}
-                      <label className={`w-full sm:flex-1 flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
-                        errors.thumbnail ? 'border-red-500' : 'border-white/10'
-                      }`}>
-                        <Image size={20} className="text-slate-400 mb-2 sm:hidden" />
-                        <Image size={24} className="text-slate-400 mb-2 hidden sm:block" />
-                        <span className="text-xs sm:text-sm text-slate-400 text-center">Click to upload thumbnail</span>
-                        <span className="text-[10px] sm:text-xs text-slate-500 mt-1">JPG, PNG, WebP (max 5MB)</span>
-                        <input
-                          type="file"
-                          accept={IMAGE_EXTENSIONS}
-                          onChange={handleThumbnailSelect}
-                          className="hidden"
+                {/* Thumbnail - For both Audio and Video */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                    Thumbnail Image {isVideo && <span className="text-slate-500">(recommended)</span>}
+                    {!isVideo && <span className="text-slate-500">(optional - shows in player)</span>}
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    {thumbnailPreview && (
+                      <div className="relative w-full sm:w-auto">
+                        <img 
+                          src={thumbnailPreview} 
+                          alt="Thumbnail preview" 
+                          className="w-full sm:w-40 h-32 sm:h-24 object-cover rounded-lg"
                         />
-                      </label>
-                    </div>
-                    {errors.thumbnail && (
-                      <p className="mt-1.5 text-sm text-red-400">{errors.thumbnail}</p>
+                        <button
+                          type="button"
+                          onClick={clearThumbnail}
+                          className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
                     )}
+                    <label className={`w-full sm:flex-1 flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                      errors.thumbnail ? 'border-red-500' : 'border-white/10'
+                    }`}>
+                      <Image size={20} className="text-slate-400 mb-2 sm:hidden" />
+                      <Image size={24} className="text-slate-400 mb-2 hidden sm:block" />
+                      <span className="text-xs sm:text-sm text-slate-400 text-center">Click to upload thumbnail</span>
+                      <span className="text-[10px] sm:text-xs text-slate-500 mt-1">JPG, PNG, WebP (max 5MB)</span>
+                      <input
+                        type="file"
+                        accept={IMAGE_EXTENSIONS}
+                        onChange={handleThumbnailSelect}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
-                )}
+                  {errors.thumbnail && (
+                    <p className="mt-1.5 text-sm text-red-400">{errors.thumbnail}</p>
+                  )}
+                </div>
 
                 {/* Media File */}
                 <div>
@@ -504,29 +496,43 @@ export const PodcastEditor: React.FC = () => {
               <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Pricing</h3>
               
               <div className="space-y-4">
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleChange('isFree', true)}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      formData.isFree
-                        ? 'bg-neon-green/20 text-neon-green border border-neon-green/30'
-                        : 'bg-slate-800 text-slate-400 border border-transparent hover:bg-slate-700'
-                    }`}
-                  >
-                    Free
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleChange('isFree', false)}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      !formData.isFree
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        : 'bg-slate-800 text-slate-400 border border-transparent hover:bg-slate-700'
-                    }`}
-                  >
-                    Paid
-                  </button>
+                {/* Free/Paid Toggle Switch */}
+                <div className="relative">
+                  <div className="flex bg-slate-800/80 rounded-xl p-1 border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => handleChange('isFree', true)}
+                      className={`relative flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 z-10 ${
+                        formData.isFree
+                          ? 'text-slate-900'
+                          : 'text-slate-400 hover:text-slate-300'
+                      }`}
+                    >
+                      <span className="relative z-10">Free</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('isFree', false)}
+                      className={`relative flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 z-10 ${
+                        !formData.isFree
+                          ? 'text-slate-900'
+                          : 'text-slate-400 hover:text-slate-300'
+                      }`}
+                    >
+                      <span className="relative z-10">Paid</span>
+                    </button>
+                    {/* Sliding indicator */}
+                    <div
+                      className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg transition-all duration-200 ease-out ${
+                        formData.isFree 
+                          ? 'left-1 bg-neon-green shadow-lg shadow-neon-green/30' 
+                          : 'left-[calc(50%+2px)] bg-amber-400 shadow-lg shadow-amber-400/30'
+                      }`}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2 text-center">
+                    {formData.isFree ? 'Anyone can access this content' : 'Users must pay to access'}
+                  </p>
                 </div>
 
                 {!formData.isFree && (
@@ -540,19 +546,31 @@ export const PodcastEditor: React.FC = () => {
                   />
                 )}
 
-                <div>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.isDownloadable}
-                      onChange={(e) => handleChange('isDownloadable', e.target.checked)}
-                      className="w-4 h-4 rounded border-white/20 bg-slate-800 text-neon-cyan focus:ring-neon-cyan/50"
-                    />
-                    <span className="text-sm text-slate-300">Allow downloads</span>
-                  </label>
-                  <p className="text-xs text-slate-500 mt-1 ml-7">
-                    Free users can download this content. Premium users can always download.
-                  </p>
+                {/* Downloads Toggle */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-slate-300">Allow Downloads</span>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Free users can download
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('isDownloadable', !formData.isDownloadable)}
+                      className={`relative w-12 h-7 rounded-full transition-all duration-200 ${
+                        formData.isDownloadable
+                          ? 'bg-neon-cyan shadow-lg shadow-neon-cyan/30'
+                          : 'bg-slate-700'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-200 ${
+                          formData.isDownloadable ? 'left-6' : 'left-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

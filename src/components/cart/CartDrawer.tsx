@@ -222,16 +222,13 @@ export const CartDrawer: React.FC = () => {
                 <button
                   onClick={handleCheckout}
                   disabled={isCheckingOut}
-                  className="group w-full bg-white text-black font-bold py-3.5 md:py-4 rounded-xl transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex items-center justify-center gap-2 overflow-hidden relative touch-feedback disabled:opacity-50"
+                  className="w-full bg-neon-cyan text-slate-900 font-bold py-3.5 md:py-4 rounded-xl transition-all hover:bg-neon-cyan/90 shadow-lg shadow-neon-cyan/20 hover:shadow-neon-cyan/40 flex items-center justify-center gap-2 touch-feedback disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-neon-cyan via-white to-neon-purple opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <span className="relative z-10 flex items-center gap-2">
-                    {isCheckingOut ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <>Checkout <ChevronRight size={18} /></>
-                    )}
-                  </span>
+                  {isCheckingOut ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <>Checkout <ChevronRight size={18} /></>
+                  )}
                 </button>
 
                 <div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-slate-500 font-mono">
