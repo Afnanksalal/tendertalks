@@ -34,7 +34,7 @@ export async function uploadFile(
   path: string,
   file: File,
   options?: { upsert?: boolean }
-): Promise<{ url: string; error: Error | null }> {
+): Promise<{ url: string; path: string; error: Error | null }> {
   try {
     const { data, error } = await supabase.storage
       .from(bucket)
@@ -44,13 +44,22 @@ export async function uploadFile(
       });
 
     if (error) {
-      return { url: '', error };
+      return { url: '', path: '', error };
+    }
+
+    // For private buckets (podcasts), store the path instead of public URL
+    // For public buckets (thumbnails, merch, avatars), return public URL
+    const isPrivateBucket = bucket === STORAGE_BUCKETS.PODCASTS;
+    
+    if (isPrivateBucket) {
+      // Store bucket:path format for later signed URL generation
+      return { url: `supabase://${bucket}/${data.path}`, path: data.path, error: null };
     }
 
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-    return { url: urlData.publicUrl, error: null };
+    return { url: urlData.publicUrl, path: data.path, error: null };
   } catch (err) {
-    return { url: '', error: err instanceof Error ? err : new Error('Upload failed') };
+    return { url: '', path: '', error: err instanceof Error ? err : new Error('Upload failed') };
   }
 }
 

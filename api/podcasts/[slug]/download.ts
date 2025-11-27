@@ -1,10 +1,16 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
+import { createClient } from '@supabase/supabase-js';
 import * as schema from '../../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
+
+// Create Supabase client for storage access
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export default async function handler(req: Request) {
   const headers = {
@@ -109,6 +115,42 @@ export default async function handler(req: Request) {
       });
     }
 
+    let downloadUrl = podcast.mediaUrl;
+
+    // If it's a Supabase storage URL, generate a signed URL
+    if (podcast.mediaUrl.startsWith('supabase://')) {
+      // Parse supabase://bucket/path format
+      const match = podcast.mediaUrl.match(/^supabase:\/\/([^/]+)\/(.+)$/);
+      if (match) {
+        const [, bucket, path] = match;
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(path, 7200); // 2 hours expiry
+        
+        if (error || !data) {
+          console.error('Failed to create signed URL:', error);
+          return new Response(JSON.stringify({ error: 'Failed to generate download URL' }), {
+            status: 500,
+            headers,
+          });
+        }
+        downloadUrl = data.signedUrl;
+      }
+    } else if (podcast.mediaUrl.includes('supabase.co/storage')) {
+      // Handle existing public URLs - extract path and create signed URL
+      const urlMatch = podcast.mediaUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+      if (urlMatch) {
+        const [, bucket, path] = urlMatch;
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(decodeURIComponent(path), 7200);
+        
+        if (data && !error) {
+          downloadUrl = data.signedUrl;
+        }
+      }
+    }
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
@@ -120,7 +162,7 @@ export default async function handler(req: Request) {
 
     return new Response(
       JSON.stringify({
-        url: podcast.mediaUrl,
+        url: downloadUrl,
         expiresAt: expiresAt.toISOString(),
       }),
       { status: 200, headers }

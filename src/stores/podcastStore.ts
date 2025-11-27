@@ -91,7 +91,9 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
   fetchPodcastBySlug: async (slug: string) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`/api/podcasts/${slug}`);
+      const response = await fetch(`/api/podcasts/${slug}`, {
+        headers: getAuthHeaders(),
+      });
       if (!response.ok) throw new Error('Podcast not found');
       
       const podcast = await response.json();
