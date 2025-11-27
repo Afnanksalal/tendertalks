@@ -3,10 +3,22 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
-const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client, { schema });
+// Lazy initialization
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  const sql_client = neon(process.env.DATABASE_URL);
+  return drizzle(sql_client, { schema });
+}
 
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+function getRazorpaySecret() {
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!secret) {
+    throw new Error('RAZORPAY_KEY_SECRET environment variable is not set');
+  }
+  return secret;
+}
 
 async function verifySignature(
   orderId: string,
@@ -14,6 +26,7 @@ async function verifySignature(
   signature: string
 ): Promise<boolean> {
   try {
+    const RAZORPAY_KEY_SECRET = getRazorpaySecret();
     const encoder = new TextEncoder();
     const data = encoder.encode(`${orderId}|${paymentId}`);
     const key = encoder.encode(RAZORPAY_KEY_SECRET);
@@ -67,6 +80,8 @@ export default async function handler(req: Request) {
         headers,
       });
     }
+
+    const db = getDb();
 
     // Idempotency check - prevent double processing
     const [existingOrder] = await db.select().from(schema.merchOrders)

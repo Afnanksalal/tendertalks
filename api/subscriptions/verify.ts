@@ -3,13 +3,26 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client, { schema });
+// Lazy initialization
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  const sql_client = neon(process.env.DATABASE_URL);
+  return drizzle(sql_client, { schema });
+}
 
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+function getRazorpaySecret() {
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!secret) {
+    throw new Error('RAZORPAY_KEY_SECRET environment variable is not set');
+  }
+  return secret;
+}
 
 async function verifySignature(orderId: string, paymentId: string, signature: string): Promise<boolean> {
   try {
+    const RAZORPAY_KEY_SECRET = getRazorpaySecret();
     const encoder = new TextEncoder();
     const data = encoder.encode(`${orderId}|${paymentId}`);
     const key = encoder.encode(RAZORPAY_KEY_SECRET);
@@ -27,7 +40,7 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
 }
 
 // Helper to safely update payment history (table may not exist yet)
-async function safeUpdatePaymentHistory(orderId: string, data: any) {
+async function safeUpdatePaymentHistory(db: ReturnType<typeof getDb>, orderId: string, data: any) {
   try {
     await db.update(schema.paymentHistory).set(data).where(eq(schema.paymentHistory.razorpayOrderId, orderId));
   } catch (e) {
@@ -64,11 +77,12 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing payment details' }), { status: 400, headers });
     }
 
+    const db = getDb();
     const isValid = await verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
     const now = new Date();
 
     if (!isValid) {
-      await safeUpdatePaymentHistory(razorpay_order_id, { status: 'failed', updatedAt: now });
+      await safeUpdatePaymentHistory(db, razorpay_order_id, { status: 'failed', updatedAt: now });
       return new Response(JSON.stringify({ error: 'Invalid payment signature' }), { status: 400, headers });
     }
 
@@ -88,7 +102,7 @@ export default async function handler(req: Request) {
     }
 
     // Update payment history as completed
-    await safeUpdatePaymentHistory(razorpay_order_id, {
+    await safeUpdatePaymentHistory(db, razorpay_order_id, {
       status: 'completed',
       razorpayPaymentId: razorpay_payment_id,
       razorpaySignature: razorpay_signature,
@@ -114,7 +128,7 @@ export default async function handler(req: Request) {
         currentPeriodEnd: periodEnd,
       }).returning();
 
-      await safeUpdatePaymentHistory(razorpay_order_id, { refId: subscription.id, refType: 'subscription' });
+      await safeUpdatePaymentHistory(db, razorpay_order_id, { refId: subscription.id, refType: 'subscription' });
 
       const message = action === 'upgrade' 
         ? 'Upgraded successfully! New plan is now active.'

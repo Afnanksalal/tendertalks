@@ -3,15 +3,33 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 
-const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client, { schema });
+// Lazy initialization
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  const sql_client = neon(process.env.DATABASE_URL);
+  return drizzle(sql_client, { schema });
+}
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+function getRazorpayCredentials() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    throw new Error('Razorpay credentials not configured');
+  }
+  return { keyId, keySecret };
+}
 
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  if (typeof btoa !== 'undefined') return btoa(str);
-  return Buffer.from(str).toString('base64');
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  return btoa(binary);
 }
 
 export default async function handler(req: Request) {
@@ -30,6 +48,8 @@ export default async function handler(req: Request) {
   if (!adminId) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
+
+  const db = getDb();
 
   // Verify admin
   const [admin] = await db.select().from(schema.users)
@@ -135,11 +155,13 @@ export default async function handler(req: Request) {
         }
 
         // Create refund via Razorpay
+        const { keyId: RAZORPAY_KEY_ID, keySecret: RAZORPAY_KEY_SECRET } = getRazorpayCredentials();
+        
         const refundResponse = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}/refund`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+            'Authorization': `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
           },
           body: JSON.stringify({
             amount: Math.round(parseFloat(refundRequest.amount) * 100),
@@ -151,11 +173,17 @@ export default async function handler(req: Request) {
         });
 
         if (!refundResponse.ok) {
-          const error = await refundResponse.text();
-          console.error('Razorpay refund error:', error);
+          const errorText = await refundResponse.text();
+          console.error('Razorpay refund error:', refundResponse.status, errorText);
+          
+          let errorMessage = 'Failed to process refund via Razorpay. Process manually.';
+          if (refundResponse.status === 401) {
+            errorMessage = 'Invalid Razorpay credentials. Process refund manually.';
+          }
+          
           return new Response(JSON.stringify({ 
-            error: 'Failed to process refund via Razorpay. Process manually.',
-            razorpayError: error,
+            error: errorMessage,
+            razorpayError: errorText,
             manualRefundRequired: true,
           }), { status: 400, headers });
         }

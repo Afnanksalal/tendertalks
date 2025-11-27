@@ -18,9 +18,15 @@ function getRazorpayCredentials() {
   return { keyId, keySecret };
 }
 
-// Simple base64 encoding - Razorpay keys are ASCII only
+// Edge-compatible base64 encoding using TextEncoder
 function base64Encode(str: string): string {
-  return btoa(str);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  return btoa(binary);
 }
 
 export default async function handler(req: Request) {
@@ -108,53 +114,40 @@ export default async function handler(req: Request) {
     const authString = `${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`;
     const encodedAuth = base64Encode(authString);
     
-    // Log for debugging (mask the secret)
-    console.log('Auth debug:', {
-      keyIdLength: RAZORPAY_KEY_ID.length,
-      keyIdPrefix: RAZORPAY_KEY_ID.substring(0, 12),
-      secretLength: RAZORPAY_KEY_SECRET.length,
-      authStringLength: authString.length,
-      encodedLength: encodedAuth.length,
-    });
-
-    // Log the exact request being made
-    const requestHeaders = {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${encodedAuth}`,
-    };
-    console.log('Making request to Razorpay with headers:', Object.keys(requestHeaders));
+    console.log('Creating Razorpay order with key:', RAZORPAY_KEY_ID.substring(0, 12) + '...');
 
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
-      headers: requestHeaders,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${encodedAuth}`,
+      },
       body: JSON.stringify(orderData),
     });
 
-    // Log response for debugging
-    console.log('Razorpay response status:', razorpayResponse.status);
-    const responseHeaders: Record<string, string> = {};
-    razorpayResponse.headers.forEach((value, key) => {
-      responseHeaders[key] = value;
-    });
-    console.log('Razorpay response headers:', responseHeaders);
-
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
-      console.error('Razorpay order creation failed:', razorpayResponse.status, 'Body:', errorText);
+      console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
       
-      // Try to parse Razorpay error for better message
-      let razorpayError = 'Unknown error';
+      // Parse Razorpay error for better message
+      let razorpayError = 'Payment gateway error';
       try {
         const errorJson = JSON.parse(errorText);
         razorpayError = errorJson.error?.description || errorJson.error?.reason || errorJson.message || errorText;
       } catch {
-        razorpayError = errorText;
+        razorpayError = errorText || `HTTP ${razorpayResponse.status}`;
+      }
+      
+      // 401 = bad credentials, 406 = content negotiation issue
+      if (razorpayResponse.status === 401) {
+        razorpayError = 'Invalid Razorpay credentials. Please check your API keys.';
+      } else if (razorpayResponse.status === 406) {
+        razorpayError = 'Request format not accepted by Razorpay. Please contact support.';
       }
       
       return new Response(JSON.stringify({ 
-        error: `Payment gateway error: ${razorpayError}`,
-        details: `Razorpay returned ${razorpayResponse.status}`,
-        razorpayError
+        error: razorpayError,
+        code: razorpayResponse.status
       }), { status: 500, headers });
     }
 

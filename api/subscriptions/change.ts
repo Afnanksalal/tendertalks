@@ -3,15 +3,33 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client, { schema });
+// Lazy initialization
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  const sql_client = neon(process.env.DATABASE_URL);
+  return drizzle(sql_client, { schema });
+}
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+function getRazorpayCredentials() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    throw new Error('Razorpay credentials not configured');
+  }
+  return { keyId, keySecret };
+}
 
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  if (typeof btoa !== 'undefined') return btoa(str);
-  return Buffer.from(str).toString('base64');
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  return btoa(binary);
 }
 
 export default async function handler(req: Request) {
@@ -42,6 +60,8 @@ export default async function handler(req: Request) {
     if (!newPlanId) {
       return new Response(JSON.stringify({ error: 'New plan ID required' }), { status: 400, headers });
     }
+
+    const db = getDb();
 
     // Get current subscription with plan
     const currentSubResult = await db.select({
@@ -139,18 +159,29 @@ export default async function handler(req: Request) {
         },
       };
 
+      const { keyId: RAZORPAY_KEY_ID, keySecret: RAZORPAY_KEY_SECRET } = getRazorpayCredentials();
+      
       const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
           'Authorization': `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
         },
         body: JSON.stringify(orderData),
       });
 
       if (!razorpayResponse.ok) {
-        throw new Error('Failed to create payment order');
+        const errorText = await razorpayResponse.text();
+        console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
+        
+        let errorMessage = 'Failed to create payment order';
+        if (razorpayResponse.status === 401) {
+          errorMessage = 'Invalid payment gateway credentials';
+        } else if (razorpayResponse.status === 406) {
+          errorMessage = 'Payment request format error';
+        }
+        
+        return new Response(JSON.stringify({ error: errorMessage }), { status: 500, headers });
       }
 
       const razorpayOrder = await razorpayResponse.json();

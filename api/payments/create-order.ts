@@ -141,7 +141,6 @@ export default async function handler(req: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
         'Authorization': `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
       },
       body: JSON.stringify(orderData),
@@ -150,7 +149,20 @@ export default async function handler(req: Request) {
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
       console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
-      return new Response(JSON.stringify({ error: 'Failed to create payment order' }), { status: 500, headers });
+      
+      let errorMessage = 'Failed to create payment order';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error?.description || errorJson.error?.reason || errorMessage;
+      } catch {}
+      
+      if (razorpayResponse.status === 401) {
+        errorMessage = 'Invalid payment gateway credentials';
+      } else if (razorpayResponse.status === 406) {
+        errorMessage = 'Payment request format error';
+      }
+      
+      return new Response(JSON.stringify({ error: errorMessage }), { status: 500, headers });
     }
 
     const razorpayOrder = await razorpayResponse.json();
