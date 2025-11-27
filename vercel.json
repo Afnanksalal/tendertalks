@@ -6,6 +6,9 @@
   "rewrites": [
     { "source": "/api/admin/podcasts/:id/publish", "destination": "/api/admin/podcasts/[id]/publish" },
     { "source": "/api/admin/podcasts/:id", "destination": "/api/admin/podcasts/[id]" },
+    { "source": "/api/admin/products/:id", "destination": "/api/admin/products/[id]" },
+    { "source": "/api/admin/plans/:id", "destination": "/api/admin/plans/[id]" },
+    { "source": "/api/admin/categories/:id", "destination": "/api/admin/categories/[id]" },
     { "source": "/api/podcasts/:slug/download", "destination": "/api/podcasts/[slug]/download" },
     { "source": "/api/podcasts/:slug", "destination": "/api/podcasts/[slug]" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
