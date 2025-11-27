@@ -143,10 +143,18 @@ npm run preview
 
 ## Troubleshooting
 
+### Site loading forever on custom domain
+1. **Check Vercel Environment Variables**: Ensure `VITE_APP_URL` is set to `https://tendertalks.live` (not the vercel.app URL)
+2. **Check Supabase Redirect URLs**: Go to Supabase Dashboard > Authentication > URL Configuration and ensure `https://tendertalks.live/auth/callback` is in the allowed redirect URLs
+3. **Check DNS propagation**: Use `dig tendertalks.live` or online tools to verify DNS is properly configured
+4. **Clear browser cache**: The old domain might be cached
+5. **Check browser console**: Look for CORS errors or failed API calls
+
 ### Auth not working
 - Check Supabase redirect URLs include your domain
 - Verify Google OAuth credentials are correct
 - Check browser console for errors
+- Ensure `VITE_APP_URL` matches your actual domain
 
 ### Payments failing
 - Verify Razorpay keys are correct (test vs live)
@@ -157,3 +165,8 @@ npm run preview
 - Check Supabase storage buckets exist
 - Verify storage policies are set correctly
 - Check CORS settings if needed
+
+### Infinite redirect loop
+- Check vercel.json redirects configuration
+- Ensure www redirect is set up correctly in Vercel dashboard
+- Verify no conflicting redirects in DNS settings

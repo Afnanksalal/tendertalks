@@ -85,10 +85,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signInWithGoogle: async () => {
+        // Use the configured app URL for redirects to ensure consistency
+        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
+            redirectTo: `${appUrl}/auth/callback`,
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',
@@ -123,6 +125,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signUpWithEmail: async (email: string, password: string, name: string) => {
+        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -131,7 +134,7 @@ export const useAuthStore = create<AuthState>()(
               name,
               full_name: name,
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: `${appUrl}/auth/callback`,
           },
         });
         

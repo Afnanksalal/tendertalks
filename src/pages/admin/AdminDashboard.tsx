@@ -72,64 +72,99 @@ export const AdminLayout: React.FC = () => {
         </nav>
       </aside>
 
-      {/* Mobile Admin Header */}
-      <div className="lg:hidden fixed top-16 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-lg border-b border-white/10 safe-area-inset">
-        <div className="flex items-center justify-between px-3 py-2.5">
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex items-center gap-2 text-white font-medium min-w-0"
-          >
-            <Menu size={18} className="text-slate-400 flex-shrink-0" />
-            <span className="truncate text-sm">{currentPage}</span>
-            <ChevronDown size={14} className={`text-slate-400 transition-transform flex-shrink-0 ${mobileMenuOpen ? 'rotate-180' : ''}`} />
-          </button>
-          <Link
-            to="/admin/podcasts/new"
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-neon-cyan text-slate-900 text-xs font-bold rounded-lg flex-shrink-0"
-          >
-            <Plus size={14} /> New
-          </Link>
-        </div>
-
-        {/* Mobile Dropdown Menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
+      {/* Mobile Admin Sidebar Drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden border-t border-white/5"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+            />
+            {/* Sidebar Drawer */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="lg:hidden fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-slate-900 border-r border-white/10 z-[70] flex flex-col"
             >
-              <nav className="p-2 max-h-[50vh] overflow-y-auto">
-                <div className="grid grid-cols-2 gap-1.5">
-                  {sidebarLinks.map((link) => {
-                    const isActive = location.pathname === link.path;
-                    const Icon = link.icon;
-                    return (
-                      <Link
-                        key={link.path}
-                        to={link.path}
-                        className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-colors ${
-                          isActive 
-                            ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' 
-                            : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'
-                        }`}
-                      >
-                        <Icon size={14} />
-                        <span className="truncate">{link.name}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <span className="text-white font-bold text-lg">Admin Panel</span>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* New Podcast Button */}
+              <div className="p-3">
+                <Link
+                  to="/admin/podcasts/new"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors text-sm"
+                >
+                  <Plus size={16} /> New Podcast
+                </Link>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="flex-1 overflow-y-auto px-2 pb-4">
+                {sidebarLinks.map((link) => {
+                  const isActive = location.pathname === link.path;
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-colors ${
+                        isActive 
+                          ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' 
+                          : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <Icon size={18} />
+                      <span className="text-sm font-medium">{link.name}</span>
+                    </Link>
+                  );
+                })}
               </nav>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+              {/* Back to Site */}
+              <div className="p-3 border-t border-white/10">
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-white/5 text-slate-300 font-medium rounded-xl hover:bg-white/10 transition-colors text-sm"
+                >
+                  ← Back to Site
+                </Link>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Admin Header - Floating Button */}
+      <div className="lg:hidden fixed bottom-20 left-4 z-50">
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex items-center gap-2 px-4 py-3 bg-slate-900/95 backdrop-blur-lg border border-white/20 rounded-full shadow-lg text-white font-medium"
+        >
+          <Menu size={18} className="text-neon-cyan" />
+          <span className="text-sm">{currentPage}</span>
+        </button>
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-28 lg:pt-28 pb-20 lg:pb-10 px-3 sm:px-4 lg:px-8">
+      <main className="flex-1 lg:ml-64 pt-20 lg:pt-28 pb-28 lg:pb-10 px-3 sm:px-4 lg:px-8">
         <Outlet />
       </main>
     </div>

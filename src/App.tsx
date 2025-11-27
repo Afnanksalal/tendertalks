@@ -44,6 +44,13 @@ function App() {
   const { initialize } = useAuthStore();
 
   useEffect(() => {
+    // Remove initial loader once React mounts
+    const loader = document.querySelector('.initial-loader');
+    if (loader) {
+      loader.remove();
+    }
+    
+    // Initialize auth
     initialize();
   }, [initialize]);
 
