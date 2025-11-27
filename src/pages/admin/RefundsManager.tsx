@@ -285,105 +285,153 @@ export const RefundsManager: React.FC = () => {
         </div>
       )}
 
-      {/* Review Modal */}
+      {/* Review Modal - Mobile Optimized */}
       {selectedRefund && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-lg w-full"
-          >
-            <h3 className="text-xl font-bold text-white mb-4">Review Refund Request</h3>
-            
-            <div className="space-y-4 mb-6">
-              <div className="p-4 bg-slate-800/50 rounded-lg">
-                <div className="flex justify-between mb-2">
-                  <span className="text-slate-400">User</span>
-                  <span className="text-white">{selectedRefund.user?.email}</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-slate-400">Amount</span>
-                  <span className="text-white font-mono">₹{parseFloat(selectedRefund.refund.amount).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Type</span>
-                  <span className="text-white">{selectedRefund.refund.subscriptionId ? 'Subscription' : 'Purchase'}</span>
-                </div>
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setSelectedRefund(null);
+              setAdminNotes('');
+              setRazorpayRefundId('');
+            }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+          />
+          
+          {/* Modal Container */}
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg my-auto shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5">
+                <h3 className="text-base sm:text-lg font-bold text-white">Review Refund</h3>
+                <button
+                  onClick={() => {
+                    setSelectedRefund(null);
+                    setAdminNotes('');
+                    setRazorpayRefundId('');
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback"
+                >
+                  <XCircle size={20} />
+                </button>
               </div>
-
-              {selectedRefund.refund.reason && (
-                <div>
-                  <p className="text-sm text-slate-400 mb-1">Customer Reason</p>
-                  <p className="text-white bg-slate-800/50 p-3 rounded-lg">{selectedRefund.refund.reason}</p>
+              
+              {/* Content */}
+              <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto space-y-4">
+                {/* Summary Card */}
+                <div className="p-3 sm:p-4 bg-slate-800/50 rounded-xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">User</span>
+                    <span className="text-white text-sm truncate ml-2 max-w-[180px]">{selectedRefund.user?.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Amount</span>
+                    <span className="text-neon-green font-mono font-bold">₹{parseFloat(selectedRefund.refund.amount).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Type</span>
+                    <span className="text-white text-sm">{selectedRefund.refund.subscriptionId ? 'Subscription' : 'Purchase'}</span>
+                  </div>
                 </div>
-              )}
 
-              <div>
-                <label className="text-sm text-slate-400 mb-1 block">Admin Notes</label>
-                <textarea
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="Add notes about this refund..."
-                  className="w-full p-3 bg-slate-800 border border-white/10 rounded-lg text-white placeholder-slate-500 resize-none"
-                  rows={3}
-                />
-              </div>
+                {selectedRefund.refund.reason && (
+                  <div>
+                    <p className="text-xs sm:text-sm text-slate-400 mb-1.5">Customer Reason</p>
+                    <p className="text-white text-sm bg-slate-800/50 p-3 rounded-xl">{selectedRefund.refund.reason}</p>
+                  </div>
+                )}
 
-              {selectedRefund.refund.status === 'approved' && (
                 <div>
-                  <label className="text-sm text-slate-400 mb-1 block">Razorpay Refund ID (for manual refunds)</label>
-                  <input
-                    type="text"
-                    value={razorpayRefundId}
-                    onChange={(e) => setRazorpayRefundId(e.target.value)}
-                    placeholder="rfnd_xxxxxxxxxxxxx"
-                    className="w-full p-3 bg-slate-800 border border-white/10 rounded-lg text-white placeholder-slate-500"
+                  <label className="text-xs sm:text-sm text-slate-400 mb-1.5 block">Admin Notes</label>
+                  <textarea
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    placeholder="Add notes about this refund..."
+                    className="w-full p-3 bg-slate-800/50 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 resize-none focus:border-neon-cyan/50 focus:outline-none"
+                    rows={3}
                   />
                 </div>
-              )}
-            </div>
 
-            <div className="flex gap-3">
-              <Button variant="ghost" onClick={() => {
-                setSelectedRefund(null);
-                setAdminNotes('');
-                setRazorpayRefundId('');
-              }} className="flex-1">
-                Cancel
-              </Button>
-              
-              {selectedRefund.refund.status === 'pending' && (
-                <>
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleAction(selectedRefund.refund.id, 'reject')}
-                    isLoading={processingId === selectedRefund.refund.id}
-                    className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    onClick={() => handleAction(selectedRefund.refund.id, 'approve')}
-                    isLoading={processingId === selectedRefund.refund.id}
-                    className="flex-1"
-                  >
-                    Approve
-                  </Button>
-                </>
-              )}
+                {selectedRefund.refund.status === 'approved' && (
+                  <div>
+                    <label className="text-xs sm:text-sm text-slate-400 mb-1.5 block">Razorpay Refund ID</label>
+                    <input
+                      type="text"
+                      value={razorpayRefundId}
+                      onChange={(e) => setRazorpayRefundId(e.target.value)}
+                      placeholder="rfnd_xxxxxxxxxxxxx"
+                      className="w-full p-3 bg-slate-800/50 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
 
-              {selectedRefund.refund.status === 'approved' && (
-                <Button
-                  onClick={() => handleAction(selectedRefund.refund.id, 'mark_processed')}
-                  isLoading={processingId === selectedRefund.refund.id}
-                  className="flex-1"
-                >
-                  Mark as Processed
-                </Button>
-              )}
-            </div>
-          </motion.div>
-        </div>
+              {/* Actions */}
+              <div className="p-4 sm:p-6 pt-0 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                {selectedRefund.refund.status === 'pending' && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedRefund(null);
+                        setAdminNotes('');
+                        setRazorpayRefundId('');
+                      }}
+                      className="flex-1 order-3 sm:order-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleAction(selectedRefund.refund.id, 'reject')}
+                      isLoading={processingId === selectedRefund.refund.id}
+                      className="flex-1 order-2"
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      onClick={() => handleAction(selectedRefund.refund.id, 'approve')}
+                      isLoading={processingId === selectedRefund.refund.id}
+                      className="flex-1 order-1 sm:order-3"
+                    >
+                      Approve
+                    </Button>
+                  </>
+                )}
+
+                {selectedRefund.refund.status === 'approved' && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedRefund(null);
+                        setAdminNotes('');
+                        setRazorpayRefundId('');
+                      }}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleAction(selectedRefund.refund.id, 'mark_processed')}
+                      isLoading={processingId === selectedRefund.refund.id}
+                      className="flex-1"
+                    >
+                      Mark Processed
+                    </Button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </>
       )}
     </div>
   );

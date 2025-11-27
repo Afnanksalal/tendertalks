@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Zap, Loader2, Download, Wifi, Headphones, ArrowUp, ArrowDown } from 'lucide-react';
+import { Check, Star, Zap, Loader2, Download, Wifi, Headphones, ArrowUp, ArrowDown, Share2 } from 'lucide-react';
 import { useUserStore } from '../stores/userStore';
 import { useAuthStore } from '../stores/authStore';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -13,6 +13,29 @@ export const PricingPage: React.FC = () => {
   const { user } = useAuthStore();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleSharePlan = async (plan: typeof pricingPlans[0]) => {
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/pricing?plan=${plan.slug}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${plan.name} Plan | TenderTalks`,
+          text: plan.description || `Subscribe to ${plan.name} for ₹${parseFloat(plan.price)}/${plan.interval}`,
+          url,
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          await navigator.clipboard.writeText(url);
+          toast.success('Link copied!');
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied!');
+    }
+  };
 
   useEffect(() => {
     fetchPricingPlans();
@@ -249,14 +272,24 @@ export const PricingPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Current Plan Badge */}
-                {subscription?.planId === plan.id && (
-                  <div className="absolute top-4 right-4">
+                {/* Current Plan Badge & Share */}
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                  {subscription?.planId === plan.id && (
                     <span className="px-2 py-1 bg-neon-green/20 text-neon-green text-xs font-bold rounded">
                       Current
                     </span>
-                  </div>
-                )}
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSharePlan(plan);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    title="Share plan"
+                  >
+                    <Share2 size={14} />
+                  </button>
+                </div>
 
                 {/* Plan Header */}
                 <div className="mb-6 pt-2">

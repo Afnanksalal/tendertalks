@@ -168,22 +168,38 @@ export const PodcastDetailPage: React.FC = () => {
     }
   };
 
+  const [shareText, setShareText] = useState('Share');
+  
   const handleShare = async () => {
-    const url = window.location.href;
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/podcast/${podcast.slug}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
-          title: podcast.title,
-          text: podcast.description,
+          title: `${podcast.title} | TenderTalks`,
+          text: podcast.description?.slice(0, 100) || 'Check out this podcast on TenderTalks!',
           url,
         });
       } catch (err) {
-        // User cancelled or error
+        // User cancelled - fallback to clipboard
+        if ((err as Error).name !== 'AbortError') {
+          await copyToClipboard(url);
+        }
       }
     } else {
+      await copyToClipboard(url);
+    }
+  };
+  
+  const copyToClipboard = async (url: string) => {
+    try {
       await navigator.clipboard.writeText(url);
+      setShareText('Copied!');
       toast.success('Link copied to clipboard!');
+      setTimeout(() => setShareText('Share'), 2000);
+    } catch {
+      toast.error('Failed to copy link');
     }
   };
 
@@ -501,8 +517,9 @@ export const PodcastDetailPage: React.FC = () => {
                 size="sm"
                 onClick={handleShare}
                 leftIcon={<Share2 size={16} />}
+                className={shareText === 'Copied!' ? 'text-neon-green' : ''}
               >
-                Share
+                {shareText}
               </Button>
             </div>
 

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Tag, FolderOpen, Plus, X, Trash2, Loader2, Edit2, Save } from 'lucide-react';
+import { Settings, Tag, FolderOpen, Plus, X, Trash2, Loader2, Edit2, Save, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 
 interface Category { id: string; name: string; slug: string; description: string; }
 interface TagItem { id: string; name: string; slug: string; }
+interface DeleteModal { open: boolean; type: 'category' | 'tag'; id: string | null; name: string; }
 
 export default function SettingsManager() {
   const { user } = useAuthStore();
@@ -16,6 +18,7 @@ export default function SettingsManager() {
   const [newTag, setNewTag] = useState('');
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatData, setEditCatData] = useState({ name: '', description: '' });
+  const [deleteModal, setDeleteModal] = useState<DeleteModal>({ open: false, type: 'category', id: null, name: '' });
 
   useEffect(() => { fetchData(); }, [user]);
 
@@ -51,10 +54,11 @@ export default function SettingsManager() {
     fetchData();
   };
 
-  const deleteCategory = async (id: string) => {
-    if (!user?.id || !confirm('Delete this category?')) return;
-    const res = await fetch(`/api/admin/categories/${id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+  const deleteCategory = async () => {
+    if (!user?.id || !deleteModal.id) return;
+    const res = await fetch(`/api/admin/categories/${deleteModal.id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
     if (!res.ok) { const data = await res.json(); alert(data.error || 'Failed to delete'); }
+    setDeleteModal({ open: false, type: 'category', id: null, name: '' });
     fetchData();
   };
 
@@ -67,9 +71,10 @@ export default function SettingsManager() {
     if (res.ok) { setNewTag(''); fetchData(); }
   };
 
-  const deleteTag = async (id: string) => {
-    if (!user?.id || !confirm('Delete this tag?')) return;
-    await fetch(`/api/admin/tags?id=${id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+  const deleteTag = async () => {
+    if (!user?.id || !deleteModal.id) return;
+    await fetch(`/api/admin/tags?id=${deleteModal.id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+    setDeleteModal({ open: false, type: 'tag', id: null, name: '' });
     fetchData();
   };
 
@@ -117,7 +122,7 @@ export default function SettingsManager() {
                     </div>
                     <div className="flex gap-1">
                       <button onClick={() => startEditCat(cat)} className="p-1.5 text-slate-400 hover:text-neon-cyan transition-colors"><Edit2 size={14} /></button>
-                      <button onClick={() => deleteCategory(cat.id)} className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
+                      <button onClick={() => setDeleteModal({ open: true, type: 'category', id: cat.id, name: cat.name })} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors touch-feedback"><Trash2 size={14} /></button>
                     </div>
                   </div>
                 )}
@@ -147,7 +152,7 @@ export default function SettingsManager() {
             {tags.map(tag => (
               <span key={tag.id} className="bg-slate-800 border border-white/10 px-3 py-1.5 rounded-full text-sm text-slate-300 flex items-center gap-2 group">
                 {tag.name}
-                <button onClick={() => deleteTag(tag.id)} className="text-slate-500 hover:text-red-400 transition-colors">&times;</button>
+                <button onClick={() => setDeleteModal({ open: true, type: 'tag', id: tag.id, name: tag.name })} className="text-slate-500 hover:text-red-400 transition-colors">&times;</button>
               </span>
             ))}
             {tags.length === 0 && <p className="text-slate-500 text-sm">No tags yet</p>}
@@ -178,6 +183,36 @@ export default function SettingsManager() {
           ))}
         </div>
       </motion.div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, type: 'category', id: null, name: '' })}
+        title={`Delete ${deleteModal.type === 'category' ? 'Category' : 'Tag'}`}
+        size="sm"
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={20} className="text-red-400" />
+          </div>
+          <div>
+            <p className="text-white font-medium mb-1">Delete "{deleteModal.name}"?</p>
+            <p className="text-slate-400 text-sm">
+              {deleteModal.type === 'category' 
+                ? 'This will remove the category. Podcasts using it will be unaffected.'
+                : 'This will remove the tag from all podcasts.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => setDeleteModal({ open: false, type: 'category', id: null, name: '' })} className="flex-1">
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={deleteModal.type === 'category' ? deleteCategory : deleteTag} className="flex-1">
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, Tag, Save, X, Check, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Tag, Save, X, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 
 interface PricingPlan {
   id: string;
@@ -31,6 +32,7 @@ export default function PlansManager() {
     name: '', description: '', price: '', currency: 'INR', interval: 'month',
     features: [] as string[], allowDownloads: false, allowOffline: false, sortOrder: 0, isActive: true,
   });
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string | null; name: string }>({ open: false, id: null, name: '' });
 
   useEffect(() => { fetchPlans(); }, [user]);
 
@@ -58,9 +60,10 @@ export default function PlansManager() {
     setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!user?.id || !confirm('Delete/deactivate this plan?')) return;
-    await fetch(`/api/admin/plans/${id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+  const handleDelete = async () => {
+    if (!user?.id || !deleteModal.id) return;
+    await fetch(`/api/admin/plans/${deleteModal.id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+    setDeleteModal({ open: false, id: null, name: '' });
     fetchPlans();
   };
 
@@ -194,16 +197,44 @@ export default function PlansManager() {
               {plan.allowOffline && <span className="bg-neon-purple/10 text-neon-purple px-2 py-1 rounded text-xs">Offline</span>}
             </div>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => startEdit(plan)} className="flex items-center gap-1 flex-1 sm:flex-none justify-center">
-                <Edit2 size={14} /> Edit
+              <Button variant="secondary" size="sm" onClick={() => startEdit(plan)} className="flex items-center gap-1.5 flex-1 sm:flex-none justify-center">
+                <Edit2 size={14} /> <span>Edit</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(plan.id)} className="flex items-center gap-1 flex-1 sm:flex-none justify-center text-red-400 hover:bg-red-500/10">
-                <Trash2 size={14} /> Delete
+              <Button variant="ghost" size="sm" onClick={() => setDeleteModal({ open: true, id: plan.id, name: plan.name })} className="flex items-center gap-1.5 flex-1 sm:flex-none justify-center text-red-400 hover:bg-red-500/10">
+                <Trash2 size={14} /> <span>Delete</span>
               </Button>
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, name: '' })}
+        title="Delete Plan"
+        size="sm"
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={20} className="text-red-400" />
+          </div>
+          <div>
+            <p className="text-white font-medium mb-1">Delete "{deleteModal.name}"?</p>
+            <p className="text-slate-400 text-sm">
+              This will deactivate the plan. Existing subscribers won't be affected.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => setDeleteModal({ open: false, id: null, name: '' })} className="flex-1">
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDelete} className="flex-1">
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

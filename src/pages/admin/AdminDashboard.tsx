@@ -152,11 +152,11 @@ export const AdminLayout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Mobile Admin Header - Floating Button */}
-      <div className="lg:hidden fixed bottom-20 left-4 z-50">
+      {/* Mobile Admin Header - Floating Button (Bottom Left Corner) */}
+      <div className="lg:hidden fixed bottom-6 left-4 z-50">
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-slate-900/95 backdrop-blur-lg border border-white/20 rounded-full shadow-lg text-white font-medium"
+          className="flex items-center gap-2 px-4 py-3 bg-slate-900/95 backdrop-blur-lg border border-neon-cyan/30 rounded-full shadow-lg shadow-neon-cyan/10 text-white font-medium touch-feedback"
         >
           <Menu size={18} className="text-neon-cyan" />
           <span className="text-sm">{currentPage}</span>

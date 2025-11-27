@@ -337,100 +337,122 @@ export const SettingsPage: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Cancel Modal */}
+      {/* Cancel Modal - Mobile Optimized */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-md w-full"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                <AlertTriangle size={20} className="text-red-400" />
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCancelModal(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+          />
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md my-auto shadow-2xl"
+            >
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle size={20} className="text-red-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">Cancel Subscription</h3>
+                </div>
+                
+                <p className="text-slate-400 text-sm sm:text-base mb-4">
+                  Your subscription will remain active until {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}. 
+                  After that, you'll lose access to premium content.
+                </p>
+
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Tell us why you're leaving (optional)"
+                  className="w-full p-3 bg-slate-800/50 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 mb-4 resize-none focus:border-neon-cyan/50 focus:outline-none"
+                  rows={3}
+                />
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <Button variant="ghost" onClick={() => setShowCancelModal(false)} className="flex-1 order-2 sm:order-1">
+                    Keep Subscription
+                  </Button>
+                  <Button 
+                    variant="danger"
+                    onClick={() => handleCancelSubscription(false)}
+                    isLoading={isCancelling}
+                    className="flex-1 order-1 sm:order-2"
+                  >
+                    Cancel Subscription
+                  </Button>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-white">Cancel Subscription</h3>
-            </div>
-            
-            <p className="text-slate-400 mb-4">
-              Your subscription will remain active until {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}. 
-              After that, you'll lose access to premium content.
-            </p>
-
-            <textarea
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Tell us why you're leaving (optional)"
-              className="w-full p-3 bg-slate-800 border border-white/10 rounded-lg text-white placeholder-slate-500 mb-4 resize-none"
-              rows={3}
-            />
-
-            <div className="flex gap-3">
-              <Button variant="ghost" onClick={() => setShowCancelModal(false)} className="flex-1">
-                Keep Subscription
-              </Button>
-              <Button 
-                variant="secondary"
-                onClick={() => handleCancelSubscription(false)}
-                isLoading={isCancelling}
-                className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30"
-              >
-                Cancel at Period End
-              </Button>
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
+          </div>
+        </>
       )}
 
-      {/* Refund Modal */}
+      {/* Refund Modal - Mobile Optimized */}
       {showRefundModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-md w-full"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-                <CreditCard size={20} className="text-amber-400" />
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowRefundModal(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+          />
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md my-auto shadow-2xl"
+            >
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <CreditCard size={20} className="text-amber-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">Request Refund</h3>
+                </div>
+                
+                <p className="text-slate-400 text-sm sm:text-base mb-4">
+                  You're within the {subscription?.refundWindowDays}-day refund window. 
+                  Our team will review your request within 2-3 business days.
+                </p>
+
+                <div className="p-3 bg-slate-800/50 rounded-xl mb-4">
+                  <p className="text-xs sm:text-sm text-slate-400">Refund Amount</p>
+                  <p className="text-xl sm:text-2xl font-bold text-neon-green">
+                    ₹{parseFloat(subscription?.amount || '0').toLocaleString()}
+                  </p>
+                </div>
+
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Please tell us why you'd like a refund"
+                  className="w-full p-3 bg-slate-800/50 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 mb-4 resize-none focus:border-neon-cyan/50 focus:outline-none"
+                  rows={3}
+                />
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <Button variant="ghost" onClick={() => setShowRefundModal(false)} className="flex-1 order-2 sm:order-1">
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleRequestRefund}
+                    isLoading={isRequestingRefund}
+                    className="flex-1 order-1 sm:order-2"
+                  >
+                    Submit Request
+                  </Button>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-white">Request Refund</h3>
-            </div>
-            
-            <p className="text-slate-400 mb-4">
-              You're within the {subscription?.refundWindowDays}-day refund window. 
-              Our team will review your request within 2-3 business days.
-            </p>
-
-            <div className="p-3 bg-slate-800 rounded-lg mb-4">
-              <p className="text-sm text-slate-400">Refund Amount</p>
-              <p className="text-xl font-bold text-white">
-                ₹{parseFloat(subscription?.amount || '0').toLocaleString()}
-              </p>
-            </div>
-
-            <textarea
-              value={refundReason}
-              onChange={(e) => setRefundReason(e.target.value)}
-              placeholder="Please tell us why you'd like a refund"
-              className="w-full p-3 bg-slate-800 border border-white/10 rounded-lg text-white placeholder-slate-500 mb-4 resize-none"
-              rows={3}
-            />
-
-            <div className="flex gap-3">
-              <Button variant="ghost" onClick={() => setShowRefundModal(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleRequestRefund}
-                isLoading={isRequestingRefund}
-                className="flex-1"
-              >
-                Submit Request
-              </Button>
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
+          </div>
+        </>
       )}
     </div>
   );

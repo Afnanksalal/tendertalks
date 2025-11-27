@@ -230,18 +230,61 @@ export default function SubscriptionsManager() {
         </div>
       )}
 
+      {/* Extend Modal - Mobile Optimized */}
       {showExtendModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-bold text-white mb-4">Extend Subscription</h3>
-            <input type="number" value={extendDays} onChange={e => setExtendDays(parseInt(e.target.value) || 0)} 
-              className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white mb-4 focus:border-neon-cyan/50 focus:outline-none" placeholder="Days to extend" />
-            <div className="flex gap-3">
-              <Button variant="secondary" onClick={() => setShowExtendModal(null)} className="flex-1">Cancel</Button>
-              <Button onClick={() => handleAction(showExtendModal, 'extend', { days: extendDays })} className="flex-1">Extend</Button>
-            </div>
-          </motion.div>
-        </div>
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowExtendModal(null)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+          />
+          
+          {/* Modal Container */}
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-sm my-auto shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5">
+                <h3 className="text-base sm:text-lg font-bold text-white">Extend Subscription</h3>
+                <button
+                  onClick={() => setShowExtendModal(null)}
+                  className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors touch-feedback"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              {/* Content */}
+              <div className="p-4 sm:p-6">
+                <label className="text-xs sm:text-sm text-slate-400 mb-2 block">Days to extend</label>
+                <input 
+                  type="number" 
+                  value={extendDays} 
+                  onChange={e => setExtendDays(parseInt(e.target.value) || 0)} 
+                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white text-base focus:border-neon-cyan/50 focus:outline-none" 
+                  placeholder="30" 
+                />
+                <p className="text-xs text-slate-500 mt-2">This will add {extendDays} days to the subscription end date.</p>
+              </div>
+              
+              {/* Actions */}
+              <div className="p-4 sm:p-6 pt-0 flex gap-3">
+                <Button variant="ghost" onClick={() => setShowExtendModal(null)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button onClick={() => handleAction(showExtendModal, 'extend', { days: extendDays })} className="flex-1">
+                  Extend
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </>
       )}
     </div>
   );

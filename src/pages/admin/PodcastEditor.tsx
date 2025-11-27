@@ -150,6 +150,43 @@ export const PodcastEditor: React.FC = () => {
     if (errors.media) {
       setErrors((prev) => ({ ...prev, media: '' }));
     }
+
+    // Auto-extract duration from media file
+    extractDuration(file);
+  };
+
+  // Extract duration from audio/video file
+  const extractDuration = (file: File) => {
+    const url = URL.createObjectURL(file);
+    const media = formData.mediaType === 'video' 
+      ? document.createElement('video') 
+      : document.createElement('audio');
+    
+    media.preload = 'metadata';
+    media.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      const durationInSeconds = Math.round(media.duration);
+      if (durationInSeconds && !isNaN(durationInSeconds)) {
+        handleChange('duration', durationInSeconds);
+        toast.success(`Duration detected: ${formatDurationDisplay(durationInSeconds)}`);
+      }
+    };
+    media.onerror = () => {
+      URL.revokeObjectURL(url);
+      console.log('Could not extract duration from file');
+    };
+    media.src = url;
+  };
+
+  // Format duration for display
+  const formatDurationDisplay = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs}h ${mins}m ${secs}s`;
+    }
+    return `${mins}m ${secs}s`;
   };
 
   const clearThumbnail = () => {
@@ -352,28 +389,47 @@ export const PodcastEditor: React.FC = () => {
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">
                       Category
                     </label>
-                    <select
-                      value={formData.categoryId}
-                      onChange={(e) => handleChange('categoryId', e.target.value)}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-neon-cyan/50"
-                    >
-                      <option value="">Select category</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.categoryId}
+                        onChange={(e) => handleChange('categoryId', e.target.value)}
+                        className="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 focus:border-neon-cyan/50 transition-all"
+                      >
+                        <option value="" className="bg-slate-900 text-slate-400">Select category</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id} className="bg-slate-900 text-white py-2">
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <Input
-                  label="Duration (seconds)"
-                  type="number"
-                  placeholder="3600"
-                  value={formData.duration.toString()}
-                  onChange={(e) => handleChange('duration', parseInt(e.target.value) || 0)}
-                />
+                {/* Duration - Auto-detected or manual override */}
+                <div className="bg-slate-800/30 rounded-xl p-3 border border-white/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-slate-300">Duration</span>
+                      <p className="text-xs text-slate-500 mt-0.5">Auto-detected from file</p>
+                    </div>
+                    <div className="text-right">
+                      {formData.duration > 0 ? (
+                        <span className="text-neon-cyan font-mono text-lg">{formatDurationDisplay(formData.duration)}</span>
+                      ) : (
+                        <span className="text-slate-500 text-sm">Upload file to detect</span>
+                      )}
+                    </div>
+                  </div>
+                  {formData.duration > 0 && (
+                    <p className="text-[10px] text-slate-600 mt-1">{formData.duration} seconds</p>
+                  )}
+                </div>
               </div>
             </div>
 

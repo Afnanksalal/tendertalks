@@ -100,24 +100,24 @@ export const BillingPage: React.FC = () => {
               </h2>
               <div className="space-y-3">
                 {refunds.map(refund => (
-                  <div key={refund.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl">
-                    <div className="flex items-center gap-3">
+                  <div key={refund.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-slate-800/50 rounded-xl gap-2 sm:gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
                       {statusIcon(refund.status)}
-                      <div>
-                        <p className="text-white font-medium">₹{parseFloat(refund.amount).toLocaleString()}</p>
-                        <p className="text-sm text-slate-400">{refund.reason || 'No reason provided'}</p>
+                      <div className="min-w-0">
+                        <p className="text-white font-medium text-sm sm:text-base">₹{parseFloat(refund.amount).toLocaleString()}</p>
+                        <p className="text-xs sm:text-sm text-slate-400 truncate">{refund.reason || 'No reason provided'}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        refund.status === 'processed' ? 'bg-green-600' :
-                        refund.status === 'pending' ? 'bg-yellow-600' :
-                        refund.status === 'approved' ? 'bg-blue-600' :
-                        'bg-red-600'
+                    <div className="flex items-center justify-between sm:justify-end gap-3 pl-7 sm:pl-0">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        refund.status === 'processed' ? 'bg-green-500/20 text-green-400' :
+                        refund.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                        refund.status === 'approved' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-red-500/20 text-red-400'
                       }`}>
                         {refund.status}
                       </span>
-                      <p className="text-xs text-slate-500 mt-1">{formatDate(refund.createdAt)}</p>
+                      <p className="text-xs text-slate-500">{formatDate(refund.createdAt)}</p>
                     </div>
                   </div>
                 ))}
@@ -146,16 +146,16 @@ export const BillingPage: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {payments.map(payment => (
-                  <div key={payment.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors">
-                    <div className="flex items-center gap-3">
+                  <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors gap-2 sm:gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
                       {statusIcon(payment.status)}
-                      <div>
-                        <p className="text-white font-medium">{typeLabels[payment.type] || payment.type}</p>
-                        <p className="text-sm text-slate-400">{formatDate(payment.createdAt)}</p>
+                      <div className="min-w-0">
+                        <p className="text-white font-medium text-sm sm:text-base truncate">{typeLabels[payment.type] || payment.type}</p>
+                        <p className="text-xs sm:text-sm text-slate-400">{formatDate(payment.createdAt)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-mono font-bold ${payment.status === 'refunded' ? 'text-purple-400 line-through' : 'text-green-400'}`}>
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 pl-7 sm:pl-0">
+                      <p className={`font-mono font-bold text-sm sm:text-base ${payment.status === 'refunded' ? 'text-purple-400 line-through' : 'text-green-400'}`}>
                         ₹{parseFloat(payment.amount).toLocaleString()}
                       </p>
                       {payment.razorpayPaymentId && (
@@ -163,7 +163,7 @@ export const BillingPage: React.FC = () => {
                           href={`https://dashboard.razorpay.com/app/payments/${payment.razorpayPaymentId}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-400 hover:underline flex items-center justify-end gap-1"
+                          className="text-xs text-blue-400 hover:underline flex items-center gap-1 touch-feedback"
                         >
                           View <ExternalLink size={10} />
                         </a>

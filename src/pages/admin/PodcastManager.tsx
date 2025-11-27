@@ -162,24 +162,24 @@ export const PodcastManager: React.FC = () => {
                       }
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     {podcast.status === 'draft' && (
                       <button
                         onClick={() => handlePublish(podcast.id)}
-                        className="p-2 text-neon-green hover:bg-neon-green/10 rounded-lg"
+                        className="w-9 h-9 flex items-center justify-center text-neon-green hover:bg-neon-green/10 rounded-lg transition-colors touch-feedback"
                       >
                         <Play size={16} />
                       </button>
                     )}
-                    <Link to={`/podcast/${podcast.slug}`} className="p-2 text-slate-400 hover:text-white">
+                    <Link to={`/podcast/${podcast.slug}`} className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors touch-feedback">
                       <Eye size={16} />
                     </Link>
-                    <Link to={`/admin/podcasts/${podcast.id}/edit`} className="p-2 text-slate-400 hover:text-white">
+                    <Link to={`/admin/podcasts/${podcast.id}/edit`} className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors touch-feedback">
                       <Edit size={16} />
                     </Link>
                     <button
                       onClick={() => setDeleteModal({ open: true, id: podcast.id })}
-                      className="p-2 text-slate-400 hover:text-red-400"
+                      className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors touch-feedback"
                     >
                       <Trash2 size={16} />
                     </button>

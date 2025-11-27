@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Plus, Check, Loader2 } from 'lucide-react';
+import { ShoppingBag, Plus, Check, Loader2, Share2 } from 'lucide-react';
 import { useMerchStore } from '../stores/merchStore';
 import { useCartStore } from '../stores/cartStore';
 import type { MerchItem } from '../db/schema';
+import toast from 'react-hot-toast';
 
 export const StorePage: React.FC = () => {
   const { items: merch, fetchMerch, isLoading, error } = useMerchStore();
@@ -25,6 +26,29 @@ export const StorePage: React.FC = () => {
         return next;
       });
     }, 1500);
+  };
+
+  const handleShareProduct = async (item: MerchItem) => {
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/store?product=${item.slug}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${item.name} | TenderTalks Store`,
+          text: item.description || 'Check out this merch from TenderTalks!',
+          url,
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          await navigator.clipboard.writeText(url);
+          toast.success('Link copied!');
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied!');
+    }
   };
 
   const categories = ['all', 'clothing', 'accessories', 'digital'];
@@ -143,6 +167,18 @@ export const StorePage: React.FC = () => {
                       </span>
                     </div>
                   )}
+
+                  {/* Share Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShareProduct(item);
+                    }}
+                    className="absolute top-3 md:top-4 right-3 md:right-4 z-20 p-2 bg-black/50 border border-white/10 rounded-lg text-slate-300 hover:text-white hover:bg-black/70 backdrop-blur-sm transition-all touch-feedback"
+                    title="Share"
+                  >
+                    <Share2 size={14} />
+                  </button>
                 </div>
 
                 {/* Info */}

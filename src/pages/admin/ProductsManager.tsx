@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, Package, Save, X, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, Save, X, Loader2, AlertTriangle, Upload, Image as ImageIcon, DollarSign, Hash, FileText, Tag } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { uploadMerchImage } from '../../lib/storage';
+import toast from 'react-hot-toast';
 
 interface MerchItem {
   id: string;
@@ -34,6 +37,9 @@ export default function ProductsManager() {
     name: '', description: '', price: '', category: 'accessories',
     imageUrl: '', stockQuantity: 0, inStock: true, isActive: true,
   });
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string | null; name: string }>({ open: false, id: null, name: '' });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchProducts(); }, [user]);
 
@@ -68,9 +74,10 @@ export default function ProductsManager() {
     setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!user?.id || !confirm('Deactivate this product?')) return;
-    await fetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+  const handleDelete = async () => {
+    if (!user?.id || !deleteModal.id) return;
+    await fetch(`/api/admin/products/${deleteModal.id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+    setDeleteModal({ open: false, id: null, name: '' });
     fetchProducts();
   };
 
@@ -113,45 +120,196 @@ export default function ProductsManager() {
         </motion.div>
       )}
 
-      {showForm && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
-          <div className="flex justify-between items-center mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-bold text-white">{editingId ? 'Edit' : 'New'} Product</h2>
-            <button onClick={resetForm} className="text-slate-400 hover:text-white"><X size={18} /></button>
+      {/* Product Form Modal */}
+      <Modal
+        isOpen={showForm}
+        onClose={resetForm}
+        title={editingId ? 'Edit Product' : 'Add New Product'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Image Upload Section */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+              <ImageIcon size={14} className="text-neon-cyan" />
+              Product Image
+            </label>
+            <div className="flex items-start gap-4">
+              <div 
+                onClick={() => imageInputRef.current?.click()}
+                className={`w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden ${
+                  formData.imageUrl 
+                    ? 'border-neon-cyan/30 bg-neon-cyan/5' 
+                    : 'border-white/20 bg-slate-800/50 hover:border-neon-cyan/50 hover:bg-slate-800'
+                }`}
+              >
+                {uploadingImage ? (
+                  <Loader2 size={24} className="text-neon-cyan animate-spin" />
+                ) : formData.imageUrl ? (
+                  <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <Upload size={24} className="text-slate-500" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingImage(true);
+                    try {
+                      const tempId = editingId || `temp-${Date.now()}`;
+                      const url = await uploadMerchImage(file, tempId);
+                      if (url) {
+                        setFormData({ ...formData, imageUrl: url });
+                        toast.success('Image uploaded!');
+                      } else {
+                        throw new Error('Upload failed');
+                      }
+                    } catch (err) {
+                      toast.error('Failed to upload image');
+                    }
+                    setUploadingImage(false);
+                  }}
+                />
+                <input
+                  placeholder="Or paste image URL..."
+                  value={formData.imageUrl}
+                  onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                  className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
+                />
+                <p className="text-xs text-slate-500">Click to upload or paste URL</p>
+              </div>
+            </div>
           </div>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            <input placeholder="Product Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
-            <input placeholder="Price (₹)" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
-            <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as any})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-neon-cyan/50 focus:outline-none">
-              <option value="clothing">Clothing</option>
-              <option value="accessories">Accessories</option>
-              <option value="digital">Digital</option>
-            </select>
-            <input placeholder="Stock Quantity" type="number" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: parseInt(e.target.value) || 0})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" />
-            <input placeholder="Image URL" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} 
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none md:col-span-2" />
-            <textarea placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={2}
-              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none md:col-span-2 resize-none" />
-            <div className="flex gap-6 md:col-span-2">
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={formData.inStock} onChange={e => setFormData({...formData, inStock: e.target.checked})} className="w-4 h-4 rounded" /> In Stock
+
+          {/* Name & Price Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                <Tag size={14} className="text-neon-cyan" />
+                Product Name *
               </label>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} className="w-4 h-4 rounded" /> Active
+              <input
+                placeholder="e.g., TenderTalks T-Shirt"
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                <DollarSign size={14} className="text-neon-green" />
+                Price (₹) *
               </label>
+              <input
+                placeholder="299"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={e => setFormData({...formData, price: e.target.value})}
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
+                required
+              />
             </div>
-            <div className="md:col-span-2">
-              <Button type="submit" isLoading={saving} className="w-full flex items-center justify-center gap-2">
-                <Save size={18} /> {editingId ? 'Update' : 'Create'} Product
-              </Button>
+          </div>
+
+          {/* Category & Stock Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                <Package size={14} className="text-neon-purple" />
+                Category
+              </label>
+              <select
+                value={formData.category}
+                onChange={e => setFormData({...formData, category: e.target.value as any})}
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-neon-cyan/50 focus:outline-none appearance-none cursor-pointer"
+              >
+                <option value="clothing">👕 Clothing</option>
+                <option value="accessories">🎧 Accessories</option>
+                <option value="digital">💾 Digital</option>
+              </select>
             </div>
-          </form>
-        </motion.div>
-      )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                <Hash size={14} className="text-amber-400" />
+                Stock Quantity
+              </label>
+              <input
+                placeholder="100"
+                type="number"
+                min="0"
+                value={formData.stockQuantity}
+                onChange={e => setFormData({...formData, stockQuantity: parseInt(e.target.value) || 0})}
+                className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+              <FileText size={14} className="text-slate-400" />
+              Description
+            </label>
+            <textarea
+              placeholder="Describe your product..."
+              value={formData.description}
+              onChange={e => setFormData({...formData, description: e.target.value})}
+              rows={3}
+              className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none resize-none"
+            />
+          </div>
+
+          {/* Toggle Switches */}
+          <div className="flex flex-wrap gap-6 pt-2">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={formData.inStock}
+                  onChange={e => setFormData({...formData, inStock: e.target.checked})}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-neon-green/30 transition-colors"></div>
+                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-slate-400 rounded-full transition-all peer-checked:translate-x-5 peer-checked:bg-neon-green"></div>
+              </div>
+              <span className="text-sm text-slate-300 group-hover:text-white transition-colors">In Stock</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={e => setFormData({...formData, isActive: e.target.checked})}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-neon-cyan/30 transition-colors"></div>
+                <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-slate-400 rounded-full transition-all peer-checked:translate-x-5 peer-checked:bg-neon-cyan"></div>
+              </div>
+              <span className="text-sm text-slate-300 group-hover:text-white transition-colors">Active (visible in store)</span>
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex gap-3 pt-4 border-t border-white/10">
+            <Button type="button" variant="ghost" onClick={resetForm} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={saving} className="flex-1 flex items-center justify-center gap-2">
+              <Save size={18} />
+              {editingId ? 'Update' : 'Create'} Product
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {products.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-12 text-center">
@@ -185,9 +343,9 @@ export default function ProductsManager() {
                       <p className="text-neon-green font-mono font-bold">₹{parseFloat(item.price).toLocaleString()}</p>
                       <p className="text-slate-500 text-xs">{item.stockQuantity} in stock</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => startEdit(item)} className="p-2 text-slate-400 hover:text-neon-cyan transition-colors"><Edit2 size={16} /></button>
-                      <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                    <div className="flex items-center gap-0.5">
+                      <button onClick={() => startEdit(item)} className="p-2 text-slate-400 hover:text-neon-cyan hover:bg-neon-cyan/10 rounded-lg transition-colors touch-feedback"><Edit2 size={16} /></button>
+                      <button onClick={() => setDeleteModal({ open: true, id: item.id, name: item.name })} className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors touch-feedback"><Trash2 size={16} /></button>
                     </div>
                   </div>
                 </div>
@@ -196,6 +354,34 @@ export default function ProductsManager() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, name: '' })}
+        title="Delete Product"
+        size="sm"
+      >
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={20} className="text-red-400" />
+          </div>
+          <div>
+            <p className="text-white font-medium mb-1">Delete "{deleteModal.name}"?</p>
+            <p className="text-slate-400 text-sm">
+              This will deactivate the product. It won't appear in the store anymore.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => setDeleteModal({ open: false, id: null, name: '' })} className="flex-1">
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDelete} className="flex-1">
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
