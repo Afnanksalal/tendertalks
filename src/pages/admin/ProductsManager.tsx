@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Package, Save, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Edit2, Trash2, Package, Save, X, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
+import { Button } from '../../components/ui/Button';
 
 interface MerchItem {
   id: string;
@@ -17,14 +19,14 @@ interface MerchItem {
   createdAt: string;
 }
 
-const API_URL = import.meta.env.VITE_APP_URL || '';
-
 export default function ProductsManager() {
   const { user } = useAuthStore();
   const [products, setProducts] = useState<MerchItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<{
     name: string; description: string; price: string; category: 'clothing' | 'accessories' | 'digital';
     imageUrl: string; stockQuantity: number; inStock: boolean; isActive: boolean;
@@ -33,43 +35,43 @@ export default function ProductsManager() {
     imageUrl: '', stockQuantity: 0, inStock: true, isActive: true,
   });
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { fetchProducts(); }, [user]);
 
   const fetchProducts = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/admin/products?includeInactive=true`, {
-        headers: { 'X-User-Id': user?.id || '' },
+      const res = await fetch(`/api/admin/products?includeInactive=true`, {
+        headers: { 'X-User-Id': user.id },
       });
-      if (res.ok) setProducts(await res.json());
-    } catch (e) { console.error(e); }
+      if (!res.ok) throw new Error('Failed to fetch products');
+      setProducts(await res.json());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to fetch');
+    }
     setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const url = editingId ? `${API_URL}/api/admin/products/${editingId}` : `${API_URL}/api/admin/products`;
-    const method = editingId ? 'PUT' : 'POST';
-
+    if (!user?.id) return;
+    setSaving(true);
     try {
-      const res = await fetch(url, {
-        method, headers: { 'Content-Type': 'application/json', 'X-User-Id': user?.id || '' },
+      const res = await fetch(editingId ? `/api/admin/products/${editingId}` : `/api/admin/products`, {
+        method: editingId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-User-Id': user.id },
         body: JSON.stringify({ ...formData, price: parseFloat(formData.price) }),
       });
-      if (res.ok) {
-        fetchProducts();
-        resetForm();
-      }
+      if (res.ok) { fetchProducts(); resetForm(); }
     } catch (e) { console.error(e); }
+    setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deactivate this product?')) return;
-    try {
-      await fetch(`${API_URL}/api/admin/products/${id}`, {
-        method: 'DELETE', headers: { 'X-User-Id': user?.id || '' },
-      });
-      fetchProducts();
-    } catch (e) { console.error(e); }
+    if (!user?.id || !confirm('Deactivate this product?')) return;
+    await fetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+    fetchProducts();
   };
 
   const startEdit = (item: MerchItem) => {
@@ -88,67 +90,102 @@ export default function ProductsManager() {
     setFormData({ name: '', description: '', price: '', category: 'accessories', imageUrl: '', stockQuantity: 0, inStock: true, isActive: true });
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-neon-cyan animate-spin" /></div>;
+  }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Package /> Products</h1>
-        <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
+        <h1 className="text-2xl font-display font-bold text-white flex items-center gap-3">
+          <Package className="text-neon-cyan" /> Products
+        </h1>
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
           <Plus size={18} /> Add Product
-        </button>
+        </Button>
       </div>
 
+      {error && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-400">
+          {error} <button onClick={fetchProducts} className="ml-2 underline">Retry</button>
+        </motion.div>
+      )}
+
       {showForm && (
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <div className="flex justify-between mb-4">
-            <h2 className="text-lg font-semibold">{editingId ? 'Edit' : 'New'} Product</h2>
-            <button onClick={resetForm}><X /></button>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-white">{editingId ? 'Edit' : 'New'} Product</h2>
+            <button onClick={resetForm} className="text-slate-400 hover:text-white"><X size={20} /></button>
           </div>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-            <input placeholder="Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input" required />
-            <input placeholder="Price" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="input" required />
-            <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as any})} className="input">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input placeholder="Product Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
+            <input placeholder="Price (₹)" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
+            <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as any})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-neon-cyan/50 focus:outline-none">
               <option value="clothing">Clothing</option>
               <option value="accessories">Accessories</option>
               <option value="digital">Digital</option>
             </select>
-            <input placeholder="Stock Qty" type="number" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: parseInt(e.target.value)})} className="input" />
-            <input placeholder="Image URL" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="input col-span-2" />
-            <textarea placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="input col-span-2" rows={2} />
-            <div className="flex gap-4 col-span-2">
-              <label className="flex items-center gap-2"><input type="checkbox" checked={formData.inStock} onChange={e => setFormData({...formData, inStock: e.target.checked})} /> In Stock</label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} /> Active</label>
+            <input placeholder="Stock Quantity" type="number" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: parseInt(e.target.value) || 0})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" />
+            <input placeholder="Image URL" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none md:col-span-2" />
+            <textarea placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={2}
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none md:col-span-2 resize-none" />
+            <div className="flex gap-6 md:col-span-2">
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+                <input type="checkbox" checked={formData.inStock} onChange={e => setFormData({...formData, inStock: e.target.checked})} className="w-4 h-4 rounded" /> In Stock
+              </label>
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+                <input type="checkbox" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} className="w-4 h-4 rounded" /> Active
+              </label>
             </div>
-            <button type="submit" className="btn-primary col-span-2 flex items-center justify-center gap-2"><Save size={18} /> Save</button>
+            <div className="md:col-span-2">
+              <Button type="submit" isLoading={saving} className="w-full flex items-center justify-center gap-2">
+                <Save size={18} /> {editingId ? 'Update' : 'Create'} Product
+              </Button>
+            </div>
           </form>
-        </div>
+        </motion.div>
       )}
 
-      <div className="bg-gray-800 rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-700">
-            <tr><th className="p-3 text-left">Product</th><th className="p-3">Category</th><th className="p-3">Price</th><th className="p-3">Stock</th><th className="p-3">Status</th><th className="p-3">Actions</th></tr>
-          </thead>
-          <tbody>
-            {products.map(item => (
-              <tr key={item.id} className="border-t border-gray-700">
-                <td className="p-3"><div className="font-medium">{item.name}</div><div className="text-sm text-gray-400">{item.slug}</div></td>
-                <td className="p-3 text-center capitalize">{item.category}</td>
-                <td className="p-3 text-center">₹{item.price}</td>
-                <td className="p-3 text-center">{item.stockQuantity}</td>
-                <td className="p-3 text-center">
-                  <span className={`px-2 py-1 rounded text-xs ${item.isActive ? 'bg-green-600' : 'bg-gray-600'}`}>{item.isActive ? 'Active' : 'Inactive'}</span>
-                </td>
-                <td className="p-3 text-center">
-                  <button onClick={() => startEdit(item)} className="p-1 hover:text-blue-400"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(item.id)} className="p-1 hover:text-red-400 ml-2"><Trash2 size={16} /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {products.length === 0 ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-12 text-center">
+          <Package size={48} className="mx-auto mb-4 text-slate-600" />
+          <p className="text-slate-400 mb-2">No products yet</p>
+          <p className="text-slate-500 text-sm">Click "Add Product" to create your first product</p>
+        </motion.div>
+      ) : (
+        <div className="grid gap-4">
+          {products.map((item, idx) => (
+            <motion.div key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+              className={`bg-slate-900/50 border border-white/10 rounded-xl p-4 flex items-center gap-4 ${!item.isActive ? 'opacity-60' : ''}`}>
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt="" className="w-16 h-16 rounded-lg object-cover bg-slate-800" />
+              ) : (
+                <div className="w-16 h-16 rounded-lg bg-slate-800 flex items-center justify-center"><Package className="text-slate-600" /></div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-white font-medium truncate">{item.name}</h3>
+                <p className="text-slate-500 text-sm">{item.slug} · <span className="capitalize">{item.category}</span></p>
+              </div>
+              <div className="text-right hidden sm:block">
+                <p className="text-neon-green font-mono font-bold">₹{parseFloat(item.price).toLocaleString()}</p>
+                <p className="text-slate-500 text-xs">{item.stockQuantity} in stock</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.isActive ? 'bg-neon-green/20 text-neon-green' : 'bg-slate-700 text-slate-400'}`}>
+                  {item.isActive ? 'Active' : 'Inactive'}
+                </span>
+                <button onClick={() => startEdit(item)} className="p-2 text-slate-400 hover:text-neon-cyan transition-colors"><Edit2 size={16} /></button>
+                <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

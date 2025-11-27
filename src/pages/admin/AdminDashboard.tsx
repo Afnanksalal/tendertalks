@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  LayoutDashboard, Mic2, Users, CreditCard, Settings, 
-  Plus, BarChart3, Loader2, TrendingUp, Calendar, RotateCcw,
-  Package, Tag, Receipt
+import {
+  LayoutDashboard, Mic2, Users, CreditCard, Settings,
+  Plus, Loader2, TrendingUp, Calendar, RotateCcw,
+  Package, Tag, Receipt, AlertCircle, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -39,31 +39,20 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] flex">
-      <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-white/5 pt-20 hidden lg:block">
+      <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-white/5 pt-20 hidden lg:block overflow-y-auto">
         <div className="p-4">
-          <Link
-            to="/admin/podcasts/new"
-            className="flex items-center justify-center gap-2 w-full py-3 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors"
-          >
-            <Plus size={18} />
-            New Podcast
+          <Link to="/admin/podcasts/new"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors">
+            <Plus size={18} /> New Podcast
           </Link>
         </div>
-
-        <nav className="px-2 mt-4">
+        <nav className="px-2 mt-2">
           {sidebarLinks.map((link) => {
             const isActive = location.pathname === link.path;
             const Icon = link.icon;
             return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors ${
-                  isActive
-                    ? 'bg-white/10 text-white'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`}
-              >
+              <Link key={link.path} to={link.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
                 <Icon size={18} />
                 {link.name}
               </Link>
@@ -71,7 +60,6 @@ export const AdminLayout: React.FC = () => {
           })}
         </nav>
       </aside>
-
       <main className="flex-1 lg:ml-64 pt-20 pb-10 px-4 lg:px-8">
         <Outlet />
       </main>
@@ -79,44 +67,45 @@ export const AdminLayout: React.FC = () => {
   );
 };
 
-interface AdminStats {
+interface Stats {
   totalPodcasts: number;
   totalUsers: number;
   activeSubscriptions: number;
+  totalProducts: number;
   totalRevenue: number;
+  monthlyRevenue: number;
+  newUsersThisMonth: number;
+  newSubsThisMonth: number;
+  pendingRefunds: number;
 }
 
-interface RecentActivity {
-  recentPurchases: any[];
-  recentSubscriptions: any[];
-  recentUsers: any[];
+interface ChartData {
+  revenueByDay: { date: string; day: string; revenue: number }[];
+  planDistribution: { planId: string; planName: string; count: number }[];
+  topPodcasts: { id: string; title: string; thumbnailUrl: string | null; purchaseCount: number; revenue: string }[];
 }
 
 export const AdminOverview: React.FC = () => {
   const { user } = useAuthStore();
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activity, setActivity] = useState<RecentActivity | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [charts, setCharts] = useState<ChartData | null>(null);
+  const [recentPurchases, setRecentPurchases] = useState<any[]>([]);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchStats();
-    }
+    if (user) fetchStats();
   }, [user]);
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/stats', {
-        headers: { 'X-User-Id': user!.id },
-      });
+      const response = await fetch('/api/admin/stats', { headers: { 'X-User-Id': user!.id } });
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
-        setActivity({
-          recentPurchases: data.recentPurchases,
-          recentSubscriptions: data.recentSubscriptions,
-          recentUsers: data.recentUsers,
-        });
+        setCharts(data.charts);
+        setRecentPurchases(data.recentPurchases || []);
+        setRecentUsers(data.recentUsers || []);
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -125,21 +114,6 @@ export const AdminOverview: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
-      </div>
-    );
-  }
-
-  const statCards = [
-    { label: 'Total Podcasts', value: stats?.totalPodcasts || 0, icon: Mic2, color: 'text-neon-cyan' },
-    { label: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-neon-purple' },
-    { label: 'Revenue', value: `₹${((stats?.totalRevenue || 0) / 1000).toFixed(1)}K`, icon: CreditCard, color: 'text-neon-green' },
-    { label: 'Active Subs', value: stats?.activeSubscriptions || 0, icon: TrendingUp, color: 'text-amber-400' },
-  ];
-
   const formatDate = (date: string) => {
     const d = new Date(date);
     const now = new Date();
@@ -147,87 +121,176 @@ export const AdminOverview: React.FC = () => {
     const mins = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-
     if (mins < 60) return `${mins}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
   };
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-neon-cyan animate-spin" /></div>;
+  }
+
+  const maxRevenue = Math.max(...(charts?.revenueByDay.map(d => d.revenue) || [1]), 1);
+
   return (
     <div>
       <h1 className="text-2xl font-display font-bold text-white mb-6">Dashboard Overview</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-slate-900/50 border border-white/10 rounded-xl p-5"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-slate-400 text-sm">{stat.label}</span>
-                <Icon size={18} className={stat.color} />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        {[
+          { label: 'Total Revenue', value: `₹${((stats?.totalRevenue || 0) / 1000).toFixed(1)}K`, icon: CreditCard, color: 'text-neon-green', bg: 'bg-neon-green/10' },
+          { label: 'Monthly Revenue', value: `₹${((stats?.monthlyRevenue || 0) / 1000).toFixed(1)}K`, icon: TrendingUp, color: 'text-neon-cyan', bg: 'bg-neon-cyan/10' },
+          { label: 'Active Subs', value: stats?.activeSubscriptions || 0, icon: Users, color: 'text-neon-purple', bg: 'bg-neon-purple/10' },
+          { label: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+          { label: 'Podcasts', value: stats?.totalPodcasts || 0, icon: Mic2, color: 'text-pink-400', bg: 'bg-pink-400/10' },
+        ].map((stat, idx) => (
+          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+            className="bg-slate-900/50 border border-white/10 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-slate-400 text-xs">{stat.label}</span>
+              <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                <stat.icon size={14} className={stat.color} />
               </div>
-              <p className="text-2xl font-display font-bold text-white">{stat.value}</p>
-            </motion.div>
-          );
-        })}
+            </div>
+            <p className={`text-xl font-display font-bold ${stat.color}`}>{stat.value}</p>
+          </motion.div>
+        ))}
       </div>
 
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: 'New Users (30d)', value: stats?.newUsersThisMonth || 0, trend: 'up' },
+          { label: 'New Subs (30d)', value: stats?.newSubsThisMonth || 0, trend: 'up' },
+          { label: 'Products', value: stats?.totalProducts || 0, trend: 'neutral' },
+          { label: 'Pending Refunds', value: stats?.pendingRefunds || 0, trend: 'alert', link: '/admin/refunds' },
+        ].map((stat, idx) => (
+          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + idx * 0.05 }}
+            className="bg-slate-900/50 border border-white/10 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-400 text-xs mb-1">{stat.label}</p>
+                <p className="text-lg font-bold text-white">{stat.value}</p>
+              </div>
+              {stat.trend === 'up' && <ArrowUpRight className="text-neon-green" size={20} />}
+              {stat.trend === 'alert' && stat.value > 0 && (
+                <Link to={stat.link!}><AlertCircle className="text-amber-400" size={20} /></Link>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Revenue Chart */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          className="lg:col-span-2 bg-slate-900/50 border border-white/10 rounded-xl p-5">
+          <h3 className="text-lg font-bold text-white mb-4">Revenue (Last 7 Days)</h3>
+          <div className="flex items-end gap-2 h-40">
+            {charts?.revenueByDay.map((day, idx) => (
+              <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
+                <div className="w-full bg-slate-800 rounded-t relative" style={{ height: `${Math.max((day.revenue / maxRevenue) * 100, 5)}%` }}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-neon-cyan/50 to-neon-cyan/20 rounded-t" />
+                  {day.revenue > 0 && (
+                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-neon-cyan font-mono">
+                      ₹{day.revenue >= 1000 ? `${(day.revenue/1000).toFixed(1)}K` : day.revenue}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-slate-500">{day.day}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Plan Distribution */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-5">
+          <h3 className="text-lg font-bold text-white mb-4">Subscription Plans</h3>
+          {charts?.planDistribution && charts.planDistribution.length > 0 ? (
+            <div className="space-y-3">
+              {charts.planDistribution.map((plan, idx) => {
+                const total = charts.planDistribution.reduce((a, b) => a + b.count, 0);
+                const percent = total > 0 ? (plan.count / total) * 100 : 0;
+                const colors = ['bg-neon-cyan', 'bg-neon-purple', 'bg-neon-green', 'bg-amber-400'];
+                return (
+                  <div key={plan.planId}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-300">{plan.planName}</span>
+                      <span className="text-slate-400">{plan.count} ({percent.toFixed(0)}%)</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className={`h-full ${colors[idx % colors.length]} rounded-full`} style={{ width: `${percent}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm text-center py-8">No active subscriptions</p>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Top Podcasts & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-white mb-4">Recent Purchases</h3>
-          <div className="space-y-3">
-            {activity?.recentPurchases?.length === 0 ? (
-              <p className="text-slate-500 text-sm">No purchases yet</p>
-            ) : (
-              activity?.recentPurchases?.slice(0, 5).map((purchase: any) => (
+        {/* Top Podcasts */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-5">
+          <h3 className="text-lg font-bold text-white mb-4">Top Podcasts</h3>
+          {charts?.topPodcasts && charts.topPodcasts.length > 0 ? (
+            <div className="space-y-3">
+              {charts.topPodcasts.filter(p => p.purchaseCount > 0).slice(0, 5).map((podcast, idx) => (
+                <div key={podcast.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                  <span className="text-slate-500 text-sm w-5">{idx + 1}</span>
+                  {podcast.thumbnailUrl ? (
+                    <img src={podcast.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center"><Mic2 size={16} className="text-slate-600" /></div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{podcast.title}</p>
+                    <p className="text-slate-500 text-xs">{podcast.purchaseCount} purchases</p>
+                  </div>
+                  <span className="text-neon-green text-sm font-mono">₹{parseFloat(podcast.revenue || '0').toLocaleString()}</span>
+                </div>
+              ))}
+              {charts.topPodcasts.filter(p => p.purchaseCount > 0).length === 0 && (
+                <p className="text-slate-500 text-sm text-center py-4">No purchases yet</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm text-center py-8">No data available</p>
+          )}
+        </motion.div>
+
+        {/* Recent Purchases */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-5">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-white">Recent Purchases</h3>
+            <Link to="/admin/payments" className="text-neon-cyan text-sm hover:underline">View all</Link>
+          </div>
+          {recentPurchases.length > 0 ? (
+            <div className="space-y-3">
+              {recentPurchases.slice(0, 5).map((purchase: any) => (
                 <div key={purchase.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                   <div>
-                    <p className="text-white text-sm">{purchase.user?.name || purchase.user?.email}</p>
-                    <p className="text-slate-500 text-xs">{purchase.podcast?.title}</p>
+                    <p className="text-white text-sm">{purchase.user?.name || purchase.user?.email || 'Unknown'}</p>
+                    <p className="text-slate-500 text-xs truncate max-w-[150px]">{purchase.podcast?.title}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-neon-green text-sm font-mono">₹{parseFloat(purchase.amount).toFixed(0)}</p>
                     <p className="text-slate-500 text-xs">{formatDate(purchase.createdAt)}</p>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-white mb-4">New Users</h3>
-          <div className="space-y-3">
-            {activity?.recentUsers?.length === 0 ? (
-              <p className="text-slate-500 text-sm">No users yet</p>
-            ) : (
-              activity?.recentUsers?.slice(0, 5).map((u: any) => (
-                <div key={u.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                  <div className="flex items-center gap-3">
-                    {u.avatarUrl ? (
-                      <img src={u.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                        <Users size={14} className="text-slate-400" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-white text-sm">{u.name || 'User'}</p>
-                      <p className="text-slate-500 text-xs">{u.email}</p>
-                    </div>
-                  </div>
-                  <span className="text-slate-500 text-xs">{formatDate(u.createdAt)}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm text-center py-8">No purchases yet</p>
+          )}
+        </motion.div>
       </div>
     </div>
   );
