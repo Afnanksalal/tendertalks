@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Music, Video, Image, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { usePodcastStore } from '../../stores/podcastStore';
 import { useAuthStore } from '../../stores/authStore';
 import { uploadFile, STORAGE_BUCKETS } from '../../lib/supabase';
 import toast from 'react-hot-toast';
+
+// File type configurations
+const AUDIO_EXTENSIONS = '.mp3,.wav,.ogg,.m4a,.aac,.flac,.wma';
+const VIDEO_EXTENSIONS = '.mp4,.webm,.mov,.avi,.mkv,.m4v';
+const IMAGE_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif';
+
+const AUDIO_MIME_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/aac', 'audio/flac', 'audio/x-ms-wma'];
+const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/x-m4v'];
+const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 interface PodcastFormData {
   title: string;
@@ -83,32 +92,79 @@ export const PodcastEditor: React.FC = () => {
     }
   };
 
+  // Handle media type change - clear media file if type changes
+  const handleMediaTypeChange = (type: 'audio' | 'video') => {
+    if (type !== formData.mediaType) {
+      setMediaFile(null);
+      handleChange('mediaUrl', '');
+      // Clear thumbnail only when switching FROM video TO audio
+      if (type === 'audio') {
+        setThumbnailFile(null);
+        setThumbnailPreview('');
+        handleChange('thumbnailUrl', '');
+      }
+    }
+    handleChange('mediaType', type);
+  };
+
   const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
-        return;
-      }
-      setThumbnailFile(file);
-      setThumbnailPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    if (!IMAGE_MIME_TYPES.includes(file.type)) {
+      toast.error('Please select a valid image file (JPG, PNG, WebP, GIF)');
+      return;
     }
+
+    // Max 5MB for thumbnails
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Thumbnail must be less than 5MB');
+      return;
+    }
+
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
   };
 
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const isAudio = file.type.startsWith('audio/');
-      const isVideo = file.type.startsWith('video/');
-      
-      if (!isAudio && !isVideo) {
-        toast.error('Please select an audio or video file');
-        return;
-      }
-      
-      setMediaFile(file);
-      handleChange('mediaType', isVideo ? 'video' : 'audio');
+    if (!file) return;
+
+    const isAudio = AUDIO_MIME_TYPES.includes(file.type);
+    const isVideo = VIDEO_MIME_TYPES.includes(file.type);
+
+    // Validate file type matches selected media type
+    if (formData.mediaType === 'audio' && !isAudio) {
+      toast.error('Please select a valid audio file (MP3, WAV, OGG, M4A, AAC, FLAC)');
+      return;
     }
+
+    if (formData.mediaType === 'video' && !isVideo) {
+      toast.error('Please select a valid video file (MP4, WebM, MOV, AVI, MKV)');
+      return;
+    }
+
+    // File size limits
+    const maxSize = formData.mediaType === 'video' ? 500 : 100; // MB
+    if (file.size > maxSize * 1024 * 1024) {
+      toast.error(`File must be less than ${maxSize}MB`);
+      return;
+    }
+
+    setMediaFile(file);
+    if (errors.media) {
+      setErrors((prev) => ({ ...prev, media: '' }));
+    }
+  };
+
+  const clearThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview('');
+    handleChange('thumbnailUrl', '');
+  };
+
+  const clearMediaFile = () => {
+    setMediaFile(null);
   };
 
   const validate = (): boolean => {
@@ -124,7 +180,11 @@ export const PodcastEditor: React.FC = () => {
       newErrors.price = 'Price is required for paid content';
     }
     if (!isEditing && !mediaFile && !formData.mediaUrl) {
-      newErrors.media = 'Media file is required';
+      newErrors.media = `${formData.mediaType === 'video' ? 'Video' : 'Audio'} file is required`;
+    }
+    // Thumbnail required for video
+    if (formData.mediaType === 'video' && !thumbnailFile && !formData.thumbnailUrl) {
+      newErrors.thumbnail = 'Thumbnail is required for video content';
     }
 
     setErrors(newErrors);
@@ -146,10 +206,11 @@ export const PodcastEditor: React.FC = () => {
       let thumbnailUrl = formData.thumbnailUrl;
       let mediaUrl = formData.mediaUrl;
 
-      // Upload thumbnail if selected
+      // Upload thumbnail if selected (required for video, optional for audio)
       if (thumbnailFile) {
         setUploadProgress('Uploading thumbnail...');
-        const path = `${user.id}/${Date.now()}-${thumbnailFile.name}`;
+        const ext = thumbnailFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const path = `${user.id}/${Date.now()}.${ext}`;
         const { url, error } = await uploadFile(STORAGE_BUCKETS.THUMBNAILS, path, thumbnailFile, { upsert: true });
         
         if (error) {
@@ -158,14 +219,15 @@ export const PodcastEditor: React.FC = () => {
         thumbnailUrl = url;
       }
 
-      // Upload media if selected
+      // Upload media file
       if (mediaFile) {
-        setUploadProgress('Uploading media file...');
-        const path = `${user.id}/${Date.now()}-${mediaFile.name}`;
+        setUploadProgress(`Uploading ${formData.mediaType} file...`);
+        const ext = mediaFile.name.split('.').pop()?.toLowerCase() || (formData.mediaType === 'video' ? 'mp4' : 'mp3');
+        const path = `${user.id}/${Date.now()}.${ext}`;
         const { url, error } = await uploadFile(STORAGE_BUCKETS.PODCASTS, path, mediaFile, { upsert: true });
         
         if (error) {
-          throw new Error('Failed to upload media file');
+          throw new Error(`Failed to upload ${formData.mediaType} file`);
         }
         mediaUrl = url;
       }
@@ -180,7 +242,7 @@ export const PodcastEditor: React.FC = () => {
         price: formData.isFree ? '0' : formData.price,
         categoryId: formData.categoryId || undefined,
         isDownloadable: formData.isDownloadable,
-        thumbnailUrl,
+        thumbnailUrl: formData.mediaType === 'video' ? thumbnailUrl : '', // Only save thumbnail for video
         mediaUrl,
         duration: formData.duration,
         status: publish ? 'published' : 'draft',
@@ -207,6 +269,8 @@ export const PodcastEditor: React.FC = () => {
   if (!isAdmin) {
     return null;
   }
+
+  const isVideo = formData.mediaType === 'video';
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -261,23 +325,33 @@ export const PodcastEditor: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                      Media Type
+                      Content Type
                     </label>
                     <div className="flex gap-2">
-                      {['audio', 'video'].map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => handleChange('mediaType', type)}
-                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                            formData.mediaType === type
-                              ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30'
-                              : 'bg-slate-800 text-slate-400 border border-transparent hover:bg-slate-700'
-                          }`}
-                        >
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </button>
-                      ))}
+                      <button
+                        type="button"
+                        onClick={() => handleMediaTypeChange('audio')}
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                          !isVideo
+                            ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30'
+                            : 'bg-slate-800 text-slate-400 border border-transparent hover:bg-slate-700'
+                        }`}
+                      >
+                        <Music size={16} />
+                        Audio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMediaTypeChange('video')}
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                          isVideo
+                            ? 'bg-neon-purple/20 text-neon-purple border border-neon-purple/30'
+                            : 'bg-slate-800 text-slate-400 border border-transparent hover:bg-slate-700'
+                        }`}
+                      >
+                        <Video size={16} />
+                        Video
+                      </button>
                     </div>
                   </div>
 
@@ -312,60 +386,107 @@ export const PodcastEditor: React.FC = () => {
 
             {/* Media Upload */}
             <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Media Files</h3>
+              <h3 className="text-lg font-bold text-white mb-4">
+                {isVideo ? 'Video Files' : 'Audio File'}
+              </h3>
               
               <div className="space-y-4">
-                {/* Thumbnail */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                    Thumbnail Image
-                  </label>
-                  <div className="flex items-start gap-4">
-                    {thumbnailPreview && (
-                      <img 
-                        src={thumbnailPreview} 
-                        alt="Thumbnail preview" 
-                        className="w-32 h-20 object-cover rounded-lg"
-                      />
-                    )}
-                    <label className="flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors">
-                      <Upload size={24} className="text-slate-400 mb-2" />
-                      <span className="text-sm text-slate-400">Click to upload thumbnail</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleThumbnailSelect}
-                        className="hidden"
-                      />
+                {/* Thumbnail - Only for Video */}
+                {isVideo && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                      Thumbnail Image <span className="text-red-400">*</span>
                     </label>
+                    <div className="flex items-start gap-4">
+                      {thumbnailPreview && (
+                        <div className="relative">
+                          <img 
+                            src={thumbnailPreview} 
+                            alt="Thumbnail preview" 
+                            className="w-40 h-24 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={clearThumbnail}
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
+                      <label className={`flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                        errors.thumbnail ? 'border-red-500' : 'border-white/10'
+                      }`}>
+                        <Image size={24} className="text-slate-400 mb-2" />
+                        <span className="text-sm text-slate-400">Click to upload thumbnail</span>
+                        <span className="text-xs text-slate-500 mt-1">JPG, PNG, WebP (max 5MB)</span>
+                        <input
+                          type="file"
+                          accept={IMAGE_EXTENSIONS}
+                          onChange={handleThumbnailSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    {errors.thumbnail && (
+                      <p className="mt-1.5 text-sm text-red-400">{errors.thumbnail}</p>
+                    )}
                   </div>
-                </div>
+                )}
 
                 {/* Media File */}
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                    {formData.mediaType === 'video' ? 'Video' : 'Audio'} File
+                    {isVideo ? 'Video' : 'Audio'} File <span className="text-red-400">*</span>
                   </label>
-                  <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
-                    errors.media ? 'border-red-500' : 'border-white/10'
-                  }`}>
-                    <Upload size={24} className="text-slate-400 mb-2" />
-                    <span className="text-sm text-slate-400">
-                      {mediaFile ? mediaFile.name : 'Click to upload media file'}
-                    </span>
-                    <input
-                      type="file"
-                      accept="audio/*,video/*"
-                      onChange={handleMediaSelect}
-                      className="hidden"
-                    />
-                  </label>
+                  
+                  {mediaFile ? (
+                    <div className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-xl border border-white/10">
+                      {isVideo ? <Video size={20} className="text-neon-purple" /> : <Music size={20} className="text-neon-cyan" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white truncate">{mediaFile.name}</p>
+                        <p className="text-xs text-slate-400">{(mediaFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearMediaFile}
+                        className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                      errors.media ? 'border-red-500' : 'border-white/10'
+                    }`}>
+                      {isVideo ? (
+                        <Video size={32} className="text-slate-400 mb-2" />
+                      ) : (
+                        <Music size={32} className="text-slate-400 mb-2" />
+                      )}
+                      <span className="text-sm text-slate-400">
+                        Click to upload {isVideo ? 'video' : 'audio'} file
+                      </span>
+                      <span className="text-xs text-slate-500 mt-1">
+                        {isVideo 
+                          ? 'MP4, WebM, MOV, AVI, MKV (max 500MB)' 
+                          : 'MP3, WAV, OGG, M4A, AAC, FLAC (max 100MB)'}
+                      </span>
+                      <input
+                        type="file"
+                        accept={isVideo ? VIDEO_EXTENSIONS : AUDIO_EXTENSIONS}
+                        onChange={handleMediaSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
                   {errors.media && (
                     <p className="mt-1.5 text-sm text-red-400">{errors.media}</p>
                   )}
-                  <p className="mt-1 text-xs text-slate-500">Or enter URL directly:</p>
+                  
+                  <p className="mt-2 text-xs text-slate-500">Or enter URL directly:</p>
                   <Input
-                    placeholder="https://example.com/media.mp3"
+                    placeholder={isVideo ? 'https://example.com/video.mp4' : 'https://example.com/audio.mp3'}
                     value={formData.mediaUrl}
                     onChange={(e) => handleChange('mediaUrl', e.target.value)}
                     className="mt-2"

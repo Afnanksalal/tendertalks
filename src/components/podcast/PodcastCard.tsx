@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Clock, Lock, Video, Headphones } from 'lucide-react';
+import { Play, Clock, Lock, Video, Music } from 'lucide-react';
 import type { Podcast, Category } from '../../db/schema';
 
 interface PodcastCardProps {
@@ -41,11 +41,13 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+          <div className={`w-full h-full flex items-center justify-center ${
+            podcast.mediaType === 'video' ? 'bg-neon-purple/10' : 'bg-neon-cyan/10'
+          }`}>
             {podcast.mediaType === 'video' ? (
-              <Video className="w-12 h-12 text-slate-600" />
+              <Video className="w-12 h-12 text-neon-purple/40" />
             ) : (
-              <Headphones className="w-12 h-12 text-slate-600" />
+              <Music className="w-12 h-12 text-neon-cyan/40" />
             )}
           </div>
         )}
@@ -66,13 +68,17 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({
 
         {/* Badges */}
         <div className="absolute top-3 left-3 z-20 flex gap-2">
-          {podcast.mediaType === 'video' && (
-            <span className="px-2 py-1 bg-neon-purple/80 backdrop-blur text-white text-[10px] font-bold rounded uppercase tracking-wide">
-              Video
+          {podcast.mediaType === 'video' ? (
+            <span className="px-2 py-1 bg-neon-purple/90 backdrop-blur text-white text-[10px] font-bold rounded flex items-center gap-1">
+              <Video size={10} /> VIDEO
+            </span>
+          ) : (
+            <span className="px-2 py-1 bg-neon-cyan/90 backdrop-blur text-black text-[10px] font-bold rounded flex items-center gap-1">
+              <Music size={10} /> AUDIO
             </span>
           )}
           {!podcast.isFree && !canAccess && (
-            <span className="px-2 py-1 bg-amber-500/80 backdrop-blur text-white text-[10px] font-bold rounded flex items-center gap-1">
+            <span className="px-2 py-1 bg-amber-500/90 backdrop-blur text-white text-[10px] font-bold rounded flex items-center gap-1">
               <Lock size={10} /> Premium
             </span>
           )}

@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Play, Pause, Lock, Clock, Calendar, Tag, ArrowLeft, Loader2, 
-  Download, Share2, Heart, Volume2, VolumeX, SkipBack, SkipForward,
-  Maximize, Minimize
+  Download, Share2, Volume2, VolumeX, SkipBack, SkipForward,
+  Video, Music
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { usePodcastStore } from '../stores/podcastStore';
@@ -18,7 +18,7 @@ export const PodcastDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { currentPodcast, fetchPodcastBySlug, isLoading } = usePodcastStore();
-  const { canAccessPodcast, hasPurchased, hasActiveSubscription, fetchPurchases, fetchSubscription, subscription } = useUserStore();
+  const { canAccessPodcast, hasActiveSubscription, fetchPurchases, fetchSubscription, subscription } = useUserStore();
   const { user } = useAuthStore();
 
   const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
@@ -30,9 +30,7 @@ export const PodcastDetailPage: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
 
   useEffect(() => {
@@ -266,7 +264,9 @@ export const PodcastDetailPage: React.FC = () => {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Thumbnail / Player */}
-            <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-900 mb-6">
+            <div className={`relative aspect-video rounded-2xl overflow-hidden mb-6 ${
+              podcast.mediaType === 'video' ? 'bg-neon-purple/5' : 'bg-neon-cyan/5'
+            }`}>
               {podcast.thumbnailUrl ? (
                 <img
                   src={podcast.thumbnailUrl}
@@ -274,8 +274,29 @@ export const PodcastDetailPage: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-slate-800" />
+                <div className={`w-full h-full flex items-center justify-center ${
+                  podcast.mediaType === 'video' ? 'bg-neon-purple/10' : 'bg-neon-cyan/10'
+                }`}>
+                  {podcast.mediaType === 'video' ? (
+                    <Video size={64} className="text-neon-purple/30" />
+                  ) : (
+                    <Music size={64} className="text-neon-cyan/30" />
+                  )}
+                </div>
               )}
+              
+              {/* Media Type Badge */}
+              <div className="absolute top-4 left-4 z-20">
+                {podcast.mediaType === 'video' ? (
+                  <span className="px-3 py-1.5 bg-neon-purple/90 backdrop-blur text-white text-xs font-bold rounded-lg flex items-center gap-1.5">
+                    <Video size={14} /> VIDEO
+                  </span>
+                ) : (
+                  <span className="px-3 py-1.5 bg-neon-cyan/90 backdrop-blur text-black text-xs font-bold rounded-lg flex items-center gap-1.5">
+                    <Music size={14} /> AUDIO
+                  </span>
+                )}
+              </div>
 
               {/* Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

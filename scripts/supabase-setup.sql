@@ -10,13 +10,23 @@
 -- ============================================
 
 -- Podcasts bucket (for audio/video files - PRIVATE)
+-- Audio: MP3, WAV, OGG, M4A, AAC, FLAC, WMA
+-- Video: MP4, WebM, MOV, AVI, MKV, M4V
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'podcasts',
   'podcasts',
   false,
   524288000, -- 500MB limit
-  ARRAY['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'video/mp4', 'video/webm', 'video/quicktime']
+  ARRAY[
+    -- Audio formats
+    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 
+    'audio/x-m4a', 'audio/m4a', 'audio/aac', 'audio/flac', 
+    'audio/x-ms-wma', 'audio/x-wav',
+    -- Video formats
+    'video/mp4', 'video/webm', 'video/quicktime', 
+    'video/x-msvideo', 'video/x-matroska', 'video/x-m4v'
+  ]
 )
 ON CONFLICT (id) DO UPDATE SET
   file_size_limit = EXCLUDED.file_size_limit,

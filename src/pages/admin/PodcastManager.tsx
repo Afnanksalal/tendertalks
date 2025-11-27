@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Plus, Search, Filter, MoreVertical, Edit, Trash2, 
-  Eye, Play, Loader2, Video, Headphones 
+  Plus, Search, Edit, Trash2, 
+  Eye, Play, Loader2, Video, Music, Clock
 } from 'lucide-react';
 import { usePodcastStore } from '../../stores/podcastStore';
 import { Button } from '../../components/ui/Button';
@@ -125,6 +125,9 @@ export const PodcastManager: React.FC = () => {
                     Price
                   </th>
                   <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
+                    Duration
+                  </th>
+                  <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
                     Created
                   </th>
                   <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
@@ -137,15 +140,17 @@ export const PodcastManager: React.FC = () => {
                   <tr key={podcast.id} className="border-b border-white/5 hover:bg-white/5">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
+                        <div className={`w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 ${
+                          podcast.mediaType === 'video' ? 'bg-neon-purple/10' : 'bg-neon-cyan/10'
+                        }`}>
                           {podcast.thumbnailUrl ? (
                             <img src={podcast.thumbnailUrl} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               {podcast.mediaType === 'video' ? (
-                                <Video size={18} className="text-slate-600" />
+                                <Video size={20} className="text-neon-purple/60" />
                               ) : (
-                                <Headphones size={18} className="text-slate-600" />
+                                <Music size={20} className="text-neon-cyan/60" />
                               )}
                             </div>
                           )}
@@ -157,7 +162,19 @@ export const PodcastManager: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-slate-400 text-sm capitalize">{podcast.mediaType}</span>
+                      <div className="flex items-center gap-2">
+                        {podcast.mediaType === 'video' ? (
+                          <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-neon-purple/10 text-neon-purple text-xs font-medium">
+                            <Video size={12} />
+                            Video
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-neon-cyan/10 text-neon-cyan text-xs font-medium">
+                            <Music size={12} />
+                            Audio
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(podcast.status)}`}>
@@ -167,6 +184,15 @@ export const PodcastManager: React.FC = () => {
                     <td className="px-4 py-4">
                       <span className={`text-sm ${podcast.isFree ? 'text-neon-green' : 'text-white'}`}>
                         {podcast.isFree ? 'Free' : `₹${parseFloat(podcast.price || '0').toFixed(0)}`}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-slate-400 text-sm flex items-center gap-1">
+                        <Clock size={12} />
+                        {podcast.duration 
+                          ? `${Math.floor(podcast.duration / 60)}:${(podcast.duration % 60).toString().padStart(2, '0')}`
+                          : '--:--'
+                        }
                       </span>
                     </td>
                     <td className="px-4 py-4">
