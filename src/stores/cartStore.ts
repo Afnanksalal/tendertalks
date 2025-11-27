@@ -19,7 +19,7 @@ interface CartState {
   openCart: () => void;
   closeCart: () => void;
   
-  // Computed
+  // These are computed in components directly
   total: number;
   itemCount: number;
 }
@@ -73,16 +73,10 @@ export const useCartStore = create<CartState>()(
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
 
-      get total() {
-        return get().items.reduce(
-          (sum, item) => sum + parseFloat(item.price) * item.quantity,
-          0
-        );
-      },
-
-      get itemCount() {
-        return get().items.reduce((sum, item) => sum + item.quantity, 0);
-      },
+      // Note: These are computed in components, not as getters
+      // The getters syntax doesn't work properly with zustand persist
+      total: 0,
+      itemCount: 0,
     }),
     {
       name: 'cart-storage',

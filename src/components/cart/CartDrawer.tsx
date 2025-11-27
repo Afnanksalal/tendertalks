@@ -11,6 +11,7 @@ export const CartDrawer: React.FC = () => {
   const { user } = useAuthStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  // Compute total and itemCount directly since zustand getters don't work with persist
   const total = items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 

@@ -130,13 +130,13 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({
       </div>
 
       {/* Mobile Play Button */}
-      <button 
-        onClick={onPlay}
+      <Link 
+        to={`/podcast/${podcast.slug}`}
         className="md:hidden absolute bottom-4 right-4 w-10 h-10 rounded-full bg-neon-cyan text-black flex items-center justify-center shadow-lg shadow-neon-cyan/30 touch-feedback z-30"
         aria-label={`Play ${podcast.title}`}
       >
         <Play size={18} fill="currentColor" className="ml-0.5" />
-      </button>
+      </Link>
     </div>
   );
 };

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Receipt, CreditCard, RefreshCw, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Receipt, CreditCard, RefreshCw, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { Button } from '../components/ui/Button';
 
@@ -52,7 +52,7 @@ export const BillingPage: React.FC = () => {
   };
 
   if (authLoading) {
-    return <div className="min-h-screen bg-[#030014] flex items-center justify-center"><RefreshCw className="w-8 h-8 text-neon-cyan animate-spin" /></div>;
+    return <div className="min-h-screen bg-[#030014] flex items-center justify-center"><Loader2 className="w-8 h-8 text-neon-cyan animate-spin" /></div>;
   }
 
   if (!user) {
