@@ -88,17 +88,17 @@ export const UsersManager: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-bold text-white">Users</h1>
-        <span className="text-slate-400 text-sm">{users.length} total</span>
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-white">Users</h1>
+        <span className="text-slate-400 text-xs sm:text-sm">{users.length} total</span>
       </div>
 
-      <form onSubmit={handleSearch} className="mb-6">
+      <form onSubmit={handleSearch} className="mb-4 sm:mb-6">
         <Input
           placeholder="Search by email or name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          leftIcon={<Search size={18} />}
+          leftIcon={<Search size={16} />}
         />
       </form>
 

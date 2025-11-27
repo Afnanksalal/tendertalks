@@ -1,63 +1,76 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-
-interface OrbProps {
-  color: 'cyan' | 'purple' | 'green';
-  size: number;
-  x: string;
-  y: string;
-  delay: number;
-  duration: number;
-}
-
-const Orb: React.FC<OrbProps> = ({ color, size, x, y, delay, duration }) => {
-  const colors = {
-    cyan: 'rgba(0, 240, 255, 0.15)',
-    purple: 'rgba(112, 0, 255, 0.15)',
-    green: 'rgba(0, 255, 148, 0.1)',
-  };
-
-  return (
-    <motion.div
-      className="absolute rounded-full pointer-events-none"
-      style={{
-        width: size,
-        height: size,
-        left: x,
-        top: y,
-        background: `radial-gradient(circle, ${colors[color]} 0%, transparent 70%)`,
-        filter: 'blur(40px)',
-      }}
-      animate={{
-        x: [0, 30, -20, 0],
-        y: [0, -40, 20, 0],
-        scale: [1, 1.2, 0.9, 1],
-        opacity: [0.5, 0.8, 0.4, 0.5],
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      }}
-    />
-  );
-};
+import React, { useEffect, useState } from 'react';
 
 export const FloatingOrbs: React.FC = () => {
-  const orbs: OrbProps[] = [
-    { color: 'cyan', size: 400, x: '10%', y: '20%', delay: 0, duration: 15 },
-    { color: 'purple', size: 500, x: '60%', y: '10%', delay: 2, duration: 18 },
-    { color: 'green', size: 300, x: '80%', y: '60%', delay: 4, duration: 12 },
-    { color: 'cyan', size: 350, x: '20%', y: '70%', delay: 1, duration: 20 },
-    { color: 'purple', size: 250, x: '40%', y: '50%', delay: 3, duration: 14 },
-  ];
+  const [isMobile, setIsMobile] = useState(false);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Don't render on mobile - too heavy
+  if (isMobile) {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Simple static gradient for mobile */}
+        <div 
+          className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(0, 240, 255, 0.08) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(112, 0, 255, 0.08) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Desktop: CSS animations instead of framer-motion for better performance
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {orbs.map((orb, i) => (
-        <Orb key={i} {...orb} />
-      ))}
+      <div 
+        className="absolute rounded-full pointer-events-none animate-float-slow"
+        style={{
+          width: 350,
+          height: 350,
+          left: '10%',
+          top: '20%',
+          background: 'radial-gradient(circle, rgba(0, 240, 255, 0.12) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
+      <div 
+        className="absolute rounded-full pointer-events-none animate-float-medium"
+        style={{
+          width: 400,
+          height: 400,
+          left: '60%',
+          top: '10%',
+          background: 'radial-gradient(circle, rgba(112, 0, 255, 0.12) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
+      <div 
+        className="absolute rounded-full pointer-events-none animate-float-fast"
+        style={{
+          width: 250,
+          height: 250,
+          left: '75%',
+          top: '60%',
+          background: 'radial-gradient(circle, rgba(0, 255, 148, 0.08) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
     </div>
   );
 };

@@ -385,8 +385,8 @@ export const PodcastEditor: React.FC = () => {
             </div>
 
             {/* Media Upload */}
-            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4">
+            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">
                 {isVideo ? 'Video Files' : 'Audio File'}
               </h3>
               
@@ -397,13 +397,13 @@ export const PodcastEditor: React.FC = () => {
                     <label className="block text-sm font-medium text-slate-300 mb-1.5">
                       Thumbnail Image <span className="text-red-400">*</span>
                     </label>
-                    <div className="flex items-start gap-4">
+                    <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                       {thumbnailPreview && (
-                        <div className="relative">
+                        <div className="relative w-full sm:w-auto">
                           <img 
                             src={thumbnailPreview} 
                             alt="Thumbnail preview" 
-                            className="w-40 h-24 object-cover rounded-lg"
+                            className="w-full sm:w-40 h-32 sm:h-24 object-cover rounded-lg"
                           />
                           <button
                             type="button"
@@ -414,12 +414,13 @@ export const PodcastEditor: React.FC = () => {
                           </button>
                         </div>
                       )}
-                      <label className={`flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                      <label className={`w-full sm:flex-1 flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
                         errors.thumbnail ? 'border-red-500' : 'border-white/10'
                       }`}>
-                        <Image size={24} className="text-slate-400 mb-2" />
-                        <span className="text-sm text-slate-400">Click to upload thumbnail</span>
-                        <span className="text-xs text-slate-500 mt-1">JPG, PNG, WebP (max 5MB)</span>
+                        <Image size={20} className="text-slate-400 mb-2 sm:hidden" />
+                        <Image size={24} className="text-slate-400 mb-2 hidden sm:block" />
+                        <span className="text-xs sm:text-sm text-slate-400 text-center">Click to upload thumbnail</span>
+                        <span className="text-[10px] sm:text-xs text-slate-500 mt-1">JPG, PNG, WebP (max 5MB)</span>
                         <input
                           type="file"
                           accept={IMAGE_EXTENSIONS}
@@ -441,33 +442,33 @@ export const PodcastEditor: React.FC = () => {
                   </label>
                   
                   {mediaFile ? (
-                    <div className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-xl border border-white/10">
-                      {isVideo ? <Video size={20} className="text-neon-purple" /> : <Music size={20} className="text-neon-cyan" />}
+                    <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-slate-800/50 rounded-xl border border-white/10">
+                      {isVideo ? <Video size={18} className="text-neon-purple flex-shrink-0" /> : <Music size={18} className="text-neon-cyan flex-shrink-0" />}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white truncate">{mediaFile.name}</p>
-                        <p className="text-xs text-slate-400">{(mediaFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        <p className="text-xs sm:text-sm text-white truncate">{mediaFile.name}</p>
+                        <p className="text-[10px] sm:text-xs text-slate-400">{(mediaFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                       </div>
                       <button
                         type="button"
                         onClick={clearMediaFile}
-                        className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
                       >
-                        <X size={18} />
+                        <X size={16} />
                       </button>
                     </div>
                   ) : (
-                    <label className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                    <label className={`flex flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
                       errors.media ? 'border-red-500' : 'border-white/10'
                     }`}>
                       {isVideo ? (
-                        <Video size={32} className="text-slate-400 mb-2" />
+                        <Video size={28} className="text-slate-400 mb-2" />
                       ) : (
-                        <Music size={32} className="text-slate-400 mb-2" />
+                        <Music size={28} className="text-slate-400 mb-2" />
                       )}
-                      <span className="text-sm text-slate-400">
+                      <span className="text-xs sm:text-sm text-slate-400 text-center">
                         Click to upload {isVideo ? 'video' : 'audio'} file
                       </span>
-                      <span className="text-xs text-slate-500 mt-1">
+                      <span className="text-[10px] sm:text-xs text-slate-500 mt-1 text-center">
                         {isVideo 
                           ? 'MP4, WebM, MOV, AVI, MKV (max 500MB)' 
                           : 'MP3, WAV, OGG, M4A, AAC, FLAC (max 100MB)'}
@@ -497,10 +498,10 @@ export const PodcastEditor: React.FC = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Pricing */}
-            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Pricing</h3>
+            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Pricing</h3>
               
               <div className="space-y-4">
                 <div className="flex gap-2">
@@ -557,28 +558,28 @@ export const PodcastEditor: React.FC = () => {
             </div>
 
             {/* Actions */}
-            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-6">
-              <div className="space-y-3">
+            <div className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6">
+              <div className="space-y-2 sm:space-y-3">
                 {uploadProgress && (
-                  <div className="text-sm text-neon-cyan text-center mb-2">
+                  <div className="text-xs sm:text-sm text-neon-cyan text-center mb-2">
                     {uploadProgress}
                   </div>
                 )}
                 <Button
                   type="button"
-                  className="w-full"
+                  className="w-full text-sm sm:text-base"
                   onClick={(e) => handleSubmit(e, true)}
                   isLoading={isSubmitting}
-                  leftIcon={<Eye size={18} />}
+                  leftIcon={<Eye size={16} />}
                 >
                   Publish Now
                 </Button>
                 <Button
                   type="submit"
                   variant="outline"
-                  className="w-full"
+                  className="w-full text-sm sm:text-base"
                   isLoading={isSubmitting}
-                  leftIcon={<Save size={18} />}
+                  leftIcon={<Save size={16} />}
                 >
                   Save as Draft
                 </Button>

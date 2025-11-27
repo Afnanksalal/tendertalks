@@ -1,7 +1,7 @@
 {
-  "name": "TenderTalks - Premium Podcast Platform",
+  "name": "TenderTalks - Come talk with Afnan & Jenna",
   "short_name": "TenderTalks",
-  "description": "Premium podcast platform exploring AI, technology, and the future. Stream exclusive audio & video content.",
+  "description": "Exploring the cutting edge of AI, Tech, and Human Connection. Future, unfiltered.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

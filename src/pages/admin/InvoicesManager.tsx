@@ -85,18 +85,24 @@ export default function InvoicesManager() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-display font-bold text-white flex items-center gap-3">
-          <Receipt className="text-neon-cyan" /> Invoices & Payments
+      <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-lg sm:text-2xl font-display font-bold text-white flex items-center gap-2 sm:gap-3">
+          <Receipt size={18} className="text-neon-cyan sm:hidden" />
+          <Receipt size={24} className="text-neon-cyan hidden sm:block" />
+          <span className="hidden sm:inline">Invoices & Payments</span>
+          <span className="sm:hidden">Invoices</span>
         </h1>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={fetchPayments} className="flex items-center gap-1"><RefreshCw size={14} /></Button>
-          <Button variant="secondary" size="sm" onClick={exportCSV} className="flex items-center gap-1"><Download size={14} /> Export</Button>
+        <div className="flex gap-1.5 sm:gap-2">
+          <Button variant="secondary" size="sm" onClick={fetchPayments} className="flex items-center gap-1 px-2 sm:px-3"><RefreshCw size={14} /></Button>
+          <Button variant="secondary" size="sm" onClick={exportCSV} className="flex items-center gap-1 px-2 sm:px-3">
+            <Download size={14} />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
         </div>
       </div>
 
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
           {[
             { label: 'Total Revenue', value: `₹${stats.totalAmount.toLocaleString()}`, color: 'text-neon-green', icon: TrendingUp },
             { label: 'Transactions', value: stats.totalCount, color: 'text-white', icon: Receipt },
@@ -105,44 +111,48 @@ export default function InvoicesManager() {
             { label: 'Failed', value: stats.failedCount, color: 'text-red-400', icon: XCircle },
           ].map((stat, idx) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-              className="bg-slate-900/50 border border-white/10 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-xs">{stat.label}</span>
-                <stat.icon size={14} className={stat.color} />
+              className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <span className="text-slate-400 text-[10px] sm:text-xs truncate pr-1">{stat.label}</span>
+                <stat.icon size={12} className={`${stat.color} flex-shrink-0`} />
               </div>
-              <p className={`text-xl font-display font-bold ${stat.color}`}>{stat.value}</p>
+              <p className={`text-base sm:text-xl font-display font-bold ${stat.color}`}>{stat.value}</p>
             </motion.div>
           ))}
         </div>
       )}
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-4 mb-6">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="flex-1 min-w-[200px] relative">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="space-y-3">
+          {/* Search - Full width on mobile */}
+          <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input placeholder="Search by name, email, or payment ID..." value={search} onChange={e => setSearch(e.target.value)} 
-              className="w-full bg-slate-800/50 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" />
+              className="w-full bg-slate-800/50 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white placeholder-slate-500 text-sm focus:border-neon-cyan/50 focus:outline-none" />
           </div>
-          <select value={filters.type} onChange={e => setFilters({...filters, type: e.target.value})} 
-            className="bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-neon-cyan/50 focus:outline-none">
-            <option value="all">All Types</option>
-            <option value="subscription">Subscription</option>
-            <option value="subscription_renewal">Renewal</option>
-            <option value="purchase">Purchase</option>
-            <option value="merch">Merch</option>
-          </select>
-          <select value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})} 
-            className="bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-neon-cyan/50 focus:outline-none">
-            <option value="all">All Status</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-          </select>
-          <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} 
-            className="bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-neon-cyan/50 focus:outline-none" />
-          <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} 
-            className="bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-neon-cyan/50 focus:outline-none" />
+          {/* Filters - Grid on mobile */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+            <select value={filters.type} onChange={e => setFilters({...filters, type: e.target.value})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none">
+              <option value="all">All Types</option>
+              <option value="subscription">Subscription</option>
+              <option value="subscription_renewal">Renewal</option>
+              <option value="purchase">Purchase</option>
+              <option value="merch">Merch</option>
+            </select>
+            <select value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none">
+              <option value="all">All Status</option>
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+            <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none" />
+            <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} 
+              className="bg-slate-800/50 border border-white/10 rounded-lg px-2 sm:px-3 py-2 text-white text-xs sm:text-sm focus:border-neon-cyan/50 focus:outline-none" />
+          </div>
         </div>
       </motion.div>
 
@@ -160,37 +170,65 @@ export default function InvoicesManager() {
             const StatusIcon = statusStyle.icon;
             return (
               <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.02 }}
-                className="bg-slate-900/50 border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${statusStyle.color.split(' ')[0]}`}>
-                    <StatusIcon size={18} className={statusStyle.color.split(' ')[1]} />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">{p.user?.name || 'Unknown'}</p>
-                    <p className="text-slate-500 text-sm">{p.user?.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6 flex-wrap">
-                  <div className="text-center">
-                    <span className="bg-slate-800 px-2 py-1 rounded text-xs text-slate-300">{typeLabels[p.type] || p.type}</span>
-                  </div>
-                  <div className="text-center">
-                    <p className={`font-mono font-bold ${p.status === 'refunded' ? 'text-neon-purple line-through' : 'text-neon-green'}`}>
+                className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4">
+                {/* Mobile Layout */}
+                <div className="sm:hidden">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusStyle.color.split(' ')[0]}`}>
+                        <StatusIcon size={14} className={statusStyle.color.split(' ')[1]} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{p.user?.name || 'Unknown'}</p>
+                        <p className="text-slate-500 text-xs truncate">{p.user?.email}</p>
+                      </div>
+                    </div>
+                    <p className={`font-mono font-bold text-sm flex-shrink-0 ${p.status === 'refunded' ? 'text-neon-purple line-through' : 'text-neon-green'}`}>
                       ₹{parseFloat(p.amount).toLocaleString()}
                     </p>
                   </div>
-                  <div className="text-center">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300">{typeLabels[p.type] || p.type}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusStyle.color}`}>{p.status}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 text-[10px]">{formatDate(p.createdAt)}</span>
+                      {p.razorpayPaymentId && (
+                        <a href={`https://dashboard.razorpay.com/app/payments/${p.razorpayPaymentId}`} target="_blank" rel="noopener noreferrer"
+                          className="text-neon-cyan text-[10px] flex items-center gap-0.5">
+                          <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${statusStyle.color.split(' ')[0]}`}>
+                      <StatusIcon size={18} className={statusStyle.color.split(' ')[1]} />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">{p.user?.name || 'Unknown'}</p>
+                      <p className="text-slate-500 text-sm">{p.user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 lg:gap-6 flex-wrap">
+                    <span className="bg-slate-800 px-2 py-1 rounded text-xs text-slate-300">{typeLabels[p.type] || p.type}</span>
+                    <p className={`font-mono font-bold ${p.status === 'refunded' ? 'text-neon-purple line-through' : 'text-neon-green'}`}>
+                      ₹{parseFloat(p.amount).toLocaleString()}
+                    </p>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyle.color}`}>{p.status}</span>
+                    <p className="text-slate-500 text-xs hidden lg:block">{formatDate(p.createdAt)}</p>
+                    {p.razorpayPaymentId && (
+                      <a href={`https://dashboard.razorpay.com/app/payments/${p.razorpayPaymentId}`} target="_blank" rel="noopener noreferrer"
+                        className="text-neon-cyan hover:underline text-xs flex items-center gap-1">
+                        View <ExternalLink size={10} />
+                      </a>
+                    )}
                   </div>
-                  <div className="text-center hidden md:block">
-                    <p className="text-slate-500 text-xs">{formatDate(p.createdAt)}</p>
-                  </div>
-                  {p.razorpayPaymentId && (
-                    <a href={`https://dashboard.razorpay.com/app/payments/${p.razorpayPaymentId}`} target="_blank" rel="noopener noreferrer"
-                      className="text-neon-cyan hover:underline text-xs flex items-center gap-1">
-                      View <ExternalLink size={10} />
-                    </a>
-                  )}
                 </div>
               </motion.div>
             );

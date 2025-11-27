@@ -1,5 +1,5 @@
 # TenderTalks Robots.txt
-# https://tendertalks.vercel.app
+# https://tendertalks.live
 
 User-agent: *
 Allow: /
@@ -14,7 +14,7 @@ Allow: /api/podcasts
 Allow: /api/categories
 
 # Sitemap
-Sitemap: https://tendertalks.vercel.app/sitemap.xml
+Sitemap: https://tendertalks.live/sitemap.xml
 
 # Crawl-delay for polite crawling
 Crawl-delay: 1

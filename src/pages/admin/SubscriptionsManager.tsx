@@ -74,14 +74,14 @@ export default function SubscriptionsManager() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-display font-bold text-white flex items-center gap-3">
-          <TrendingUp className="text-neon-green" /> Subscriptions
+      <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-2 sm:gap-3">
+          <TrendingUp size={20} className="text-neon-green" /> Subscriptions
         </h1>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1">
           {filters.map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${filter === f ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-slate-800/50 text-slate-400 border border-white/10 hover:bg-slate-800'}`}>
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium capitalize transition-colors whitespace-nowrap flex-shrink-0 ${filter === f ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' : 'bg-slate-800/50 text-slate-400 border border-white/10 hover:bg-slate-800'}`}>
               {f}
             </button>
           ))}
@@ -94,11 +94,77 @@ export default function SubscriptionsManager() {
           <p className="text-slate-400">No subscriptions found</p>
         </motion.div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {subscriptions.map((sub, idx) => (
             <motion.div key={sub.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
-              className="bg-slate-900/50 border border-white/10 rounded-xl p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4">
+              {/* Mobile Layout */}
+              <div className="sm:hidden">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <Users size={14} className="text-slate-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white text-sm font-medium truncate">{sub.user?.name || 'Unknown'}</p>
+                      <p className="text-slate-500 text-xs truncate">{sub.user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="relative flex-shrink-0">
+                    <button onClick={() => setActionMenu(actionMenu === sub.id ? null : sub.id)} 
+                      className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+                      <MoreVertical size={16} />
+                    </button>
+                    {actionMenu === sub.id && (
+                      <div className="absolute right-0 top-full mt-1 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-20 min-w-[140px] py-1">
+                        {sub.status === 'active' && (
+                          <>
+                            <button onClick={() => handleAction(sub.id, 'pause')} className="w-full px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-700 flex items-center gap-2">
+                              <Pause size={12} /> Pause
+                            </button>
+                            <button onClick={() => handleAction(sub.id, 'cancel')} className="w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-slate-700 flex items-center gap-2">
+                              <X size={12} /> Cancel
+                            </button>
+                          </>
+                        )}
+                        {(sub.status === 'cancelled' || sub.status === 'paused') && (
+                          <button onClick={() => handleAction(sub.id, 'reactivate')} className="w-full px-3 py-2 text-left text-xs text-neon-green hover:bg-slate-700 flex items-center gap-2">
+                            <Play size={12} /> Reactivate
+                          </button>
+                        )}
+                        <button onClick={() => { setShowExtendModal(sub.id); setActionMenu(null); }} className="w-full px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-700 flex items-center gap-2">
+                          <RefreshCw size={12} /> Extend
+                        </button>
+                        {sub.razorpaySubscriptionId && (
+                          <a href={`https://dashboard.razorpay.com/app/subscriptions/${sub.razorpaySubscriptionId}`} target="_blank" rel="noopener noreferrer"
+                            className="w-full px-3 py-2 text-left text-xs text-neon-cyan hover:bg-slate-700 flex items-center gap-2">
+                            <ArrowUpRight size={12} /> Razorpay
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-xs font-medium">{sub.plan?.name}</span>
+                    <span className="text-slate-500 text-[10px]">₹{sub.plan?.price}/{sub.plan?.interval}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusColors[sub.status] || 'bg-slate-700 text-slate-400'}`}>
+                      {sub.status}
+                    </span>
+                    <span className="text-slate-500 text-[10px] flex items-center gap-0.5">
+                      <Calendar size={10} /> {formatDate(sub.currentPeriodEnd)}
+                    </span>
+                  </div>
+                </div>
+                {sub.cancelAtPeriodEnd && <p className="text-amber-400 text-[10px] mt-1">Cancels at period end</p>}
+                {isExpired(sub.currentPeriodEnd) && <p className="text-red-400 text-[10px] mt-1">Expired</p>}
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
                     <Users size={18} className="text-slate-400" />

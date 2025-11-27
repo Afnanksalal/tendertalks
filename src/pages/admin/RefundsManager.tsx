@@ -130,27 +130,27 @@ export const RefundsManager: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-display font-bold text-white">Refund Requests</h1>
-          <div className="flex gap-4 mt-1">
-            <p className="text-slate-400 text-sm">
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-white">Refund Requests</h1>
+          <div className="flex gap-3 sm:gap-4 mt-0.5 sm:mt-1">
+            <p className="text-slate-400 text-xs sm:text-sm">
               Pending: <span className="text-amber-400 font-mono">{pendingCount}</span>
             </p>
-            <p className="text-slate-400 text-sm">
-              Total Refunded: <span className="text-neon-green font-mono">₹{totalRefunded.toLocaleString()}</span>
+            <p className="text-slate-400 text-xs sm:text-sm">
+              Refunded: <span className="text-neon-green font-mono">₹{totalRefunded.toLocaleString()}</span>
             </p>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1">
         {['all', 'pending', 'approved', 'processed', 'rejected'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
               filter === f
                 ? 'bg-neon-cyan text-black'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -158,7 +158,7 @@ export const RefundsManager: React.FC = () => {
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
             {f === 'pending' && pendingCount > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 bg-amber-500 text-black text-xs rounded-full">
+              <span className="ml-1 sm:ml-2 px-1 sm:px-1.5 py-0.5 bg-amber-500 text-black text-[10px] sm:text-xs rounded-full">
                 {pendingCount}
               </span>
             )}
@@ -177,97 +177,107 @@ export const RefundsManager: React.FC = () => {
           <p className="text-slate-400">Refund requests will appear here</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {refunds.map((item) => (
             <motion.div
               key={item.refund.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-slate-900/50 border border-white/10 rounded-xl p-5 hover:border-white/20 transition-colors"
+              className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-5 hover:border-white/20 transition-colors"
             >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
-                    <User size={20} className="text-slate-400" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-white font-medium">
-                        {item.user?.name || item.user?.email || 'Unknown User'}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusBadge(item.refund.status)}`}>
-                        {item.refund.status}
-                      </span>
+              <div className="flex flex-col gap-3 sm:gap-4">
+                {/* Header Row */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2 sm:gap-4 min-w-0 flex-1">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <User size={16} className="text-slate-400 sm:hidden" />
+                      <User size={20} className="text-slate-400 hidden sm:block" />
                     </div>
-                    <p className="text-slate-500 text-sm mt-1">
-                      {item.refund.subscriptionId ? 'Subscription Refund' : 'Purchase Refund'}
-                    </p>
-                    {item.refund.reason && (
-                      <p className="text-slate-400 text-sm mt-2 italic">"{item.refund.reason}"</p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {new Date(item.refund.createdAt).toLocaleDateString('en-IN', {
-                          day: 'numeric', month: 'short', year: 'numeric'
-                        })}
-                      </span>
-                      {item.refund.razorpayRefundId && (
-                        <span className="font-mono">{item.refund.razorpayRefundId}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-white text-sm sm:text-base font-medium truncate">
+                          {item.user?.name || item.user?.email || 'Unknown User'}
+                        </span>
+                        <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold ${getStatusBadge(item.refund.status)}`}>
+                          {item.refund.status}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 text-xs sm:text-sm mt-0.5 sm:mt-1">
+                        {item.refund.subscriptionId ? 'Subscription Refund' : 'Purchase Refund'}
+                      </p>
+                      {item.refund.reason && (
+                        <p className="text-slate-400 text-xs sm:text-sm mt-1.5 sm:mt-2 italic line-clamp-2">"{item.refund.reason}"</p>
                       )}
                     </div>
                   </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                    {getStatusIcon(item.refund.status)}
+                    <span className="text-base sm:text-xl font-mono text-white">
+                      ₹{parseFloat(item.refund.amount || '0').toLocaleString()}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 justify-end">
-                      {getStatusIcon(item.refund.status)}
-                      <span className="text-xl font-mono text-white">
-                        ₹{parseFloat(item.refund.amount || '0').toLocaleString()}
-                      </span>
-                    </div>
+                {/* Meta & Actions Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex items-center gap-3 text-[10px] sm:text-xs text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={10} className="sm:hidden" />
+                      <Calendar size={12} className="hidden sm:block" />
+                      {new Date(item.refund.createdAt).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                      })}
+                    </span>
+                    {item.refund.razorpayRefundId && (
+                      <span className="font-mono truncate max-w-[100px] sm:max-w-none">{item.refund.razorpayRefundId}</span>
+                    )}
                   </div>
 
-                  {item.refund.status === 'pending' && (
-                    <div className="flex gap-2">
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    {item.refund.status === 'pending' && (
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={() => setSelectedRefund(item)}
                         disabled={processingId !== null}
+                        className="text-xs sm:text-sm flex-1 sm:flex-none"
                       >
                         Review
                       </Button>
-                    </div>
-                  )}
+                    )}
 
-                  {item.refund.status === 'approved' && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleAction(item.refund.id, 'process')}
-                        isLoading={processingId === item.refund.id}
-                      >
-                        Process via Razorpay
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setSelectedRefund(item)}
-                        disabled={processingId !== null}
-                      >
-                        Mark Manual
-                      </Button>
-                    </div>
-                  )}
+                    {item.refund.status === 'approved' && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAction(item.refund.id, 'process')}
+                          isLoading={processingId === item.refund.id}
+                          className="text-xs sm:text-sm flex-1 sm:flex-none"
+                        >
+                          <span className="hidden sm:inline">Process via Razorpay</span>
+                          <span className="sm:hidden">Process</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setSelectedRefund(item)}
+                          disabled={processingId !== null}
+                          className="text-xs sm:text-sm flex-1 sm:flex-none"
+                        >
+                          <span className="hidden sm:inline">Mark Manual</span>
+                          <span className="sm:hidden">Manual</span>
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {item.refund.adminNotes && (
-                <div className="mt-4 p-3 bg-slate-800/50 rounded-lg">
-                  <p className="text-xs text-slate-500 mb-1">Admin Notes</p>
-                  <p className="text-sm text-slate-300">{item.refund.adminNotes}</p>
+                <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-slate-800/50 rounded-lg">
+                  <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">Admin Notes</p>
+                  <p className="text-xs sm:text-sm text-slate-300">{item.refund.adminNotes}</p>
                 </div>
               )}
             </motion.div>

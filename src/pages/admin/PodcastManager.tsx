@@ -60,15 +60,18 @@ export const PodcastManager: React.FC = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-display font-bold text-white">Podcasts</h1>
+      <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-white">Podcasts</h1>
         <Link to="/admin/podcasts/new">
-          <Button leftIcon={<Plus size={18} />}>New Podcast</Button>
+          <Button leftIcon={<Plus size={16} />} className="text-sm sm:text-base">
+            <span className="hidden sm:inline">New Podcast</span>
+            <span className="sm:hidden">New</span>
+          </Button>
         </Link>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="flex-1">
           <Input
             placeholder="Search podcasts..."
@@ -77,15 +80,15 @@ export const PodcastManager: React.FC = () => {
             leftIcon={<Search size={18} />}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1">
           {['all', 'draft', 'published', 'scheduled'].map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 statusFilter === status
                   ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'
               }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}

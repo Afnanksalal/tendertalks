@@ -81,22 +81,22 @@ export const PaymentsManager: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-display font-bold text-white">Payments</h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Total Revenue: <span className="text-neon-green font-mono">₹{totalRevenue.toLocaleString()}</span>
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-white">Payments</h1>
+          <p className="text-slate-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+            Total: <span className="text-neon-green font-mono">₹{totalRevenue.toLocaleString()}</span>
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1">
         {['all', 'purchases', 'subscriptions', 'merch'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
               filter === f
                 ? 'bg-neon-cyan text-black'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -118,15 +118,52 @@ export const PaymentsManager: React.FC = () => {
           <p className="text-slate-400">Payments will appear here once customers make purchases</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {payments.map((payment) => (
             <motion.div
               key={payment.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-slate-900/50 border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors"
+              className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4 hover:border-white/20 transition-colors"
             >
-              <div className="flex items-center justify-between">
+              {/* Mobile Layout */}
+              <div className="sm:hidden">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <CreditCard size={14} className="text-slate-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white text-sm font-medium truncate">
+                        {payment.user?.name || payment.user?.email || 'Unknown'}
+                      </p>
+                      <p className="text-slate-500 text-xs truncate">
+                        {payment.podcast?.title || payment.plan?.name || 'Order'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {getStatusIcon(payment.status)}
+                    <span className="text-base font-mono text-white">
+                      ₹{parseFloat(payment.amount || '0').toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="px-2 py-0.5 bg-slate-800 rounded text-slate-400">
+                    {getTypeLabel(payment.type)}
+                  </span>
+                  <span className="text-slate-500">
+                    {new Date(payment.createdAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
                     <CreditCard size={18} className="text-slate-400" />

@@ -96,12 +96,14 @@ export default function ProductsManager() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-3">
-          <Package className="text-neon-cyan" /> Products
+      <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-lg sm:text-2xl font-display font-bold text-white flex items-center gap-2 sm:gap-3">
+          <Package size={18} className="text-neon-cyan" /> Products
         </h1>
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 w-full sm:w-auto justify-center">
-          <Plus size={18} /> Add Product
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+          <Plus size={16} />
+          <span className="hidden sm:inline">Add Product</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 
@@ -112,12 +114,12 @@ export default function ProductsManager() {
       )}
 
       {showForm && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-white">{editingId ? 'Edit' : 'New'} Product</h2>
-            <button onClick={resetForm} className="text-slate-400 hover:text-white"><X size={20} /></button>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex justify-between items-center mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-white">{editingId ? 'Edit' : 'New'} Product</h2>
+            <button onClick={resetForm} className="text-slate-400 hover:text-white"><X size={18} /></button>
           </div>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <input placeholder="Product Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
               className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none" required />
             <input placeholder="Price (₹)" type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} 

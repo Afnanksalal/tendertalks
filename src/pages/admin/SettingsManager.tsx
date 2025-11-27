@@ -88,11 +88,11 @@ export default function SettingsManager() {
         <Settings className="text-neon-purple" /> Platform Settings
       </h1>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
         {/* Categories */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-5">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
-            <FolderOpen size={18} className="text-neon-cyan" /> Categories
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
+          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 mb-3 sm:mb-4">
+            <FolderOpen size={16} className="text-neon-cyan" /> Categories
           </h2>
           
           <div className="space-y-2 mb-4 max-h-[300px] overflow-y-auto">
@@ -138,9 +138,9 @@ export default function SettingsManager() {
         </motion.div>
 
         {/* Tags */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-5">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
-            <Tag size={18} className="text-neon-purple" /> Tags
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
+          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 mb-3 sm:mb-4">
+            <Tag size={16} className="text-neon-purple" /> Tags
           </h2>
           
           <div className="flex flex-wrap gap-2 mb-4 min-h-[100px]">
@@ -162,18 +162,18 @@ export default function SettingsManager() {
       </div>
 
       {/* Platform Info */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-5 mt-6">
-        <h2 className="text-lg font-bold text-white mb-4">Platform Info</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5 mt-4 sm:mt-6">
+        <h2 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Platform Info</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
           {[
             { label: 'Categories', value: categories.length, color: 'text-neon-cyan' },
             { label: 'Tags', value: tags.length, color: 'text-neon-purple' },
             { label: 'Environment', value: import.meta.env.MODE, color: 'text-neon-green' },
             { label: 'API', value: import.meta.env.VITE_APP_URL || 'localhost', color: 'text-slate-400' },
           ].map(item => (
-            <div key={item.label} className="bg-slate-800/50 border border-white/10 rounded-lg p-3">
-              <p className="text-slate-400 text-xs mb-1">{item.label}</p>
-              <p className={`font-bold truncate ${item.color}`}>{item.value}</p>
+            <div key={item.label} className="bg-slate-800/50 border border-white/10 rounded-lg p-2 sm:p-3">
+              <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5 sm:mb-1">{item.label}</p>
+              <p className={`font-bold text-sm sm:text-base truncate ${item.color}`}>{item.value}</p>
             </div>
           ))}
         </div>

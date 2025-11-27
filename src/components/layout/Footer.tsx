@@ -55,7 +55,7 @@ export const Footer: React.FC = () => {
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-              Navigating the intersection of humanity, technology, and artificial intelligence. Join the conversation.
+              Exploring the cutting edge of AI, Tech, and Human Connection. Future, unfiltered.
             </p>
           </div>
 

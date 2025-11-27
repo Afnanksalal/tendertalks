@@ -3,6 +3,14 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "regions": ["bom1"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.tendertalks.live" }],
+      "destination": "https://tendertalks.live/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/api/admin/podcasts/:id/publish", "destination": "/api/admin/podcasts/[id]/publish" },
     { "source": "/api/admin/podcasts/:id", "destination": "/api/admin/podcasts/[id]" },
