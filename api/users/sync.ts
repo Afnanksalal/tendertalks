@@ -6,12 +6,27 @@ import { eq } from 'drizzle-orm';
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
 
+// Input sanitization helper
+function sanitizeString(str: string | null | undefined, maxLength: number = 255): string | null {
+  if (!str) return null;
+  // Remove any potential XSS vectors and limit length
+  return str.trim().slice(0, maxLength).replace(/<[^>]*>/g, '');
+}
+
+// Email validation
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 320;
+}
+
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
   };
 
   if (req.method === 'OPTIONS') {
@@ -26,6 +41,15 @@ export default async function handler(req: Request) {
   }
 
   try {
+    // Limit request body size
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 10000) {
+      return new Response(JSON.stringify({ error: 'Request too large' }), {
+        status: 413,
+        headers,
+      });
+    }
+
     const body = await req.json();
     const { id, email, name, avatarUrl } = body;
 
@@ -43,6 +67,14 @@ export default async function handler(req: Request) {
       });
     }
 
+    // Validate email format
+    if (!isValidEmail(email)) {
+      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
+        status: 400,
+        headers,
+      });
+    }
+
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(id)) {
       return new Response(JSON.stringify({ error: 'Invalid user ID format' }), {
@@ -50,6 +82,10 @@ export default async function handler(req: Request) {
         headers,
       });
     }
+
+    // Sanitize inputs
+    const sanitizedName = sanitizeString(name, 100);
+    const sanitizedAvatarUrl = sanitizeString(avatarUrl, 500);
 
     const existing = await db
       .select()
@@ -64,8 +100,8 @@ export default async function handler(req: Request) {
         .update(schema.users)
         .set({
           email,
-          name: name || existing[0].name,
-          avatarUrl: avatarUrl || existing[0].avatarUrl,
+          name: sanitizedName || existing[0].name,
+          avatarUrl: sanitizedAvatarUrl || existing[0].avatarUrl,
           updatedAt: new Date(),
         })
         .where(eq(schema.users.id, id))
@@ -78,8 +114,8 @@ export default async function handler(req: Request) {
         .values({
           id,
           email,
-          name: name || null,
-          avatarUrl: avatarUrl || null,
+          name: sanitizedName,
+          avatarUrl: sanitizedAvatarUrl,
           role: 'user',
         })
         .returning();
