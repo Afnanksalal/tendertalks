@@ -18,9 +18,18 @@ function getRazorpayCredentials() {
   return { keyId, keySecret };
 }
 
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  if (typeof btoa !== 'undefined') return btoa(str);
-  return Buffer.from(str).toString('base64');
+  // Use TextEncoder for Edge runtime compatibility
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  
+  // Convert Uint8Array to base64
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  return btoa(binary);
 }
 
 export default async function handler(req: Request) {
@@ -49,9 +58,9 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Invalid request - userId and items required' }), { status: 400, headers });
     }
 
-    // Validate total
-    if (!total || isNaN(total) || total <= 0) {
-      return new Response(JSON.stringify({ error: 'Invalid total amount' }), { status: 400, headers });
+    // Validate total (minimum ₹1 = 100 paise for Razorpay)
+    if (!total || isNaN(total) || total < 1) {
+      return new Response(JSON.stringify({ error: 'Invalid total amount. Minimum order is ₹1' }), { status: 400, headers });
     }
 
     // Get credentials
@@ -106,11 +115,22 @@ export default async function handler(req: Request) {
     console.log('Razorpay order data:', orderData);
 
     const authString = `${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`;
+    const encodedAuth = base64Encode(authString);
+    
+    // Log for debugging (mask the secret)
+    console.log('Auth debug:', {
+      keyIdLength: RAZORPAY_KEY_ID.length,
+      keyIdPrefix: RAZORPAY_KEY_ID.substring(0, 12),
+      secretLength: RAZORPAY_KEY_SECRET.length,
+      authStringLength: authString.length,
+      encodedLength: encodedAuth.length,
+    });
+
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${base64Encode(authString)}`,
+        Authorization: `Basic ${encodedAuth}`,
       },
       body: JSON.stringify(orderData),
     });
@@ -118,9 +138,20 @@ export default async function handler(req: Request) {
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
       console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
+      
+      // Try to parse Razorpay error for better message
+      let razorpayError = 'Unknown error';
+      try {
+        const errorJson = JSON.parse(errorText);
+        razorpayError = errorJson.error?.description || errorJson.error?.reason || errorJson.message || errorText;
+      } catch {
+        razorpayError = errorText;
+      }
+      
       return new Response(JSON.stringify({ 
-        error: 'Failed to create payment order',
-        details: `Razorpay returned ${razorpayResponse.status}`
+        error: `Payment gateway error: ${razorpayError}`,
+        details: `Razorpay returned ${razorpayResponse.status}`,
+        razorpayError
       }), { status: 500, headers });
     }
 

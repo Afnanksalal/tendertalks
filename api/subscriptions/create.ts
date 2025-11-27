@@ -21,9 +21,15 @@ function getRazorpayCredentials() {
   };
 }
 
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  if (typeof btoa !== 'undefined') return btoa(str);
-  return Buffer.from(str).toString('base64');
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  return btoa(binary);
 }
 
 export default async function handler(req: Request) {
