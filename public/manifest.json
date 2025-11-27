@@ -1,8 +1,9 @@
 {
-  "name": "TenderTalks",
+  "name": "TenderTalks - Premium Podcast Platform",
   "short_name": "TenderTalks",
-  "description": "Premium podcast platform exploring AI, technology, and the future",
+  "description": "Premium podcast platform exploring AI, technology, and the future. Stream exclusive audio & video content.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#030014",
   "theme_color": "#00F0FF",
@@ -12,20 +13,56 @@
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
+      "src": "/favicon.svg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/favicon.svg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["entertainment", "education", "podcasts"],
+  "screenshots": [
+    {
+      "src": "/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "TenderTalks Homepage"
+    }
+  ],
+  "categories": ["entertainment", "education", "podcasts", "music"],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "shortcuts": [
+    {
+      "name": "Browse Podcasts",
+      "short_name": "Browse",
+      "description": "Browse all available podcasts",
+      "url": "/browse",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your listening history and purchases",
+      "url": "/dashboard",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Store",
+      "short_name": "Store",
+      "description": "Shop official merchandise",
+      "url": "/store",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    }
+  ]
 }

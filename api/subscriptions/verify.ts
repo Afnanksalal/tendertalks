@@ -55,12 +55,13 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing payment details' }), { status: 400, headers });
     }
 
-    // Verify signature
     const isValid = await verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    const now = new Date();
+
     if (!isValid) {
       // Update payment history as failed
       await db.update(schema.paymentHistory)
-        .set({ status: 'failed', updatedAt: new Date() })
+        .set({ status: 'failed', updatedAt: now })
         .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
 
       return new Response(JSON.stringify({ error: 'Invalid payment signature' }), { status: 400, headers });
@@ -74,7 +75,6 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Plan not found' }), { status: 404, headers });
     }
 
-    const now = new Date();
     const periodEnd = new Date(now);
     if (plan.interval === 'year') {
       periodEnd.setFullYear(periodEnd.getFullYear() + 1);
@@ -82,7 +82,7 @@ export default async function handler(req: Request) {
       periodEnd.setMonth(periodEnd.getMonth() + 1);
     }
 
-    // Update payment history
+    // Update payment history as completed
     await db.update(schema.paymentHistory)
       .set({
         status: 'completed',
@@ -92,7 +92,7 @@ export default async function handler(req: Request) {
       })
       .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
 
-    if (action === 'new') {
+    if (action === 'new' || action === 'upgrade') {
       // Cancel any existing active subscription
       await db.update(schema.subscriptions)
         .set({ status: 'cancelled', cancelledAt: now, updatedAt: now })
@@ -116,44 +116,14 @@ export default async function handler(req: Request) {
         .set({ refId: subscription.id, refType: 'subscription' })
         .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
 
-      return new Response(JSON.stringify({
-        success: true,
-        subscription: { ...subscription, plan },
-        message: 'Subscription activated successfully!',
-      }), { status: 200, headers });
-
-    } else if (action === 'upgrade') {
-      // Immediate upgrade - cancel old, create new
-      const [oldSub] = await db.select().from(schema.subscriptions)
-        .where(and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active')))
-        .limit(1);
-
-      if (oldSub) {
-        await db.update(schema.subscriptions)
-          .set({ status: 'cancelled', cancelledAt: now, updatedAt: now })
-          .where(eq(schema.subscriptions.id, oldSub.id));
-      }
-
-      const [subscription] = await db.insert(schema.subscriptions).values({
-        userId,
-        planId,
-        status: 'active',
-        razorpayOrderId: razorpay_order_id,
-        razorpayPaymentId: razorpay_payment_id,
-        amount: plan.price,
-        currency: plan.currency,
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-      }).returning();
-
-      await db.update(schema.paymentHistory)
-        .set({ refId: subscription.id, refType: 'subscription' })
-        .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+      const message = action === 'upgrade' 
+        ? 'Upgraded successfully! New plan is now active.'
+        : 'Subscription activated successfully!';
 
       return new Response(JSON.stringify({
         success: true,
         subscription: { ...subscription, plan },
-        message: 'Upgraded successfully! New plan is now active.',
+        message,
       }), { status: 200, headers });
 
     } else if (action === 'downgrade') {
@@ -164,11 +134,7 @@ export default async function handler(req: Request) {
 
       if (currentSub) {
         await db.update(schema.subscriptions)
-          .set({
-            pendingPlanId: planId,
-            status: 'pending_downgrade',
-            updatedAt: now,
-          })
+          .set({ pendingPlanId: planId, updatedAt: now })
           .where(eq(schema.subscriptions.id, currentSub.id));
 
         return new Response(JSON.stringify({

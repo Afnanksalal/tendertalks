@@ -6,8 +6,13 @@ import { eq, desc, and } from 'drizzle-orm';
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID!;
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+
+function base64Encode(str: string): string {
+  if (typeof btoa !== 'undefined') return btoa(str);
+  return Buffer.from(str).toString('base64');
+}
 
 export default async function handler(req: Request) {
   const headers = {
@@ -134,7 +139,7 @@ export default async function handler(req: Request) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+            Authorization: `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
           },
           body: JSON.stringify({
             amount: Math.round(parseFloat(refundRequest.amount) * 100),

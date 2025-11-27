@@ -6,11 +6,14 @@ import { eq, and } from 'drizzle-orm';
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID!;
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
-
-// Refund window in days (7 days)
 const REFUND_WINDOW_DAYS = 7;
+
+function base64Encode(str: string): string {
+  if (typeof btoa !== 'undefined') return btoa(str);
+  return Buffer.from(str).toString('base64');
+}
 
 export default async function handler(req: Request) {
   const headers = {
@@ -39,6 +42,12 @@ export default async function handler(req: Request) {
 
     if (!planId) {
       return new Response(JSON.stringify({ error: 'Plan ID required' }), { status: 400, headers });
+    }
+
+    // Validate Razorpay credentials
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      console.error('Missing Razorpay credentials');
+      return new Response(JSON.stringify({ error: 'Payment gateway not configured' }), { status: 500, headers });
     }
 
     // Get the plan
@@ -84,6 +93,18 @@ export default async function handler(req: Request) {
         currentPeriodEnd: periodEnd,
       }).returning();
 
+      // Record in payment history
+      await db.insert(schema.paymentHistory).values({
+        userId,
+        type: 'subscription',
+        amount: '0',
+        currency,
+        status: 'completed',
+        refId: subscription.id,
+        refType: 'subscription',
+        metadata: JSON.stringify({ planId, action: 'new', planName: plan.name, isFree: true }),
+      });
+
       return new Response(JSON.stringify({ success: true, subscription, isFree: true }), { status: 200, headers });
     }
 
@@ -93,27 +114,22 @@ export default async function handler(req: Request) {
       amount: Math.round(amount * 100),
       currency,
       receipt,
-      notes: {
-        userId,
-        planId,
-        type: 'subscription',
-        action: 'new',
-      },
+      notes: { userId, planId, type: 'subscription', action: 'new' },
     };
 
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+        Authorization: `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
       },
       body: JSON.stringify(orderData),
     });
 
     if (!razorpayResponse.ok) {
-      const error = await razorpayResponse.text();
-      console.error('Razorpay error:', error);
-      throw new Error('Failed to create payment order');
+      const errorText = await razorpayResponse.text();
+      console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
+      return new Response(JSON.stringify({ error: 'Failed to create payment order' }), { status: 500, headers });
     }
 
     const razorpayOrder = await razorpayResponse.json();

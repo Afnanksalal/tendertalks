@@ -1,0 +1,20 @@
+# TenderTalks Robots.txt
+# https://tendertalks.vercel.app
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+
+# Allow specific API endpoints for SEO
+Allow: /api/podcasts
+Allow: /api/categories
+
+# Sitemap
+Sitemap: https://tendertalks.vercel.app/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1

@@ -1,34 +1,26 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { motion, useSpring, useMotionValue } from 'framer-motion';
 
 export const CustomCursor: React.FC = () => {
   const [isEnabled, setIsEnabled] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-
-  const springConfig = { damping: 30, stiffness: 400, mass: 0.5 };
-  const cursorXSpring = useSpring(cursorX, springConfig);
-  const cursorYSpring = useSpring(cursorY, springConfig);
+  
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const positionRef = useRef({ x: -100, y: -100 });
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Function to check if device should have custom cursor
     const checkDevice = () => {
-      // Only enable on desktop with mouse
       const hasHover = window.matchMedia('(hover: hover)').matches;
       const hasPointer = window.matchMedia('(pointer: fine)').matches;
       const isLargeScreen = window.innerWidth >= 1024;
       const noTouch = !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
       
       const shouldEnable = hasHover && hasPointer && isLargeScreen && noTouch;
-      
       setIsEnabled(shouldEnable);
       
-      // Apply cursor style to document
       if (shouldEnable) {
         document.documentElement.classList.add('custom-cursor-active');
       } else {
@@ -36,26 +28,56 @@ export const CustomCursor: React.FC = () => {
       }
     };
 
-    // Initial check with small delay
-    checkTimeoutRef.current = setTimeout(checkDevice, 50);
-    
-    // Re-check on resize
+    const timeout = setTimeout(checkDevice, 50);
     window.addEventListener('resize', checkDevice);
     
     return () => {
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
-      }
+      clearTimeout(timeout);
       window.removeEventListener('resize', checkDevice);
       document.documentElement.classList.remove('custom-cursor-active');
     };
   }, []);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    cursorX.set(e.clientX);
-    cursorY.set(e.clientY);
-    if (!isVisible) setIsVisible(true);
-  }, [cursorX, cursorY, isVisible]);
+  // Use RAF for smooth cursor movement
+  useEffect(() => {
+    if (!isEnabled) return;
+
+    let targetX = -100;
+    let targetY = -100;
+    let currentX = -100;
+    let currentY = -100;
+    const ease = 0.15;
+
+    const animate = () => {
+      // Lerp for smooth movement
+      currentX += (targetX - currentX) * ease;
+      currentY += (targetY - currentY) * ease;
+
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(${currentX - 6}px, ${currentY - 6}px)`;
+      }
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate(${currentX - 20}px, ${currentY - 20}px)`;
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      positionRef.current = { x: targetX, y: targetY };
+      if (!isVisible) setIsVisible(true);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [isEnabled, isVisible]);
 
   const handleMouseOver = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -69,23 +91,20 @@ export const CustomCursor: React.FC = () => {
       target.closest('a') ||
       target.closest('[role="button"]') ||
       target.closest('input') ||
-      target.closest('select') ||
-      target.closest('textarea') ||
       target.closest('[data-clickable]') ||
       window.getComputedStyle(target).cursor === 'pointer';
     
     setIsHovering(!!isClickable);
   }, []);
 
-  const handleMouseDown = useCallback(() => setIsClicking(true), []);
-  const handleMouseUp = useCallback(() => setIsClicking(false), []);
-  const handleMouseLeave = useCallback(() => setIsVisible(false), []);
-  const handleMouseEnter = useCallback(() => setIsVisible(true), []);
-
   useEffect(() => {
     if (!isEnabled) return;
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    const handleMouseDown = () => setIsClicking(true);
+    const handleMouseUp = () => setIsClicking(false);
+    const handleMouseLeave = () => setIsVisible(false);
+    const handleMouseEnter = () => setIsVisible(true);
+
     window.addEventListener('mouseover', handleMouseOver, { passive: true });
     window.addEventListener('mousedown', handleMouseDown, { passive: true });
     window.addEventListener('mouseup', handleMouseUp, { passive: true });
@@ -93,53 +112,73 @@ export const CustomCursor: React.FC = () => {
     document.addEventListener('mouseenter', handleMouseEnter);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseover', handleMouseOver);
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('mouseenter', handleMouseEnter);
     };
-  }, [isEnabled, handleMouseMove, handleMouseOver, handleMouseDown, handleMouseUp, handleMouseLeave, handleMouseEnter]);
+  }, [isEnabled, handleMouseOver]);
 
-  // Don't render on mobile/touch devices
   if (!isEnabled || !isVisible) return null;
+
+  const dotScale = isClicking ? 0.6 : isHovering ? 0.4 : 1;
+  const ringScale = isClicking ? 0.6 : isHovering ? 1.5 : 1;
 
   return (
     <>
       {/* Main Dot */}
-      <motion.div
-        className="fixed top-0 left-0 w-3 h-3 bg-neon-cyan rounded-full pointer-events-none mix-blend-difference"
+      <div
+        ref={dotRef}
+        className="fixed top-0 left-0 pointer-events-none mix-blend-difference"
         style={{
-          x: cursorXSpring,
-          y: cursorYSpring,
-          translateX: '-50%',
-          translateY: '-50%',
+          width: 12,
+          height: 12,
+          backgroundColor: '#00F0FF',
+          borderRadius: '50%',
           zIndex: 99999,
+          transform: 'translate(-100px, -100px)',
+          transition: 'width 0.1s, height 0.1s',
+          willChange: 'transform',
         }}
-        animate={{
-          scale: isClicking ? 0.6 : isHovering ? 0.4 : 1,
-        }}
-        transition={{ duration: 0.1, ease: 'easeOut' }}
-      />
+      >
+        <div 
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            backgroundColor: '#00F0FF',
+            transform: `scale(${dotScale})`,
+            transition: 'transform 0.1s ease-out',
+          }}
+        />
+      </div>
       
       {/* Trailing Ring */}
-      <motion.div
-        className="fixed top-0 left-0 w-10 h-10 border-2 rounded-full pointer-events-none"
+      <div
+        ref={ringRef}
+        className="fixed top-0 left-0 pointer-events-none"
         style={{
-          x: cursorXSpring,
-          y: cursorYSpring,
-          translateX: '-50%',
-          translateY: '-50%',
+          width: 40,
+          height: 40,
+          border: `2px solid ${isHovering ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 240, 255, 0.4)'}`,
+          borderRadius: '50%',
           zIndex: 99998,
-          borderColor: isHovering ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 240, 255, 0.4)',
-        }}
-        animate={{
-          scale: isClicking ? 0.6 : isHovering ? 1.5 : 1,
+          transform: 'translate(-100px, -100px)',
           opacity: isHovering ? 0.8 : 0.4,
+          willChange: 'transform',
         }}
-        transition={{ duration: 0.15, ease: 'easeOut' }}
-      />
+      >
+        <div 
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            transform: `scale(${ringScale})`,
+            transition: 'transform 0.15s ease-out, opacity 0.15s ease-out',
+          }}
+        />
+      </div>
     </>
   );
 };

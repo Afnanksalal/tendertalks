@@ -6,8 +6,13 @@ import { eq, and } from 'drizzle-orm';
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID!;
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+
+function base64Encode(str: string): string {
+  if (typeof btoa !== 'undefined') return btoa(str);
+  return Buffer.from(str).toString('base64');
+}
 
 export default async function handler(req: Request) {
   const headers = {
@@ -34,15 +39,21 @@ export default async function handler(req: Request) {
     }
 
     if (!type || !['purchase', 'subscription'].includes(type)) {
-      return new Response(JSON.stringify({ error: 'Invalid type' }), { status: 400, headers });
+      return new Response(JSON.stringify({ error: 'Invalid payment type' }), { status: 400, headers });
+    }
+
+    // Validate Razorpay credentials
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      console.error('Missing Razorpay credentials');
+      return new Response(JSON.stringify({ error: 'Payment gateway not configured' }), { status: 500, headers });
     }
 
     let finalAmount = amount;
     let receipt = '';
-    let metadata: any = { userId, type };
+    let metadata: Record<string, any> = { userId, type };
 
     if (type === 'purchase' && podcastId) {
-      // Check for existing purchase
+      // Check for existing completed purchase
       const existing = await db.select().from(schema.purchases)
         .where(and(
           eq(schema.purchases.userId, userId),
@@ -71,8 +82,6 @@ export default async function handler(req: Request) {
       metadata = { ...metadata, podcastId, podcastTitle: podcast.title };
 
     } else if (type === 'subscription' && planId) {
-      // For subscriptions, redirect to the new subscription API
-      // But keep backward compatibility
       const [plan] = await db.select().from(schema.pricingPlans)
         .where(eq(schema.pricingPlans.id, planId)).limit(1);
 
@@ -104,20 +113,20 @@ export default async function handler(req: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+        Authorization: `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
       },
       body: JSON.stringify(orderData),
     });
 
     if (!razorpayResponse.ok) {
-      const error = await razorpayResponse.text();
-      console.error('Razorpay error:', error);
-      throw new Error('Failed to create payment order');
+      const errorText = await razorpayResponse.text();
+      console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
+      return new Response(JSON.stringify({ error: 'Failed to create payment order' }), { status: 500, headers });
     }
 
     const razorpayOrder = await razorpayResponse.json();
 
-    // Create pending records
+    // Create pending purchase record
     if (type === 'purchase' && podcastId) {
       await db.insert(schema.purchases).values({
         userId,

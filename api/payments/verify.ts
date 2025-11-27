@@ -94,9 +94,11 @@ export default async function handler(req: Request) {
         .returning();
 
       // Update payment history with reference
-      await db.update(schema.paymentHistory)
-        .set({ refId: purchase?.id, refType: 'purchase' })
-        .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+      if (purchase) {
+        await db.update(schema.paymentHistory)
+          .set({ refId: purchase.id, refType: 'purchase' })
+          .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+      }
 
       return new Response(JSON.stringify({ success: true, purchase }), { status: 200, headers });
 

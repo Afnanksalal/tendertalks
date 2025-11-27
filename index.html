@@ -6,31 +6,34 @@
     <meta name="theme-color" content="#030014" />
     <meta name="color-scheme" content="dark" />
     
-    <!-- SEO Meta Tags -->
+    <!-- Primary SEO Meta Tags -->
     <title>TenderTalks | Premium Podcast Platform - AI, Tech & Future</title>
+    <meta name="title" content="TenderTalks | Premium Podcast Platform - AI, Tech & Future" />
     <meta name="description" content="TenderTalks - Premium podcast platform exploring AI, technology, and the future. Stream exclusive audio & video content from industry experts. Subscribe for unlimited access." />
-    <meta name="keywords" content="podcast, technology, AI, artificial intelligence, tech talks, future, premium content, audio, video, streaming, machine learning, innovation" />
+    <meta name="keywords" content="podcast, technology, AI, artificial intelligence, tech talks, future, premium content, audio, video, streaming, machine learning, innovation, TenderTalks" />
     <meta name="author" content="TenderTalks" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <link rel="canonical" href="https://tendertalks.com/" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://tendertalks.vercel.app/" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://tendertalks.com/" />
+    <meta property="og:url" content="https://tendertalks.vercel.app/" />
     <meta property="og:title" content="TenderTalks | Premium Podcast Platform" />
-    <meta property="og:description" content="Exploring the cutting edge of AI, Tech, and Human Connection. Stream premium audio & video content." />
-    <meta property="og:image" content="https://tendertalks.com/og-image.png" />
+    <meta property="og:description" content="Exploring the cutting edge of AI, Tech, and Human Connection. Stream premium audio & video content from industry experts." />
+    <meta property="og:image" content="https://tendertalks.vercel.app/og-image.svg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TenderTalks - Premium Podcast Platform" />
     <meta property="og:site_name" content="TenderTalks" />
     <meta property="og:locale" content="en_US" />
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://tendertalks.com/" />
+    <meta name="twitter:url" content="https://tendertalks.vercel.app/" />
     <meta name="twitter:title" content="TenderTalks | Premium Podcast Platform" />
-    <meta name="twitter:description" content="Exploring the cutting edge of AI, Tech, and Human Connection." />
-    <meta name="twitter:image" content="https://tendertalks.com/og-image.png" />
+    <meta name="twitter:description" content="Exploring the cutting edge of AI, Tech, and Human Connection. Stream premium podcasts." />
+    <meta name="twitter:image" content="https://tendertalks.vercel.app/og-image.svg" />
     <meta name="twitter:creator" content="@tendertalks" />
     
     <!-- PWA -->
@@ -40,61 +43,84 @@
     <meta name="apple-mobile-web-app-title" content="TenderTalks" />
     <meta name="application-name" content="TenderTalks" />
     <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-TileColor" content="#030014" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="mask-icon" href="/favicon.svg" color="#00F0FF" />
     
-    <!-- Fonts - Preconnect for performance -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     
-    <!-- DNS Prefetch for external services -->
+    <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
     <link rel="dns-prefetch" href="https://api.razorpay.com" />
+    <link rel="preconnect" href="https://checkout.razorpay.com" />
     
-    <!-- Preload critical resources -->
-    <link rel="modulepreload" href="/src/main.tsx" />
-    
-    <!-- Structured Data -->
+    <!-- Structured Data - Website -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "TenderTalks",
+      "alternateName": "TenderTalks Podcast",
       "description": "Premium podcast platform exploring AI, technology, and the future",
-      "url": "https://tendertalks.com",
+      "url": "https://tendertalks.vercel.app",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://tendertalks.com/browse?search={search_term_string}",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://tendertalks.vercel.app/browse?q={search_term_string}"
+        },
         "query-input": "required name=search_term_string"
       }
     }
     </script>
     
+    <!-- Structured Data - Organization -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "TenderTalks",
-      "url": "https://tendertalks.com",
-      "logo": "https://tendertalks.com/logo.png",
-      "sameAs": [
-        "https://twitter.com/tendertalks",
-        "https://instagram.com/tendertalks",
-        "https://youtube.com/@tendertalks"
-      ]
+      "url": "https://tendertalks.vercel.app",
+      "logo": "https://tendertalks.vercel.app/favicon.svg",
+      "description": "Premium podcast platform exploring AI, technology, and the future",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "availableLanguage": "English"
+      }
     }
     </script>
     
-    <!-- Critical CSS for initial load -->
+    <!-- Structured Data - PodcastSeries -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "PodcastSeries",
+      "name": "TenderTalks",
+      "description": "Premium podcast exploring AI, technology, and the future",
+      "url": "https://tendertalks.vercel.app",
+      "webFeed": "https://tendertalks.vercel.app/api/podcasts",
+      "author": {
+        "@type": "Organization",
+        "name": "TenderTalks"
+      }
+    }
+    </script>
+    
+    <!-- Critical CSS -->
     <style>
       html { background-color: #030014; }
-      body { margin: 0; background-color: #030014; color: #e2e8f0; }
+      body { margin: 0; background-color: #030014; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
       #root { min-height: 100vh; min-height: 100dvh; }
       .initial-loader {
         position: fixed;
@@ -118,10 +144,16 @@
   </head>
   <body>
     <div id="root">
-      <div class="initial-loader">
+      <div class="initial-loader" aria-label="Loading TenderTalks">
         <div class="initial-loader-spinner"></div>
       </div>
     </div>
+    <noscript>
+      <div style="padding: 2rem; text-align: center; color: #e2e8f0; background: #030014; min-height: 100vh;">
+        <h1>TenderTalks</h1>
+        <p>Please enable JavaScript to use TenderTalks.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
