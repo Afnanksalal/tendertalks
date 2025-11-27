@@ -33,7 +33,7 @@ export const StorePage: React.FC = () => {
     : merch;
 
   return (
-    <div className="min-h-screen bg-[#030014] pt-24 md:pt-32 pb-20 px-4 relative">
+    <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4 relative">
       {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-neon-purple/10 via-transparent to-transparent pointer-events-none" />
 

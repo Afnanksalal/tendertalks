@@ -30,7 +30,7 @@ export const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#030014] pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-10">

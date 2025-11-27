@@ -151,7 +151,7 @@ export const PricingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#030014] pt-24 md:pt-32 pb-20 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-whale-900/20 via-transparent to-transparent" />

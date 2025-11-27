@@ -106,7 +106,7 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#030014] pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
       <div className="max-w-2xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Settings</h1>

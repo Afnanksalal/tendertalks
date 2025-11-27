@@ -244,7 +244,7 @@ export const PodcastDetailPage: React.FC = () => {
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-[#030014] pt-20 pb-20">
+    <div className="min-h-screen bg-[#030014] pt-28 md:pt-32 pb-20">
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-neon-purple/10 rounded-full blur-[100px]" />

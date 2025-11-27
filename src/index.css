@@ -464,6 +464,116 @@ input[type="number"] {
 }
 
 /* ========================================
+   SHOOTING STAR ANIMATION
+   ======================================== */
+
+@keyframes shooting-star {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(300px) translateY(150px);
+    opacity: 0;
+  }
+}
+
+.shooting-star {
+  animation: shooting-star 2s ease-out forwards;
+}
+
+/* ========================================
+   GLOW EFFECTS
+   ======================================== */
+
+.shadow-glow-cyan {
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+}
+
+.shadow-glow-purple {
+  box-shadow: 0 0 30px rgba(112, 0, 255, 0.3);
+}
+
+.shadow-glow-green {
+  box-shadow: 0 0 30px rgba(0, 255, 148, 0.3);
+}
+
+/* Hover glow effects */
+.hover-glow-cyan:hover {
+  box-shadow: 0 0 40px rgba(0, 240, 255, 0.4);
+}
+
+.hover-glow-purple:hover {
+  box-shadow: 0 0 40px rgba(112, 0, 255, 0.4);
+}
+
+/* ========================================
+   GRADIENT BACKGROUNDS
+   ======================================== */
+
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+.bg-mesh-gradient {
+  background: 
+    radial-gradient(at 40% 20%, rgba(0, 240, 255, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(112, 0, 255, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(0, 255, 148, 0.05) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(0, 240, 255, 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(112, 0, 255, 0.1) 0px, transparent 50%);
+}
+
+/* ========================================
+   BORDER ANIMATIONS
+   ======================================== */
+
+@keyframes border-glow {
+  0%, 100% {
+    border-color: rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+  }
+  50% {
+    border-color: rgba(0, 240, 255, 0.6);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+}
+
+.animate-border-glow {
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+/* ========================================
+   SHIMMER EFFECT
+   ======================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ========================================
    PRINT STYLES
    ======================================== */
 

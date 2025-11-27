@@ -50,7 +50,7 @@ export const AdminLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#030014] flex flex-col lg:flex-row">
       {/* Desktop Sidebar */}
-      <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-white/5 pt-20 hidden lg:block overflow-y-auto">
+      <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-white/5 pt-24 hidden lg:block overflow-y-auto">
         <div className="p-4">
           <Link to="/admin/podcasts/new"
             className="flex items-center justify-center gap-2 w-full py-3 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors">
@@ -129,7 +129,7 @@ export const AdminLayout: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-32 lg:pt-20 pb-10 px-4 lg:px-8">
+      <main className="flex-1 lg:ml-64 pt-32 lg:pt-28 pb-10 px-4 lg:px-8">
         <Outlet />
       </main>
     </div>
