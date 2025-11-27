@@ -3,11 +3,21 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client, { schema });
+// Lazy initialization to avoid errors at module load time
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  const sql_client = neon(process.env.DATABASE_URL);
+  return drizzle(sql_client, { schema });
+}
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+function getRazorpayCredentials() {
+  return {
+    keyId: process.env.RAZORPAY_KEY_ID,
+    keySecret: process.env.RAZORPAY_KEY_SECRET,
+  };
+}
 
 function base64Encode(str: string): string {
   if (typeof btoa !== 'undefined') return btoa(str);
@@ -42,10 +52,22 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Invalid payment type' }), { status: 400, headers });
     }
 
+    // Get credentials
+    const { keyId: RAZORPAY_KEY_ID, keySecret: RAZORPAY_KEY_SECRET } = getRazorpayCredentials();
+
     // Validate Razorpay credentials
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
       console.error('Missing Razorpay credentials');
       return new Response(JSON.stringify({ error: 'Payment gateway not configured' }), { status: 500, headers });
+    }
+
+    // Get database connection
+    let db;
+    try {
+      db = getDb();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return new Response(JSON.stringify({ error: 'Database connection failed' }), { status: 500, headers });
     }
 
     let finalAmount = amount;

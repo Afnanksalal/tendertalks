@@ -3,11 +3,20 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { inArray } from 'drizzle-orm';
 
-const sql_client = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql_client, { schema });
+// Lazy initialization to avoid errors at module load time
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  const sql_client = neon(process.env.DATABASE_URL);
+  return drizzle(sql_client, { schema });
+}
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+function getRazorpayCredentials() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  return { keyId, keySecret };
+}
 
 function base64Encode(str: string): string {
   if (typeof btoa !== 'undefined') return btoa(str);
@@ -34,6 +43,8 @@ export default async function handler(req: Request) {
     const body = await req.json();
     const { userId, items, total, shippingAddress } = body;
 
+    console.log('Create merch order request:', { userId, itemCount: items?.length, total });
+
     if (!userId || !items || items.length === 0) {
       return new Response(JSON.stringify({ error: 'Invalid request - userId and items required' }), { status: 400, headers });
     }
@@ -43,10 +54,24 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Invalid total amount' }), { status: 400, headers });
     }
 
+    // Get credentials
+    const { keyId: RAZORPAY_KEY_ID, keySecret: RAZORPAY_KEY_SECRET } = getRazorpayCredentials();
+
     // Validate Razorpay credentials
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
       console.error('Missing Razorpay credentials - RAZORPAY_KEY_ID:', !!RAZORPAY_KEY_ID, 'RAZORPAY_KEY_SECRET:', !!RAZORPAY_KEY_SECRET);
       return new Response(JSON.stringify({ error: 'Payment gateway not configured. Please contact support.' }), { status: 500, headers });
+    }
+
+    console.log('Razorpay credentials present, validating items...');
+
+    // Get database connection
+    let db;
+    try {
+      db = getDb();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return new Response(JSON.stringify({ error: 'Database connection failed' }), { status: 500, headers });
     }
 
     // Validate items exist and are in stock
@@ -64,6 +89,8 @@ export default async function handler(req: Request) {
       }
     }
 
+    console.log('Items validated, creating Razorpay order...');
+
     // Create Razorpay order
     const orderData = {
       amount: Math.round(total * 100),
@@ -76,11 +103,14 @@ export default async function handler(req: Request) {
       },
     };
 
+    console.log('Razorpay order data:', orderData);
+
+    const authString = `${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`;
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+        Authorization: `Basic ${base64Encode(authString)}`,
       },
       body: JSON.stringify(orderData),
     });
@@ -88,10 +118,14 @@ export default async function handler(req: Request) {
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
       console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
-      return new Response(JSON.stringify({ error: 'Failed to create payment order' }), { status: 500, headers });
+      return new Response(JSON.stringify({ 
+        error: 'Failed to create payment order',
+        details: `Razorpay returned ${razorpayResponse.status}`
+      }), { status: 500, headers });
     }
 
     const razorpayOrder = await razorpayResponse.json();
+    console.log('Razorpay order created:', razorpayOrder.id);
 
     // Create merch order in database
     const [order] = await db.insert(schema.merchOrders).values({
@@ -139,7 +173,7 @@ export default async function handler(req: Request) {
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       dbOrderId: order.id,
-      key: RAZORPAY_KEY_ID,
+      key: RAZORPAY_KEY_ID, // This is safe to expose - it's the public key
     }), { status: 200, headers });
 
   } catch (error) {
