@@ -154,24 +154,28 @@ export default async function handler(req: Request) {
 
       const razorpayOrder = await razorpayResponse.json();
 
-      // Record in payment history
-      await db.insert(schema.paymentHistory).values({
-        userId,
-        type: 'upgrade',
-        amount: amountToPay.toString(),
-        currency,
-        status: 'pending',
-        razorpayOrderId: razorpayOrder.id,
-        metadata: JSON.stringify({
-          planId: newPlanId,
-          action: 'upgrade',
-          fromPlanId: currentSub.planId,
-          fromPlanName: currentPlan.name,
-          toPlanName: newPlan.name,
-          credit: credit.toFixed(2),
-          originalPrice: newPrice,
-        }),
-      });
+      // Record in payment history (table may not exist yet)
+      try {
+        await db.insert(schema.paymentHistory).values({
+          userId,
+          type: 'upgrade',
+          amount: amountToPay.toString(),
+          currency,
+          status: 'pending',
+          razorpayOrderId: razorpayOrder.id,
+          metadata: JSON.stringify({
+            planId: newPlanId,
+            action: 'upgrade',
+            fromPlanId: currentSub.planId,
+            fromPlanName: currentPlan.name,
+            toPlanName: newPlan.name,
+            credit: credit.toFixed(2),
+            originalPrice: newPrice,
+          }),
+        });
+      } catch (e) {
+        console.warn('Payment history insert failed:', e);
+      }
 
       return new Response(JSON.stringify({
         requiresPayment: true,
@@ -199,23 +203,27 @@ export default async function handler(req: Request) {
         })
         .where(eq(schema.subscriptions.id, currentSub.id));
 
-      // Record in payment history (no charge)
-      await db.insert(schema.paymentHistory).values({
-        userId,
-        type: 'downgrade',
-        amount: '0',
-        currency,
-        status: 'completed',
-        refId: currentSub.id,
-        refType: 'subscription',
-        metadata: JSON.stringify({
-          fromPlanId: currentSub.planId,
-          fromPlanName: currentPlan.name,
-          toPlanId: newPlanId,
-          toPlanName: newPlan.name,
-          effectiveDate: currentSub.currentPeriodEnd,
-        }),
-      });
+      // Record in payment history (no charge, table may not exist)
+      try {
+        await db.insert(schema.paymentHistory).values({
+          userId,
+          type: 'downgrade',
+          amount: '0',
+          currency,
+          status: 'completed',
+          refId: currentSub.id,
+          refType: 'subscription',
+          metadata: JSON.stringify({
+            fromPlanId: currentSub.planId,
+            fromPlanName: currentPlan.name,
+            toPlanId: newPlanId,
+            toPlanName: newPlan.name,
+            effectiveDate: currentSub.currentPeriodEnd,
+          }),
+        });
+      } catch (e) {
+        console.warn('Payment history insert failed:', e);
+      }
 
       return new Response(JSON.stringify({
         success: true,

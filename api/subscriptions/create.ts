@@ -93,17 +93,21 @@ export default async function handler(req: Request) {
         currentPeriodEnd: periodEnd,
       }).returning();
 
-      // Record in payment history
-      await db.insert(schema.paymentHistory).values({
-        userId,
-        type: 'subscription',
-        amount: '0',
-        currency,
-        status: 'completed',
-        refId: subscription.id,
-        refType: 'subscription',
-        metadata: JSON.stringify({ planId, action: 'new', planName: plan.name, isFree: true }),
-      });
+      // Record in payment history (table may not exist yet)
+      try {
+        await db.insert(schema.paymentHistory).values({
+          userId,
+          type: 'subscription',
+          amount: '0',
+          currency,
+          status: 'completed',
+          refId: subscription.id,
+          refType: 'subscription',
+          metadata: JSON.stringify({ planId, action: 'new', planName: plan.name, isFree: true }),
+        });
+      } catch (e) {
+        console.warn('Payment history insert failed:', e);
+      }
 
       return new Response(JSON.stringify({ success: true, subscription, isFree: true }), { status: 200, headers });
     }
@@ -134,16 +138,20 @@ export default async function handler(req: Request) {
 
     const razorpayOrder = await razorpayResponse.json();
 
-    // Record in payment history
-    await db.insert(schema.paymentHistory).values({
-      userId,
-      type: 'subscription',
-      amount: amount.toString(),
-      currency,
-      status: 'pending',
-      razorpayOrderId: razorpayOrder.id,
-      metadata: JSON.stringify({ planId, action: 'new', planName: plan.name }),
-    });
+    // Record in payment history (table may not exist yet - run migration)
+    try {
+      await db.insert(schema.paymentHistory).values({
+        userId,
+        type: 'subscription',
+        amount: amount.toString(),
+        currency,
+        status: 'pending',
+        razorpayOrderId: razorpayOrder.id,
+        metadata: JSON.stringify({ planId, action: 'new', planName: plan.name }),
+      });
+    } catch (historyError) {
+      console.warn('Payment history insert failed (run migration):', historyError);
+    }
 
     return new Response(JSON.stringify({
       orderId: razorpayOrder.id,

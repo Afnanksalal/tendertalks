@@ -38,6 +38,11 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Invalid request - userId and items required' }), { status: 400, headers });
     }
 
+    // Validate total
+    if (!total || isNaN(total) || total <= 0) {
+      return new Response(JSON.stringify({ error: 'Invalid total amount' }), { status: 400, headers });
+    }
+
     // Validate Razorpay credentials
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
       console.error('Missing Razorpay credentials - RAZORPAY_KEY_ID:', !!RAZORPAY_KEY_ID, 'RAZORPAY_KEY_SECRET:', !!RAZORPAY_KEY_SECRET);
@@ -108,22 +113,27 @@ export default async function handler(req: Request) {
         orderId: order.id,
         merchItemId: item.merchItemId,
         quantity: item.quantity,
-        priceAtPurchase: item.price,
+        priceAtPurchase: String(item.price),
       }))
     );
 
-    // Record in payment history
-    await db.insert(schema.paymentHistory).values({
-      userId,
-      type: 'merch',
-      amount: total.toString(),
-      currency: 'INR',
-      status: 'pending',
-      razorpayOrderId: razorpayOrder.id,
-      refId: order.id,
-      refType: 'merch_order',
-      metadata: JSON.stringify({ itemCount: items.length, items: items.map((i: any) => i.merchItemId) }),
-    });
+    // Record in payment history (table may not exist yet - run migration)
+    try {
+      await db.insert(schema.paymentHistory).values({
+        userId,
+        type: 'merch',
+        amount: total.toString(),
+        currency: 'INR',
+        status: 'pending',
+        razorpayOrderId: razorpayOrder.id,
+        refId: order.id,
+        refType: 'merch_order',
+        metadata: JSON.stringify({ itemCount: items.length, items: items.map((i: any) => i.merchItemId) }),
+      });
+    } catch (historyError) {
+      // Table may not exist yet - log but continue
+      console.warn('Payment history insert failed (run migration):', historyError);
+    }
 
     return new Response(JSON.stringify({
       orderId: razorpayOrder.id,
@@ -134,8 +144,16 @@ export default async function handler(req: Request) {
 
   } catch (error) {
     console.error('Error creating merch order:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+    console.error('Error details:', errorDetails);
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      JSON.stringify({ 
+        error: errorMessage,
+        // Include debug info in development
+        ...(process.env.NODE_ENV !== 'production' && { debug: errorDetails })
+      }),
       { status: 500, headers }
     );
   }

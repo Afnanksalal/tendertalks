@@ -138,16 +138,20 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Record in payment history
-    await db.insert(schema.paymentHistory).values({
-      userId,
-      type,
-      amount: finalAmount.toString(),
-      currency,
-      status: 'pending',
-      razorpayOrderId: razorpayOrder.id,
-      metadata: JSON.stringify(metadata),
-    });
+    // Record in payment history (table may not exist yet - run migration)
+    try {
+      await db.insert(schema.paymentHistory).values({
+        userId,
+        type,
+        amount: finalAmount.toString(),
+        currency,
+        status: 'pending',
+        razorpayOrderId: razorpayOrder.id,
+        metadata: JSON.stringify(metadata),
+      });
+    } catch (historyError) {
+      console.warn('Payment history insert failed (run migration):', historyError);
+    }
 
     return new Response(JSON.stringify({
       orderId: razorpayOrder.id,

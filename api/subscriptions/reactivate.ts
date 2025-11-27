@@ -60,20 +60,24 @@ export default async function handler(req: Request) {
       })
       .where(eq(schema.subscriptions.id, subscription.id));
 
-    // Record in payment history
-    await db.insert(schema.paymentHistory).values({
-      userId,
-      type: 'subscription',
-      amount: '0',
-      currency: subscription.currency || 'INR',
-      status: 'completed',
-      refId: subscription.id,
-      refType: 'subscription',
-      metadata: JSON.stringify({
-        action: 'reactivate',
-        planId: subscription.planId,
-      }),
-    });
+    // Record in payment history (table may not exist yet)
+    try {
+      await db.insert(schema.paymentHistory).values({
+        userId,
+        type: 'subscription',
+        amount: '0',
+        currency: subscription.currency || 'INR',
+        status: 'completed',
+        refId: subscription.id,
+        refType: 'subscription',
+        metadata: JSON.stringify({
+          action: 'reactivate',
+          planId: subscription.planId,
+        }),
+      });
+    } catch (e) {
+      console.warn('Payment history insert failed:', e);
+    }
 
     return new Response(JSON.stringify({
       success: true,

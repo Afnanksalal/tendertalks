@@ -26,6 +26,15 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
   }
 }
 
+// Helper to safely update payment history (table may not exist yet)
+async function safeUpdatePaymentHistory(orderId: string, data: any) {
+  try {
+    await db.update(schema.paymentHistory).set(data).where(eq(schema.paymentHistory.razorpayOrderId, orderId));
+  } catch (e) {
+    console.warn('Payment history update failed (run migration):', e);
+  }
+}
+
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
@@ -59,11 +68,7 @@ export default async function handler(req: Request) {
     const now = new Date();
 
     if (!isValid) {
-      // Update payment history as failed
-      await db.update(schema.paymentHistory)
-        .set({ status: 'failed', updatedAt: now })
-        .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
-
+      await safeUpdatePaymentHistory(razorpay_order_id, { status: 'failed', updatedAt: now });
       return new Response(JSON.stringify({ error: 'Invalid payment signature' }), { status: 400, headers });
     }
 
@@ -83,14 +88,12 @@ export default async function handler(req: Request) {
     }
 
     // Update payment history as completed
-    await db.update(schema.paymentHistory)
-      .set({
-        status: 'completed',
-        razorpayPaymentId: razorpay_payment_id,
-        razorpaySignature: razorpay_signature,
-        updatedAt: now,
-      })
-      .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+    await safeUpdatePaymentHistory(razorpay_order_id, {
+      status: 'completed',
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature,
+      updatedAt: now,
+    });
 
     if (action === 'new' || action === 'upgrade') {
       // Cancel any existing active subscription
@@ -111,10 +114,7 @@ export default async function handler(req: Request) {
         currentPeriodEnd: periodEnd,
       }).returning();
 
-      // Update payment history with subscription reference
-      await db.update(schema.paymentHistory)
-        .set({ refId: subscription.id, refType: 'subscription' })
-        .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+      await safeUpdatePaymentHistory(razorpay_order_id, { refId: subscription.id, refType: 'subscription' });
 
       const message = action === 'upgrade' 
         ? 'Upgraded successfully! New plan is now active.'
@@ -127,7 +127,6 @@ export default async function handler(req: Request) {
       }), { status: 200, headers });
 
     } else if (action === 'downgrade') {
-      // Schedule downgrade at period end
       const [currentSub] = await db.select().from(schema.subscriptions)
         .where(and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active')))
         .limit(1);

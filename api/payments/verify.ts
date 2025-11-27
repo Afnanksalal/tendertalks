@@ -26,6 +26,15 @@ async function verifySignature(orderId: string, paymentId: string, signature: st
   }
 }
 
+// Helper to safely update payment history
+async function updatePaymentHistory(orderId: string, data: any) {
+  try {
+    await db.update(schema.paymentHistory).set(data).where(eq(schema.paymentHistory.razorpayOrderId, orderId));
+  } catch (e) {
+    console.warn('Payment history update failed (run migration):', e);
+  }
+}
+
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'application/json',
@@ -58,10 +67,7 @@ export default async function handler(req: Request) {
     const now = new Date();
 
     if (!isValid) {
-      // Update payment history as failed
-      await db.update(schema.paymentHistory)
-        .set({ status: 'failed', updatedAt: now })
-        .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+      await updatePaymentHistory(razorpay_order_id, { status: 'failed', updatedAt: now });
 
       if (type === 'purchase') {
         await db.update(schema.purchases)
@@ -73,14 +79,12 @@ export default async function handler(req: Request) {
     }
 
     // Update payment history as completed
-    await db.update(schema.paymentHistory)
-      .set({
-        status: 'completed',
-        razorpayPaymentId: razorpay_payment_id,
-        razorpaySignature: razorpay_signature,
-        updatedAt: now,
-      })
-      .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+    await updatePaymentHistory(razorpay_order_id, {
+      status: 'completed',
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature,
+      updatedAt: now,
+    });
 
     if (type === 'purchase' && podcastId) {
       const [purchase] = await db.update(schema.purchases)
@@ -93,11 +97,8 @@ export default async function handler(req: Request) {
         .where(eq(schema.purchases.razorpayOrderId, razorpay_order_id))
         .returning();
 
-      // Update payment history with reference
       if (purchase) {
-        await db.update(schema.paymentHistory)
-          .set({ refId: purchase.id, refType: 'purchase' })
-          .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+        await updatePaymentHistory(razorpay_order_id, { refId: purchase.id, refType: 'purchase' });
       }
 
       return new Response(JSON.stringify({ success: true, purchase }), { status: 200, headers });
@@ -135,10 +136,7 @@ export default async function handler(req: Request) {
         currentPeriodEnd: periodEnd,
       }).returning();
 
-      // Update payment history with reference
-      await db.update(schema.paymentHistory)
-        .set({ refId: subscription.id, refType: 'subscription' })
-        .where(eq(schema.paymentHistory.razorpayOrderId, razorpay_order_id));
+      await updatePaymentHistory(razorpay_order_id, { refId: subscription.id, refType: 'subscription' });
 
       return new Response(JSON.stringify({ success: true, subscription }), { status: 200, headers });
     }

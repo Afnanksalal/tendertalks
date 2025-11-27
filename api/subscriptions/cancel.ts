@@ -88,22 +88,26 @@ export default async function handler(req: Request) {
         })
         .where(eq(schema.subscriptions.id, subscription.id));
 
-      // Record in payment history
-      await db.insert(schema.paymentHistory).values({
-        userId,
-        type: 'subscription',
-        amount: '0',
-        currency: plan.currency,
-        status: 'completed',
-        refId: subscription.id,
-        refType: 'subscription',
-        metadata: JSON.stringify({
-          action: 'cancel_immediate',
-          planId: subscription.planId,
-          planName: plan.name,
-          reason,
-        }),
-      });
+      // Record in payment history (table may not exist yet)
+      try {
+        await db.insert(schema.paymentHistory).values({
+          userId,
+          type: 'subscription',
+          amount: '0',
+          currency: plan.currency,
+          status: 'completed',
+          refId: subscription.id,
+          refType: 'subscription',
+          metadata: JSON.stringify({
+            action: 'cancel_immediate',
+            planId: subscription.planId,
+            planName: plan.name,
+            reason,
+          }),
+        });
+      } catch (e) {
+        console.warn('Payment history insert failed:', e);
+      }
 
       return new Response(JSON.stringify({
         success: true,
@@ -123,23 +127,27 @@ export default async function handler(req: Request) {
         })
         .where(eq(schema.subscriptions.id, subscription.id));
 
-      // Record in payment history
-      await db.insert(schema.paymentHistory).values({
-        userId,
-        type: 'subscription',
-        amount: '0',
-        currency: plan.currency,
-        status: 'completed',
-        refId: subscription.id,
-        refType: 'subscription',
-        metadata: JSON.stringify({
-          action: 'cancel_at_period_end',
-          planId: subscription.planId,
-          planName: plan.name,
-          effectiveDate: subscription.currentPeriodEnd,
-          reason,
-        }),
-      });
+      // Record in payment history (table may not exist yet)
+      try {
+        await db.insert(schema.paymentHistory).values({
+          userId,
+          type: 'subscription',
+          amount: '0',
+          currency: plan.currency,
+          status: 'completed',
+          refId: subscription.id,
+          refType: 'subscription',
+          metadata: JSON.stringify({
+            action: 'cancel_at_period_end',
+            planId: subscription.planId,
+            planName: plan.name,
+            effectiveDate: subscription.currentPeriodEnd,
+            reason,
+          }),
+        });
+      } catch (e) {
+        console.warn('Payment history insert failed:', e);
+      }
 
       return new Response(JSON.stringify({
         success: true,
