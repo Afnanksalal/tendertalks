@@ -21,15 +21,9 @@ function getRazorpayCredentials() {
   };
 }
 
-// Edge-compatible base64 encoding
+// Base64 encoding for Node.js runtime
 function base64Encode(str: string): string {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  let binary = '';
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
-  }
-  return btoa(binary);
+  return Buffer.from(str).toString('base64');
 }
 
 export default async function handler(req: Request) {
@@ -214,4 +208,4 @@ export default async function handler(req: Request) {
   }
 }
 
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'nodejs' };

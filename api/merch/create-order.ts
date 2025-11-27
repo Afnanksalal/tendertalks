@@ -18,15 +18,9 @@ function getRazorpayCredentials() {
   return { keyId, keySecret };
 }
 
-// Edge-compatible base64 encoding using TextEncoder
+// Base64 encoding - use Buffer for Node.js runtime
 function base64Encode(str: string): string {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  let binary = '';
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
-  }
-  return btoa(binary);
+  return Buffer.from(str).toString('base64');
 }
 
 export default async function handler(req: Request) {
@@ -115,15 +109,40 @@ export default async function handler(req: Request) {
     const encodedAuth = base64Encode(authString);
     
     console.log('Creating Razorpay order with key:', RAZORPAY_KEY_ID.substring(0, 12) + '...');
+    console.log('Auth debug:', {
+      keyIdLength: RAZORPAY_KEY_ID.length,
+      keyIdPrefix: RAZORPAY_KEY_ID.substring(0, 12),
+      secretLength: RAZORPAY_KEY_SECRET.length,
+      // Show first/last 4 chars of secret for debugging (safe to log)
+      secretPrefix: RAZORPAY_KEY_SECRET.substring(0, 4),
+      secretSuffix: RAZORPAY_KEY_SECRET.substring(RAZORPAY_KEY_SECRET.length - 4),
+      authStringLength: authString.length,
+      encodedLength: encodedAuth.length,
+    });
+    
+    // Verify the base64 encoding is correct
+    const testAuth = base64Encode('test:test');
+    console.log('Base64 test (should be dGVzdDp0ZXN0):', testAuth);
 
+    const requestBody = JSON.stringify(orderData);
+    console.log('Making request to Razorpay with headers:', ['Content-Type', 'Authorization']);
+    
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${encodedAuth}`,
+        'User-Agent': 'Vercel-Edge-Function/1.0',
       },
-      body: JSON.stringify(orderData),
+      body: requestBody,
     });
+
+    console.log('Razorpay response status:', razorpayResponse.status);
+    const responseHeaders: Record<string, string> = {};
+    razorpayResponse.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+    console.log('Razorpay response headers:', responseHeaders);
 
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
@@ -220,4 +239,5 @@ export default async function handler(req: Request) {
   }
 }
 
-export const config = { runtime: 'edge' };
+// Using Node.js runtime instead of edge for better Razorpay compatibility
+export const config = { runtime: 'nodejs' };
