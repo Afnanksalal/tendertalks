@@ -21,9 +21,9 @@ function getRazorpayCredentials() {
   return { keyId, keySecret };
 }
 
-// Base64 encoding for Node.js runtime
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  return Buffer.from(str).toString('base64');
+  return btoa(str);
 }
 
 export default async function handler(req: Request) {
@@ -181,4 +181,4 @@ export default async function handler(req: Request) {
   }
 }
 
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };

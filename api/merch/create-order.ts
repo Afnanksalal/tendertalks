@@ -18,9 +18,10 @@ function getRazorpayCredentials() {
   return { keyId, keySecret };
 }
 
-// Base64 encoding - use Buffer for Node.js runtime
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  return Buffer.from(str).toString('base64');
+  // Use btoa which is available in Edge runtime
+  return btoa(str);
 }
 
 export default async function handler(req: Request) {
@@ -124,17 +125,24 @@ export default async function handler(req: Request) {
     const testAuth = base64Encode('test:test');
     console.log('Base64 test (should be dGVzdDp0ZXN0):', testAuth);
 
-    const requestBody = JSON.stringify(orderData);
-    console.log('Making request to Razorpay with headers:', ['Content-Type', 'Authorization']);
+    // Try form-urlencoded format which Razorpay also accepts
+    const formData = new URLSearchParams();
+    formData.append('amount', String(orderData.amount));
+    formData.append('currency', orderData.currency);
+    formData.append('receipt', orderData.receipt);
+    formData.append('notes[userId]', orderData.notes.userId);
+    formData.append('notes[type]', orderData.notes.type);
+    formData.append('notes[itemCount]', String(orderData.notes.itemCount));
+    
+    console.log('Making request to Razorpay with form data');
     
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Basic ${encodedAuth}`,
-        'User-Agent': 'Vercel-Edge-Function/1.0',
       },
-      body: requestBody,
+      body: formData.toString(),
     });
 
     console.log('Razorpay response status:', razorpayResponse.status);
@@ -239,5 +247,4 @@ export default async function handler(req: Request) {
   }
 }
 
-// Using Node.js runtime instead of edge for better Razorpay compatibility
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };

@@ -19,9 +19,9 @@ function getRazorpayCredentials() {
   };
 }
 
-// Base64 encoding for Node.js runtime
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  return Buffer.from(str).toString('base64');
+  return btoa(str);
 }
 
 export default async function handler(req: Request) {
@@ -123,21 +123,23 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Invalid amount' }), { status: 400, headers });
     }
 
-    // Create Razorpay order
-    const orderData = {
-      amount: Math.round(finalAmount * 100),
-      currency,
-      receipt,
-      notes: metadata,
-    };
+    // Create Razorpay order using form-urlencoded format
+    const formData = new URLSearchParams();
+    formData.append('amount', String(Math.round(finalAmount * 100)));
+    formData.append('currency', currency);
+    formData.append('receipt', receipt);
+    // Add notes as nested params
+    Object.entries(metadata).forEach(([key, value]) => {
+      formData.append(`notes[${key}]`, String(value));
+    });
 
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
       },
-      body: JSON.stringify(orderData),
+      body: formData.toString(),
     });
 
     if (!razorpayResponse.ok) {
@@ -204,4 +206,4 @@ export default async function handler(req: Request) {
   }
 }
 
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };

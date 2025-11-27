@@ -21,9 +21,9 @@ function getRazorpayCredentials() {
   };
 }
 
-// Base64 encoding for Node.js runtime
+// Edge-compatible base64 encoding
 function base64Encode(str: string): string {
-  return Buffer.from(str).toString('base64');
+  return btoa(str);
 }
 
 export default async function handler(req: Request) {
@@ -135,22 +135,24 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ success: true, subscription, isFree: true }), { status: 200, headers });
     }
 
-    // Create Razorpay order
+    // Create Razorpay order using form-urlencoded format
     const receipt = `sub_new_${planId.slice(0, 8)}_${Date.now()}`;
-    const orderData = {
-      amount: Math.round(amount * 100),
-      currency,
-      receipt,
-      notes: { userId, planId, type: 'subscription', action: 'new' },
-    };
+    const formData = new URLSearchParams();
+    formData.append('amount', String(Math.round(amount * 100)));
+    formData.append('currency', currency);
+    formData.append('receipt', receipt);
+    formData.append('notes[userId]', userId);
+    formData.append('notes[planId]', planId);
+    formData.append('notes[type]', 'subscription');
+    formData.append('notes[action]', 'new');
 
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
       },
-      body: JSON.stringify(orderData),
+      body: formData.toString(),
     });
 
     if (!razorpayResponse.ok) {
@@ -208,4 +210,4 @@ export default async function handler(req: Request) {
   }
 }
 
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };
