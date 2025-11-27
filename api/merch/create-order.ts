@@ -18,18 +18,9 @@ function getRazorpayCredentials() {
   return { keyId, keySecret };
 }
 
-// Edge-compatible base64 encoding
+// Simple base64 encoding - Razorpay keys are ASCII only
 function base64Encode(str: string): string {
-  // Use TextEncoder for Edge runtime compatibility
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  
-  // Convert Uint8Array to base64
-  let binary = '';
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
-  }
-  return btoa(binary);
+  return btoa(str);
 }
 
 export default async function handler(req: Request) {
@@ -126,19 +117,30 @@ export default async function handler(req: Request) {
       encodedLength: encodedAuth.length,
     });
 
+    // Log the exact request being made
+    const requestHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${encodedAuth}`,
+    };
+    console.log('Making request to Razorpay with headers:', Object.keys(requestHeaders));
+
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Basic ${encodedAuth}`,
-      },
+      headers: requestHeaders,
       body: JSON.stringify(orderData),
     });
 
+    // Log response for debugging
+    console.log('Razorpay response status:', razorpayResponse.status);
+    const responseHeaders: Record<string, string> = {};
+    razorpayResponse.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+    console.log('Razorpay response headers:', responseHeaders);
+
     if (!razorpayResponse.ok) {
       const errorText = await razorpayResponse.text();
-      console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
+      console.error('Razorpay order creation failed:', razorpayResponse.status, 'Body:', errorText);
       
       // Try to parse Razorpay error for better message
       let razorpayError = 'Unknown error';
