@@ -22,6 +22,7 @@ import { SettingsPage } from './pages/Settings';
 import { DownloadsPage } from './pages/Downloads';
 import { BillingPage } from './pages/Billing';
 import { AuthCallback } from './pages/AuthCallback';
+import { NotFoundPage } from './pages/NotFound';
 
 // Legal Pages
 import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicy';
@@ -93,6 +94,9 @@ function App() {
               <Route path="subscriptions" element={<SubscriptionsManager />} />
               <Route path="settings" element={<SettingsManager />} />
             </Route>
+
+            {/* 404 Catch-all */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
 
           <Footer />

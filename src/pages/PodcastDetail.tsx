@@ -33,6 +33,7 @@ export const PodcastDetailPage: React.FC = () => {
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [shareText, setShareText] = useState('Share');
 
   useEffect(() => {
     if (slug) {
@@ -169,8 +170,6 @@ export const PodcastDetailPage: React.FC = () => {
     }
   };
 
-  const [shareText, setShareText] = useState('Share');
-  
   const handleShare = async () => {
     const baseUrl = window.location.origin;
     const url = `${baseUrl}/podcast/${podcast.slug}`;
