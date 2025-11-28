@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, ArrowRight, Zap, Globe, Cpu, Mic2, Sparkles, Headphones, Star } from 'lucide-react';
+import { Play, ArrowRight, Zap, Globe, Cpu, Mic2, Sparkles, Headphones, Star, FileText, Clock, Calendar } from 'lucide-react';
 import { PodcastCard } from '../components/podcast/PodcastCard';
 import { usePodcastStore } from '../stores/podcastStore';
+import { useBlogStore } from '../stores/blogStore';
 import { StarField } from '../components/effects/StarField';
 import { FloatingOrbs } from '../components/effects/FloatingOrbs';
 import { SEO } from '../components/SEO';
@@ -17,6 +18,7 @@ const fadeIn = {
 
 export const HomePage: React.FC = () => {
   const { podcasts, fetchPodcasts, isLoading } = usePodcastStore();
+  const { blogs, fetchBlogs } = useBlogStore();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -28,7 +30,8 @@ export const HomePage: React.FC = () => {
 
   useEffect(() => {
     fetchPodcasts();
-  }, [fetchPodcasts]);
+    fetchBlogs({ limit: 3 });
+  }, [fetchPodcasts, fetchBlogs]);
 
   return (
     <div className="min-h-screen bg-[#030014] overflow-x-hidden relative">
@@ -219,6 +222,84 @@ export const HomePage: React.FC = () => {
           )}
         </div>
       </section>
+
+      {/* Latest Blog Posts */}
+      {blogs.length > 0 && (
+        <section className="py-12 sm:py-16 md:py-24 px-4 relative">
+          <div className="max-w-7xl mx-auto relative z-[2]">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-8 sm:mb-12">
+              <div>
+                <span className="inline-flex items-center gap-2 text-neon-purple text-xs sm:text-sm font-bold tracking-wider uppercase mb-1 sm:mb-2">
+                  <span className="w-6 sm:w-8 h-[2px] bg-neon-purple" />
+                  From the Blog
+                </span>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white">
+                  Latest Articles
+                </h2>
+              </div>
+              <Link 
+                to="/blog" 
+                className="flex items-center gap-2 text-slate-400 hover:text-neon-purple transition-colors font-medium text-sm sm:text-base touch-feedback"
+              >
+                View All
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {blogs.slice(0, 3).map((blog, idx) => (
+                <motion.div
+                  key={blog.id}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ delay: isMobile ? 0 : idx * 0.1, duration: 0.4 }}
+                >
+                  <Link to={`/blog/${blog.slug}`} className="group block">
+                    <article className="bg-slate-900/50 border border-white/5 rounded-2xl overflow-hidden hover:border-neon-purple/30 transition-all h-full flex flex-col">
+                      <div className="aspect-[16/10] relative overflow-hidden">
+                        {blog.bannerUrl ? (
+                          <img
+                            src={blog.bannerUrl}
+                            alt={blog.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-neon-purple/10 to-neon-cyan/10 flex items-center justify-center">
+                            <FileText size={32} className="text-white/20" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                        <h3 className="text-base sm:text-lg font-bold text-white mb-2 group-hover:text-neon-purple transition-colors line-clamp-2">
+                          {blog.title}
+                        </h3>
+                        {blog.excerpt && (
+                          <p className="text-slate-400 text-sm mb-3 line-clamp-2 flex-1">{blog.excerpt}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-auto">
+                          {blog.readTime && (
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              {blog.readTime} min
+                            </span>
+                          )}
+                          {blog.publishedAt && (
+                            <span className="flex items-center gap-1">
+                              <Calendar size={12} />
+                              {new Date(blog.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="py-12 sm:py-16 md:py-24 px-4 relative">

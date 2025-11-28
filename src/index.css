@@ -815,3 +815,156 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+
+/* ========================================
+   MARKDOWN EDITOR STYLES (@uiw/react-md-editor)
+   ======================================== */
+
+/* Dark theme overrides for MD Editor */
+[data-color-mode="dark"] .w-md-editor {
+  --color-canvas-default: rgba(15, 23, 42, 0.5) !important;
+  --color-canvas-subtle: rgba(30, 41, 59, 0.5) !important;
+  --color-border-default: rgba(255, 255, 255, 0.1) !important;
+  --color-border-muted: rgba(255, 255, 255, 0.05) !important;
+  --color-fg-default: #e2e8f0 !important;
+  --color-fg-muted: #94a3b8 !important;
+  --color-fg-subtle: #64748b !important;
+  background-color: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-toolbar {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-toolbar li > button {
+  color: #94a3b8 !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-toolbar li > button:hover {
+  color: #00F0FF !important;
+  background-color: rgba(0, 240, 255, 0.1) !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-toolbar li.active > button {
+  color: #00F0FF !important;
+  background-color: rgba(0, 240, 255, 0.15) !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-text-pre > code,
+[data-color-mode="dark"] .w-md-editor-text-input,
+[data-color-mode="dark"] .w-md-editor-text {
+  color: #e2e8f0 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-preview {
+  background-color: rgba(15, 23, 42, 0.3) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown {
+  background-color: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown h1,
+[data-color-mode="dark"] .wmde-markdown h2,
+[data-color-mode="dark"] .wmde-markdown h3,
+[data-color-mode="dark"] .wmde-markdown h4,
+[data-color-mode="dark"] .wmde-markdown h5,
+[data-color-mode="dark"] .wmde-markdown h6 {
+  color: #fff !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown a {
+  color: #00F0FF !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown code {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  color: #00F0FF !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown pre {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 8px !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown pre code {
+  background-color: transparent !important;
+  padding: 0 !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown blockquote {
+  border-left-color: rgba(0, 240, 255, 0.5) !important;
+  color: #94a3b8 !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown hr {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown table th,
+[data-color-mode="dark"] .wmde-markdown table td {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown table tr {
+  background-color: transparent !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown table tr:nth-child(2n) {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown img {
+  border-radius: 8px !important;
+}
+
+/* Editor placeholder */
+[data-color-mode="dark"] .w-md-editor-text-input::placeholder {
+  color: #64748b !important;
+}
+
+/* Scrollbar in editor */
+[data-color-mode="dark"] .w-md-editor-content {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+[data-color-mode="dark"] .w-md-editor-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-color-mode="dark"] .w-md-editor-content::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+/* Mobile responsiveness for editor */
+@media (max-width: 768px) {
+  [data-color-mode="dark"] .w-md-editor {
+    min-height: 400px !important;
+  }
+  
+  [data-color-mode="dark"] .w-md-editor-toolbar {
+    flex-wrap: wrap;
+    padding: 4px !important;
+  }
+  
+  [data-color-mode="dark"] .w-md-editor-toolbar li > button {
+    padding: 6px !important;
+  }
+}

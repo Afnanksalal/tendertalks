@@ -6,14 +6,19 @@
   "rewrites": [
     { "source": "/api/admin/podcasts/:id/publish", "destination": "/api/admin/podcasts/[id]/publish" },
     { "source": "/api/admin/podcasts/:id", "destination": "/api/admin/podcasts/[id]" },
+    { "source": "/api/admin/blogs/:id/publish", "destination": "/api/admin/blogs/[id]/publish" },
+    { "source": "/api/admin/blogs/:id", "destination": "/api/admin/blogs/[id]" },
     { "source": "/api/admin/products/:id", "destination": "/api/admin/products/[id]" },
     { "source": "/api/admin/plans/:id", "destination": "/api/admin/plans/[id]" },
     { "source": "/api/admin/categories/:id", "destination": "/api/admin/categories/[id]" },
     { "source": "/api/podcasts/:slug/metadata", "destination": "/api/podcasts/[slug]/metadata" },
     { "source": "/api/podcasts/:slug/download", "destination": "/api/podcasts/[slug]/download" },
     { "source": "/api/podcasts/:slug", "destination": "/api/podcasts/[slug]" },
+    { "source": "/api/blogs/:slug/metadata", "destination": "/api/blogs/[slug]/metadata" },
+    { "source": "/api/blogs/:slug", "destination": "/api/blogs/[slug]" },
     { "source": "/api/merch/:slug/metadata", "destination": "/api/merch/[slug]/metadata" },
     { "source": "/api/pricing-plans/:slug/metadata", "destination": "/api/pricing-plans/[slug]/metadata" },
+    { "source": "/api/rss", "destination": "/api/rss" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
@@ -22,6 +27,13 @@
       "headers": [
         { "key": "Content-Type", "value": "image/png" },
         { "key": "Cache-Control", "value": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/api/rss",
+      "headers": [
+        { "key": "Content-Type", "value": "application/rss+xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400" }
       ]
     },
     {

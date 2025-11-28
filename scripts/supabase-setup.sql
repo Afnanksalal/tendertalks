@@ -74,6 +74,20 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
+-- Blogs bucket (for blog content and images - PUBLIC)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'blogs',
+  'blogs',
+  true,
+  10485760, -- 10MB limit
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'text/markdown', 'text/plain']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+
 -- ============================================
 -- 2. STORAGE POLICIES - PODCASTS (Private)
 -- Note: Admin check done via app logic since 
@@ -172,13 +186,34 @@ WITH CHECK (
 );
 
 -- ============================================
--- 6. VERIFY SETUP
+-- 6. STORAGE POLICIES - BLOGS (Public)
+-- ============================================
+
+DROP POLICY IF EXISTS "Anyone can view blogs" ON storage.objects;
+DROP POLICY IF EXISTS "Auth users can manage blogs" ON storage.objects;
+
+-- Anyone can view blog content and images
+CREATE POLICY "Anyone can view blogs"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'blogs');
+
+-- Authenticated users can manage blog content
+-- (Admin verification in API layer)
+CREATE POLICY "Auth users can manage blogs"
+ON storage.objects FOR ALL
+TO authenticated
+USING (bucket_id = 'blogs')
+WITH CHECK (bucket_id = 'blogs');
+
+-- ============================================
+-- 7. VERIFY SETUP
 -- ============================================
 
 -- Check buckets created
 SELECT id, name, public, file_size_limit, allowed_mime_types 
 FROM storage.buckets 
-WHERE id IN ('podcasts', 'thumbnails', 'merch', 'avatars');
+WHERE id IN ('podcasts', 'thumbnails', 'merch', 'avatars', 'blogs');
 
 -- Check policies created
 SELECT policyname, permissive, roles, cmd

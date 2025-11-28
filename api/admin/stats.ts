@@ -41,10 +41,15 @@ export default async function handler(req: Request) {
     // Basic counts
     const [podcastCount] = await db.select({ count: count() }).from(schema.podcasts);
     const [publishedPodcastCount] = await db.select({ count: count() }).from(schema.podcasts).where(eq(schema.podcasts.status, 'published'));
+    const [blogCount] = await db.select({ count: count() }).from(schema.blogs);
+    const [publishedBlogCount] = await db.select({ count: count() }).from(schema.blogs).where(eq(schema.blogs.status, 'published'));
     const [userCount] = await db.select({ count: count() }).from(schema.users);
     const [subCount] = await db.select({ count: count() }).from(schema.subscriptions).where(eq(schema.subscriptions.status, 'active'));
     const [merchCount] = await db.select({ count: count() }).from(schema.merchItems).where(eq(schema.merchItems.isActive, true));
     const [categoryCount] = await db.select({ count: count() }).from(schema.categories);
+
+    // Blog views
+    const [totalBlogViews] = await db.select({ total: sum(schema.blogs.viewCount) }).from(schema.blogs);
 
     // Total views across all podcasts
     const [totalViews] = await db.select({ total: sum(schema.podcasts.viewCount) }).from(schema.podcasts);
@@ -355,6 +360,9 @@ export default async function handler(req: Request) {
       stats: {
         totalPodcasts: podcastCount.count,
         publishedPodcasts: publishedPodcastCount.count,
+        totalBlogs: blogCount.count,
+        publishedBlogs: publishedBlogCount.count,
+        totalBlogViews: Number(totalBlogViews.total || 0),
         totalUsers: userCount.count,
         activeSubscriptions: subCount.count,
         cancelledSubscriptions: cancelledSubs.count,

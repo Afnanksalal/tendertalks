@@ -10,6 +10,7 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', '
 export const refundStatusEnum = pgEnum('refund_status', ['pending', 'approved', 'processed', 'rejected']);
 export const merchCategoryEnum = pgEnum('merch_category', ['clothing', 'accessories', 'digital']);
 export const orderStatusEnum = pgEnum('order_status', ['pending', 'paid', 'shipped', 'delivered', 'cancelled']);
+export const blogStatusEnum = pgEnum('blog_status', ['draft', 'published', 'archived']);
 
 // Users table
 export const users = pgTable('users', {
@@ -226,6 +227,30 @@ export const newsletterSubscribers = pgTable('newsletter_subscribers', {
   unsubscribedAt: timestamp('unsubscribed_at'),
 });
 
+// Blogs
+export const blogs = pgTable('blogs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
+  excerpt: text('excerpt'),
+  contentPath: text('content_path'), // Path to MD file in Supabase storage
+  bannerUrl: text('banner_url'),
+  status: blogStatusEnum('status').default('draft').notNull(),
+  isFeatured: boolean('is_featured').default(false).notNull(),
+  readTime: integer('read_time').default(0), // Estimated read time in minutes
+  viewCount: integer('view_count').default(0),
+  publishedAt: timestamp('published_at'),
+  createdBy: uuid('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Blog tags junction table
+export const blogTags = pgTable('blog_tags', {
+  blogId: uuid('blog_id').references(() => blogs.id, { onDelete: 'cascade' }).notNull(),
+  tagId: uuid('tag_id').references(() => tags.id, { onDelete: 'cascade' }).notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   podcasts: many(podcasts),
@@ -278,6 +303,16 @@ export const merchOrderItemsRelations = relations(merchOrderItems, ({ one }) => 
   merchItem: one(merchItems, { fields: [merchOrderItems.merchItemId], references: [merchItems.id] }),
 }));
 
+export const blogsRelations = relations(blogs, ({ one, many }) => ({
+  creator: one(users, { fields: [blogs.createdBy], references: [users.id] }),
+  tags: many(blogTags),
+}));
+
+export const blogTagsRelations = relations(blogTags, ({ one }) => ({
+  blog: one(blogs, { fields: [blogTags.blogId], references: [blogs.id] }),
+  tag: one(tags, { fields: [blogTags.tagId], references: [tags.id] }),
+}));
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -293,3 +328,5 @@ export type MerchOrder = typeof merchOrders.$inferSelect;
 export type Download = typeof downloads.$inferSelect;
 export type PaymentHistory = typeof paymentHistory.$inferSelect;
 export type RefundRequest = typeof refundRequests.$inferSelect;
+export type Blog = typeof blogs.$inferSelect;
+export type NewBlog = typeof blogs.$inferInsert;

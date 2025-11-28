@@ -26,6 +26,7 @@ export const STORAGE_BUCKETS = {
   THUMBNAILS: 'thumbnails',
   AVATARS: 'avatars',
   MERCH: 'merch',
+  BLOGS: 'blogs',
 } as const;
 
 // Upload file to Supabase Storage

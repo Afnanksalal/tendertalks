@@ -81,6 +81,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5">
               {[
                 { name: 'Browse', path: '/browse' },
+                { name: 'Blog', path: '/blog' },
                 { name: 'Store', path: '/store' },
                 { name: 'Pricing', path: '/pricing' },
                 { name: 'Dashboard', path: '/dashboard' },

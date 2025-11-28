@@ -6,6 +6,7 @@ export const BUCKETS = {
   THUMBNAILS: 'thumbnails',
   MERCH: 'merch',
   AVATARS: 'avatars',
+  BLOGS: 'blogs',
 } as const;
 
 type BucketName = typeof BUCKETS[keyof typeof BUCKETS];

@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/react';
 import { useAuthStore } from './stores/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Loader2 } from 'lucide-react';
 
 // Layout
 import { Navbar } from './components/layout/Navbar';
@@ -33,6 +34,7 @@ import { RefundPolicyPage } from './pages/legal/RefundPolicy';
 import { AdminLayout, AdminOverview } from './pages/admin/AdminDashboard';
 import { PodcastManager } from './pages/admin/PodcastManager';
 import { PodcastEditor } from './pages/admin/PodcastEditor';
+import { BlogManager } from './pages/admin/BlogManager';
 import { UsersManager } from './pages/admin/UsersManager';
 import { PaymentsManager } from './pages/admin/PaymentsManager';
 import { RefundsManager } from './pages/admin/RefundsManager';
@@ -41,6 +43,20 @@ import PlansManager from './pages/admin/PlansManager';
 import SettingsManager from './pages/admin/SettingsManager';
 import SubscriptionsManager from './pages/admin/SubscriptionsManager';
 import InvoicesManager from './pages/admin/InvoicesManager';
+
+// Blog pages
+import { BlogPage } from './pages/Blog';
+
+// Lazy loaded components (heavy dependencies)
+const BlogEditor = lazy(() => import('./pages/admin/BlogEditor').then(m => ({ default: m.BlogEditor })));
+const BlogDetailPage = lazy(() => import('./pages/BlogDetail').then(m => ({ default: m.BlogDetailPage })));
+
+// Loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+    <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+  </div>
+);
 
 function App() {
   const { initialize } = useAuthStore();
@@ -92,6 +108,8 @@ function App() {
             <Route path="/podcast/:slug" element={<PodcastDetailPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/store" element={<StorePage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<Suspense fallback={<PageLoader />}><BlogDetailPage /></Suspense>} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
@@ -108,6 +126,9 @@ function App() {
               <Route path="podcasts" element={<PodcastManager />} />
               <Route path="podcasts/new" element={<PodcastEditor />} />
               <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
+              <Route path="blogs" element={<BlogManager />} />
+              <Route path="blogs/new" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
+              <Route path="blogs/:id/edit" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
               <Route path="users" element={<UsersManager />} />
               <Route path="payments" element={<PaymentsManager />} />
               <Route path="invoices" element={<InvoicesManager />} />

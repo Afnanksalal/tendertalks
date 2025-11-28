@@ -5,13 +5,14 @@ import {
   LayoutDashboard, Mic2, Users, CreditCard, Settings,
   Plus, Loader2, TrendingUp, Calendar, RotateCcw,
   Package, Tag, Receipt, AlertCircle, ArrowUpRight, ArrowDownRight,
-  Menu, X, ChevronDown
+  Menu, X, ChevronDown, FileText
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
 const sidebarLinks = [
   { name: 'Overview', path: '/admin', icon: LayoutDashboard },
   { name: 'Podcasts', path: '/admin/podcasts', icon: Mic2 },
+  { name: 'Blogs', path: '/admin/blogs', icon: FileText },
   { name: 'Users', path: '/admin/users', icon: Users },
   { name: 'Payments', path: '/admin/payments', icon: CreditCard },
   { name: 'Invoices', path: '/admin/invoices', icon: Receipt },
@@ -51,10 +52,14 @@ export const AdminLayout: React.FC = () => {
     <div className="min-h-screen bg-[#030014] flex flex-col lg:flex-row">
       {/* Desktop Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-white/5 pt-24 hidden lg:block overflow-y-auto">
-        <div className="p-4">
+        <div className="p-4 space-y-2">
           <Link to="/admin/podcasts/new"
             className="flex items-center justify-center gap-2 w-full py-3 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors">
             <Plus size={18} /> New Podcast
+          </Link>
+          <Link to="/admin/blogs/new"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-neon-purple/20 text-neon-purple font-bold rounded-xl border border-neon-purple/30 hover:bg-neon-purple/30 transition-colors">
+            <Plus size={16} /> New Blog
           </Link>
         </div>
         <nav className="px-2 mt-2">
@@ -103,14 +108,21 @@ export const AdminLayout: React.FC = () => {
                 </button>
               </div>
 
-              {/* New Podcast Button */}
-              <div className="p-3">
+              {/* New Content Buttons */}
+              <div className="p-3 space-y-2">
                 <Link
                   to="/admin/podcasts/new"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-center gap-2 w-full py-2.5 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors text-sm"
                 >
                   <Plus size={16} /> New Podcast
+                </Link>
+                <Link
+                  to="/admin/blogs/new"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full py-2 bg-neon-purple/20 text-neon-purple font-medium rounded-xl border border-neon-purple/30 hover:bg-neon-purple/30 transition-colors text-sm"
+                >
+                  <Plus size={14} /> New Blog
                 </Link>
               </div>
 
