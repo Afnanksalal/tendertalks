@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/react';
@@ -61,9 +61,96 @@ const PageLoader = () => (
   </div>
 );
 
+// Inner app content - separated to avoid hooks issues
+const AppContent: React.FC = () => {
+  const { isAdmin, isLoading: authLoading } = useAuthStore();
+  const { settings, isLoaded: settingsLoaded } = useSettingsStore();
+
+  // Show loading while checking auth and settings
+  if (authLoading || !settingsLoaded) {
+    return (
+      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+      </div>
+    );
+  }
+
+  // Show maintenance page for non-admin users when maintenance mode is enabled
+  if (settings.maintenance_mode && !isAdmin) {
+    return <MaintenancePage />;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#030014] text-white">
+      <CustomCursor />
+      <Navbar />
+      
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/browse" element={<BrowsePage />} />
+        <Route path="/podcast/:slug" element={<PodcastDetailPage />} />
+        <Route path="/pricing" element={<FeatureGuard feature="feature_subscriptions"><PricingPage /></FeatureGuard>} />
+        <Route path="/store" element={<FeatureGuard feature="feature_merch"><StorePage /></FeatureGuard>} />
+        <Route path="/blog" element={<FeatureGuard feature="feature_blog"><BlogPage /></FeatureGuard>} />
+        <Route path="/blog/:slug" element={<FeatureGuard feature="feature_blog"><Suspense fallback={<PageLoader />}><BlogDetailPage /></Suspense></FeatureGuard>} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/refund-policy" element={<RefundPolicyPage />} />
+        
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/billing" element={<FeatureGuard feature="feature_subscriptions"><BillingPage /></FeatureGuard>} />
+        <Route path="/downloads" element={<FeatureGuard feature="feature_downloads"><DownloadsPage /></FeatureGuard>} />
+        
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminOverview />} />
+          <Route path="podcasts" element={<PodcastManager />} />
+          <Route path="podcasts/new" element={<PodcastEditor />} />
+          <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
+          <Route path="blogs" element={<BlogManager />} />
+          <Route path="blogs/new" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
+          <Route path="blogs/:id/edit" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
+          <Route path="users" element={<UsersManager />} />
+          <Route path="payments" element={<PaymentsManager />} />
+          <Route path="invoices" element={<InvoicesManager />} />
+          <Route path="refunds" element={<RefundsManager />} />
+          <Route path="products" element={<ProductsManager />} />
+          <Route path="plans" element={<PlansManager />} />
+          <Route path="subscriptions" element={<SubscriptionsManager />} />
+          <Route path="settings" element={<SettingsManager />} />
+        </Route>
+
+        {/* 404 Catch-all */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+
+      <Footer />
+      <CartDrawer />
+      
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1e293b',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+          },
+          success: { iconTheme: { primary: '#00FF94', secondary: '#1e293b' } },
+          error: { iconTheme: { primary: '#FF0055', secondary: '#1e293b' } },
+        }}
+      />
+    </div>
+  );
+};
+
 function App() {
-  const { initialize, isAdmin, isLoading: authLoading } = useAuthStore();
-  const { fetchSettings, settings, isLoaded: settingsLoaded } = useSettingsStore();
+  const { initialize } = useAuthStore();
+  const { fetchSettings } = useSettingsStore();
 
   useEffect(() => {
     // Remove initial loader once React mounts
@@ -83,110 +170,21 @@ function App() {
         wasHidden = true;
       } else if (document.visibilityState === 'visible' && wasHidden) {
         wasHidden = false;
-        // Don't re-initialize auth on visibility change - just refresh token if needed
-        // This prevents the page from reloading when switching back to the tab
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Prevent iOS Safari from reloading on back/forward navigation
-    window.addEventListener('pageshow', () => {
-      // Page was restored from bfcache - no action needed
-    });
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [initialize, fetchSettings]);
 
-  // Show loading while checking auth and settings
-  if (authLoading || !settingsLoaded) {
-    return (
-      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
-      </div>
-    );
-  }
-
-  // Show maintenance page for non-admin users when maintenance mode is enabled
-  if (settings.maintenance_mode && !isAdmin) {
-    return (
-      <ErrorBoundary>
-        <MaintenancePage />
-        <Analytics />
-      </ErrorBoundary>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <div className="min-h-screen bg-[#030014] text-white">
-          <CustomCursor />
-          <Navbar />
-          
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/browse" element={<BrowsePage />} />
-            <Route path="/podcast/:slug" element={<PodcastDetailPage />} />
-            <Route path="/pricing" element={<FeatureGuard feature="feature_subscriptions"><PricingPage /></FeatureGuard>} />
-            <Route path="/store" element={<FeatureGuard feature="feature_merch"><StorePage /></FeatureGuard>} />
-            <Route path="/blog" element={<FeatureGuard feature="feature_blog"><BlogPage /></FeatureGuard>} />
-            <Route path="/blog/:slug" element={<FeatureGuard feature="feature_blog"><Suspense fallback={<PageLoader />}><BlogDetailPage /></Suspense></FeatureGuard>} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            
-            <Route path="/privacy" element={<PrivacyPolicyPage />} />
-            <Route path="/terms" element={<TermsOfServicePage />} />
-            <Route path="/refund-policy" element={<RefundPolicyPage />} />
-            
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/billing" element={<FeatureGuard feature="feature_subscriptions"><BillingPage /></FeatureGuard>} />
-            <Route path="/downloads" element={<FeatureGuard feature="feature_downloads"><DownloadsPage /></FeatureGuard>} />
-            
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminOverview />} />
-              <Route path="podcasts" element={<PodcastManager />} />
-              <Route path="podcasts/new" element={<PodcastEditor />} />
-              <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
-              <Route path="blogs" element={<BlogManager />} />
-              <Route path="blogs/new" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
-              <Route path="blogs/:id/edit" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
-              <Route path="users" element={<UsersManager />} />
-              <Route path="payments" element={<PaymentsManager />} />
-              <Route path="invoices" element={<InvoicesManager />} />
-              <Route path="refunds" element={<RefundsManager />} />
-              <Route path="products" element={<ProductsManager />} />
-              <Route path="plans" element={<PlansManager />} />
-              <Route path="subscriptions" element={<SubscriptionsManager />} />
-              <Route path="settings" element={<SettingsManager />} />
-            </Route>
-
-            {/* 404 Catch-all */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-
-          <Footer />
-          <CartDrawer />
-          
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#1e293b',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                padding: '12px 16px',
-              },
-              success: { iconTheme: { primary: '#00FF94', secondary: '#1e293b' } },
-              error: { iconTheme: { primary: '#FF0055', secondary: '#1e293b' } },
-            }}
-          />
-          <Analytics />
-        </div>
+        <AppContent />
+        <Analytics />
       </BrowserRouter>
     </ErrorBoundary>
   );
