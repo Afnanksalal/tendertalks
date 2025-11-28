@@ -494,6 +494,22 @@ input[type="number"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  
+  /* Keep essential loading animations working */
+  .animate-spin {
+    animation: spin 1s linear infinite !important;
+  }
+}
+
+/* Ensure spin animation is always defined for loading spinners */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Force animate-spin to always work */
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 /* GPU acceleration hints */
