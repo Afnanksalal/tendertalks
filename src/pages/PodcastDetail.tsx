@@ -24,6 +24,7 @@ export const PodcastDetailPage: React.FC = () => {
   const { currentPodcast, fetchPodcastBySlug, isLoading } = usePodcastStore();
   const { canAccessPodcast, hasActiveSubscription, fetchPurchases, fetchSubscription, subscription } = useUserStore();
   const { user } = useAuthStore();
+  const { settings } = useSettingsStore();
 
   const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -173,7 +174,6 @@ export const PodcastDetailPage: React.FC = () => {
   }
 
   const podcast = currentPodcast;
-  const { settings } = useSettingsStore();
   const hasAccess = canAccessPodcast(podcast.id, podcast.isFree);
   const price = parseFloat(podcast.price || '0');
   const canDownload = settings.feature_downloads && hasAccess && (podcast.isDownloadable || subscription?.plan?.allowDownloads);
