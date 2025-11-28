@@ -52,13 +52,19 @@ export const useAuthStore = create<AuthState>()(
             set({ session: null, user: null, isAdmin: false, isLoading: false });
           }
 
-          // Listen for auth changes
+          // Listen for auth changes - but avoid unnecessary re-syncs
           supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event);
+            // Auth state changed event
+            
+            // Skip INITIAL_SESSION as we already handled it above
+            if (event === 'INITIAL_SESSION') {
+              return;
+            }
             
             if (event === 'SIGNED_OUT') {
               set({ session: null, user: null, isAdmin: false });
-            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            } else if (event === 'SIGNED_IN') {
+              // Only sync on actual sign in, not on tab focus
               if (session?.user) {
                 const userData = await syncUserToDatabase(session.user);
                 set({ 
@@ -66,6 +72,11 @@ export const useAuthStore = create<AuthState>()(
                   user: userData, 
                   isAdmin: userData?.role === 'admin' 
                 });
+              }
+            } else if (event === 'TOKEN_REFRESHED') {
+              // Just update the session, don't re-sync user data
+              if (session) {
+                set({ session });
               }
             } else if (event === 'USER_UPDATED') {
               if (session?.user) {

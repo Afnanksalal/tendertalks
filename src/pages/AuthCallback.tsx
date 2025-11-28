@@ -18,7 +18,6 @@ export const AuthCallback: React.FC = () => {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Auth callback error:', error);
           navigate('/?error=auth_failed');
           return;
         }
@@ -57,8 +56,7 @@ export const AuthCallback: React.FC = () => {
             navigate('/');
           }
         }
-      } catch (error) {
-        console.error('Auth callback error:', error);
+      } catch {
         navigate('/?error=auth_failed');
       }
     };

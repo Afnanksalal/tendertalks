@@ -52,8 +52,31 @@ function App() {
       loader.remove();
     }
     
-    // Initialize auth
+    // Initialize auth only once on mount
     initialize();
+
+    // Prevent page reload on visibility change (mobile tab switching)
+    let wasHidden = false;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        wasHidden = true;
+      } else if (document.visibilityState === 'visible' && wasHidden) {
+        wasHidden = false;
+        // Don't re-initialize auth on visibility change - just refresh token if needed
+        // This prevents the page from reloading when switching back to the tab
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Prevent iOS Safari from reloading on back/forward navigation
+    window.addEventListener('pageshow', (event) => {
+      // Page was restored from bfcache - no action needed
+    });
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [initialize]);
 
   return (

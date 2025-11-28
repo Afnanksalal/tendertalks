@@ -174,7 +174,7 @@ export const PodcastEditor: React.FC = () => {
     };
     media.onerror = () => {
       URL.revokeObjectURL(url);
-      console.log('Could not extract duration from file');
+      // Could not extract duration from file
     };
     media.src = url;
   };
@@ -289,7 +289,6 @@ export const PodcastEditor: React.FC = () => {
 
       navigate('/admin/podcasts');
     } catch (error: any) {
-      console.error('Submit error:', error);
       toast.error(error.message || 'Failed to save podcast');
     } finally {
       setIsSubmitting(false);

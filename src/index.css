@@ -693,6 +693,72 @@ input[type="number"] {
 
 
 /* ========================================
+   SAFE AREA INSET SUPPORT (PWA/Mobile)
+   ======================================== */
+
+.safe-area-inset {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Standalone PWA mode adjustments */
+@media all and (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .navbar {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* ========================================
+   MEDIA PLAYER MOBILE OPTIMIZATIONS
+   ======================================== */
+
+/* Larger touch targets for player controls */
+@media (max-width: 640px) {
+  .player-control {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Progress bar touch optimization */
+.progress-bar {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Prevent text selection during seek */
+.seeking * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Video fullscreen on iOS */
+video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+video::-webkit-media-controls-play-button {
+  display: none !important;
+}
+
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+}
+
+/* Better video aspect ratio handling */
+video {
+  object-fit: contain;
+  background: #000;
+}
+
+/* ========================================
    DARK MODE FORM INPUTS
    ======================================== */
 
