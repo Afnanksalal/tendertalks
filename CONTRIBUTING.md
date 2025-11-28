@@ -196,6 +196,14 @@ If your PR includes database schema changes:
 2. Export from component file
 3. Use existing UI components where possible
 
+### Feature Toggle Integration
+If your feature should be toggleable:
+1. Add setting key to `site_settings` table
+2. Update `settingsStore.ts` with the new flag
+3. Use `FeatureGuard` component for route protection
+4. Check `settings.feature_xxx` in Navbar/Footer for nav links
+5. Add toggle to `SettingsManager.tsx` admin page
+
 ## Questions?
 
 - Open an issue for questions

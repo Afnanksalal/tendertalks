@@ -1,7 +1,7 @@
 {
   "name": "tendertalks",
   "version": "1.0.0",
-  "description": "A modern podcast streaming platform with blog system, subscription management, merchandise store, and admin dashboard",
+  "description": "A modern podcast streaming platform with blog system, subscription management, merchandise store, feature toggles, maintenance mode, and comprehensive admin dashboard",
   "type": "module",
   "license": "MIT",
   "author": {

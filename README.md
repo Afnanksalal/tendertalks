@@ -22,6 +22,8 @@ A modern podcast streaming platform with blog system, subscription management, m
 - Lock screen media controls (Media Session API)
 - Download for offline listening (subscription feature)
 - Category & tag filtering
+- Fullscreen video support
+- Session persistence (resume where you left off)
 
 ### 📝 Blog System
 - Full markdown blog with rich editor
@@ -30,6 +32,8 @@ A modern podcast streaming platform with blog system, subscription management, m
 - Author attribution
 - Read time estimation
 - SEO optimized with Open Graph
+- Syntax highlighting for code blocks
+- Image galleries and embeds
 
 ### 💳 Subscription System
 - Multiple pricing tiers (Free, Pro, Premium)
@@ -38,12 +42,14 @@ A modern podcast streaming platform with blog system, subscription management, m
 - 7-day refund window
 - Individual podcast purchases
 - Razorpay payment integration
+- Webhook support for payment events
 
 ### 🛍️ Merchandise Store
-- Product catalog with categories
+- Product catalog with categories (clothing, accessories, digital)
 - Shopping cart with persistent state
 - Secure checkout via Razorpay
-- Order tracking
+- Stock management
+- Product image uploads
 
 ### 👤 User Features
 - Google OAuth & Email/Password authentication
@@ -51,6 +57,7 @@ A modern podcast streaming platform with blog system, subscription management, m
 - Billing & payment history
 - Download management
 - Profile settings
+- Subscription management
 
 ### 🔧 Admin Dashboard
 - Revenue analytics with charts
@@ -58,11 +65,29 @@ A modern podcast streaming platform with blog system, subscription management, m
 - Blog management with markdown editor
 - User management & roles
 - Payment & invoice tracking
-- Subscription management
-- Refund processing
-- Product inventory
+- Subscription management (pause, cancel, extend)
+- Refund processing with Razorpay integration
+- Product inventory management
 - Pricing plan configuration
 - Category & tag management
+
+### ⚙️ Platform Settings (Admin)
+- **Feature Toggles**: Enable/disable features dynamically
+  - Blog section
+  - Merchandise store
+  - Subscription system
+  - Downloads
+  - Newsletter signup
+- **Maintenance Mode**: Show maintenance page to non-admin users
+- Real-time toggle updates across the platform
+
+### 📱 Mobile Optimized
+- Fully responsive design for all screen sizes
+- Touch-optimized interactions with haptic feedback
+- Safe area support for notched devices (iPhone X+)
+- iOS Safari fixes (100vh, input zoom prevention)
+- Mobile-friendly admin dashboard with slide-out menu
+- PWA-ready with manifest and icons
 
 ## 🛠️ Tech Stack
 
@@ -92,6 +117,7 @@ tendertalks/
 │   │   ├── tags/           # Tag management
 │   │   ├── plans/          # Pricing plans
 │   │   ├── products/       # Merch products
+│   │   ├── settings/       # Feature toggles (admin)
 │   │   ├── users.ts        # User management
 │   │   ├── payments.ts     # Payment history
 │   │   ├── invoices/       # Invoice management
@@ -109,6 +135,7 @@ tendertalks/
 │   ├── tags/               # Public tags
 │   ├── newsletter/         # Newsletter subscription
 │   ├── refunds/            # Refund requests
+│   ├── settings/           # Public settings (feature flags)
 │   ├── og-image.tsx        # Dynamic OG images
 │   └── rss.ts              # RSS feed
 ├── drizzle/                # Database migrations
@@ -129,7 +156,11 @@ tendertalks/
 │   │   ├── effects/        # StarField, FloatingOrbs
 │   │   ├── layout/         # Navbar, Footer
 │   │   ├── podcast/        # PodcastCard, MediaPlayer
-│   │   └── ui/             # Button, Input, Modal, Select, etc.
+│   │   ├── ui/             # Button, Input, Modal, Select, Toggle, etc.
+│   │   ├── FeatureGuard.tsx    # Route protection by feature
+│   │   ├── ErrorBoundary.tsx   # Error handling
+│   │   ├── SEO.tsx             # Meta tags & Open Graph
+│   │   └── CustomCursor.tsx    # Desktop cursor effect
 │   ├── db/
 │   │   └── schema.ts       # Drizzle schema
 │   ├── lib/
@@ -150,7 +181,7 @@ tendertalks/
 │   │   │   ├── RefundsManager.tsx
 │   │   │   ├── ProductsManager.tsx
 │   │   │   ├── PlansManager.tsx
-│   │   │   └── SettingsManager.tsx
+│   │   │   └── SettingsManager.tsx  # Feature toggles & maintenance
 │   │   ├── legal/          # Legal pages
 │   │   │   ├── PrivacyPolicy.tsx
 │   │   │   ├── TermsOfService.tsx
@@ -167,14 +198,16 @@ tendertalks/
 │   │   ├── Billing.tsx
 │   │   ├── Downloads.tsx
 │   │   ├── AuthCallback.tsx
-│   │   └── NotFound.tsx
+│   │   ├── NotFound.tsx
+│   │   └── Maintenance.tsx     # Maintenance mode page
 │   ├── stores/             # Zustand stores
 │   │   ├── authStore.ts
 │   │   ├── podcastStore.ts
 │   │   ├── blogStore.ts
 │   │   ├── userStore.ts
 │   │   ├── cartStore.ts
-│   │   └── merchStore.ts
+│   │   ├── merchStore.ts
+│   │   └── settingsStore.ts    # Feature toggles state
 │   ├── App.tsx
 │   ├── index.css
 │   └── main.tsx
@@ -312,6 +345,31 @@ UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
 
 Run this in Neon Console or Drizzle Studio after the user has signed in.
 
+## ⚙️ Feature Toggles & Maintenance Mode
+
+The platform includes a powerful admin settings system accessible at `/admin/settings`:
+
+### Feature Toggles
+Toggle features on/off without code changes:
+- **Blog**: Enable/disable the blog section
+- **Merchandise Store**: Enable/disable the store
+- **Subscriptions**: Enable/disable subscription plans
+- **Downloads**: Enable/disable podcast downloads
+- **Newsletter**: Enable/disable newsletter signup
+
+When a feature is disabled:
+- Navigation links are hidden
+- Routes redirect to home page
+- API endpoints return appropriate errors
+
+### Maintenance Mode
+When enabled:
+- Non-admin users see a styled maintenance page
+- Admins see a warning banner but can still access the site
+- Toggle from Admin Settings → Maintenance Mode
+
+Settings are stored in the `site_settings` table and cached in the frontend via Zustand.
+
 ## 📊 Database Schema
 
 Key tables:
@@ -330,6 +388,7 @@ Key tables:
 - `downloads` - Download tracking
 - `play_history` - Playback progress
 - `newsletter_subscribers` - Email list
+- `site_settings` - Feature toggles & platform configuration
 
 ## 🤝 Contributing
 
