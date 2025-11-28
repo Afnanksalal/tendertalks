@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve
+about: Create a report to help us improve TenderTalks
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -25,9 +25,30 @@ What actually happened.
 If applicable, add screenshots to help explain your problem.
 
 ## Environment
-- **Browser**: [e.g., Chrome 120, Safari 17]
-- **OS**: [e.g., Windows 11, macOS 14, iOS 17]
-- **Device**: [e.g., Desktop, iPhone 15, Pixel 8]
+- **Browser**: [e.g., Chrome 120, Safari 17, Firefox 121]
+- **OS**: [e.g., Windows 11, macOS 14, iOS 17, Android 14]
+- **Device**: [e.g., Desktop, iPhone 15, Pixel 8, iPad Pro]
+- **Screen Size**: [e.g., 1920x1080, 390x844]
+
+## Area Affected
+- [ ] 🎧 Podcast Player
+- [ ] 📝 Blog
+- [ ] 💳 Payments/Subscriptions
+- [ ] 🛍️ Store/Cart
+- [ ] 👤 User Dashboard
+- [ ] 🔧 Admin Dashboard
+- [ ] 🔐 Authentication
+- [ ] 📱 Mobile Experience
+- [ ] 🎨 UI/Styling
+- [ ] Other
+
+## Console Errors (if any)
+```
+Paste any browser console errors here
+```
 
 ## Additional Context
 Add any other context about the problem here.
+
+## Possible Solution (optional)
+If you have ideas on how to fix this, please share.

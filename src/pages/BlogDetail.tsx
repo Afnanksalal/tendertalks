@@ -166,7 +166,7 @@ export const BlogDetailPage: React.FC = () => {
 
           {/* Tags */}
           {blog.tags && blog.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2">
               {blog.tags.map((tag: any) => (
                 <Link
                   key={tag.id}
@@ -179,17 +179,6 @@ export const BlogDetailPage: React.FC = () => {
               ))}
             </div>
           )}
-
-          {/* Share */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShare}
-            leftIcon={<Share2 size={16} />}
-            className={shareText === 'Copied!' ? 'text-neon-green border-neon-green/30' : ''}
-          >
-            {shareText}
-          </Button>
         </motion.header>
 
         {/* Excerpt */}
@@ -254,16 +243,15 @@ export const BlogDetailPage: React.FC = () => {
           className="mt-12 pt-8 border-t border-white/10"
         >
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                leftIcon={<Share2 size={16} />}
-              >
-                Share Article
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              leftIcon={<Share2 size={16} />}
+              className={shareText === 'Copied!' ? 'text-neon-green border-neon-green/30' : ''}
+            >
+              {shareText === 'Copied!' ? 'Copied!' : 'Share Article'}
+            </Button>
             <Link to="/blog">
               <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={16} />}>
                 More Articles

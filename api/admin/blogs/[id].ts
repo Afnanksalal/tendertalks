@@ -171,6 +171,10 @@ export default async function handler(req: Request) {
         }
       }
 
+      // Delete related records first (tags junction table)
+      await db.delete(schema.blogTags).where(eq(schema.blogTags.blogId, id));
+
+      // Delete the blog
       await db.delete(schema.blogs).where(eq(schema.blogs.id, id));
 
       return new Response(JSON.stringify({ success: true }), { status: 200, headers });

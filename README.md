@@ -1,12 +1,12 @@
 # TenderTalks 🎙️
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18-61dafb)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61dafb)](https://reactjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8)](https://tailwindcss.com/)
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://vercel.com)
 
-A modern podcast streaming platform with subscription management, merchandise store, and comprehensive admin dashboard. Built with React, TypeScript, and deployed on Vercel.
+A modern podcast streaming platform with blog system, subscription management, merchandise store, and comprehensive admin dashboard. Built with React, TypeScript, and deployed on Vercel Edge Functions.
 
 🌐 **Live Demo**: [tendertalks.live](https://tendertalks.live)
 
@@ -15,96 +15,189 @@ A modern podcast streaming platform with subscription management, merchandise st
 ## ✨ Features
 
 ### 🎧 Podcast Platform
-- Audio & video podcast streaming
+- Audio & video podcast streaming with custom player
 - Playback speed control (0.5x - 2x)
 - Volume control with mute toggle
 - Progress tracking & resume playback
 - Lock screen media controls (Media Session API)
-- Download for offline listening
+- Download for offline listening (subscription feature)
+- Category & tag filtering
+
+### 📝 Blog System
+- Full markdown blog with rich editor
+- Featured articles support
+- Tag-based filtering
+- Author attribution
+- Read time estimation
+- SEO optimized with Open Graph
 
 ### 💳 Subscription System
-- Multiple pricing tiers
+- Multiple pricing tiers (Free, Pro, Premium)
 - Upgrade/downgrade with prorated billing
 - Cancel & reactivate subscriptions
 - 7-day refund window
 - Individual podcast purchases
+- Razorpay payment integration
 
 ### 🛍️ Merchandise Store
 - Product catalog with categories
-- Shopping cart functionality
-- Razorpay payment integration
+- Shopping cart with persistent state
+- Secure checkout via Razorpay
 - Order tracking
 
 ### 👤 User Features
-- Google OAuth authentication
-- User dashboard
-- Billing history
+- Google OAuth & Email/Password authentication
+- User dashboard with listening history
+- Billing & payment history
 - Download management
+- Profile settings
 
 ### 🔧 Admin Dashboard
-- Revenue analytics & charts
-- Podcast management (CRUD)
-- User management
+- Revenue analytics with charts
+- Podcast management (CRUD, publish/draft)
+- Blog management with markdown editor
+- User management & roles
 - Payment & invoice tracking
 - Subscription management
 - Refund processing
 - Product inventory
 - Pricing plan configuration
+- Category & tag management
 
 ## 🛠️ Tech Stack
 
 | Category | Technology |
 |----------|------------|
-| Frontend | React 18, TypeScript, Vite |
-| Styling | Tailwind CSS, Framer Motion |
-| State | Zustand |
+| Frontend | React 18.3, TypeScript 5.5, Vite 5 |
+| Styling | Tailwind CSS 3.4, Framer Motion 11 |
+| State | Zustand 4.5 |
 | Database | Neon PostgreSQL, Drizzle ORM |
-| Auth | Supabase Auth |
+| Auth | Supabase Auth (Google OAuth + Email) |
 | Storage | Supabase Storage |
 | Payments | Razorpay |
 | Hosting | Vercel (Edge Functions) |
 | Analytics | Vercel Analytics |
+| Markdown | @uiw/react-md-editor, react-markdown |
+| Icons | Lucide React |
 
 ## 📁 Project Structure
 
 ```
 tendertalks/
-├── api/                    # Vercel serverless functions
+├── api/                    # Vercel Edge Functions
 │   ├── admin/              # Admin-only endpoints
-│   ├── podcasts/           # Podcast CRUD & streaming
+│   │   ├── blogs/          # Blog CRUD
+│   │   ├── podcasts/       # Podcast CRUD
+│   │   ├── categories/     # Category management
+│   │   ├── tags/           # Tag management
+│   │   ├── plans/          # Pricing plans
+│   │   ├── products/       # Merch products
+│   │   ├── users.ts        # User management
+│   │   ├── payments.ts     # Payment history
+│   │   ├── invoices/       # Invoice management
+│   │   ├── subscriptions/  # Subscription management
+│   │   ├── refunds/        # Refund processing
+│   │   └── stats.ts        # Analytics data
+│   ├── blogs/              # Public blog endpoints
+│   ├── podcasts/           # Public podcast endpoints
 │   ├── payments/           # Payment processing
-│   ├── subscriptions/      # Subscription management
-│   └── users/              # User profile & data
+│   ├── subscriptions/      # Subscription operations
+│   ├── merch/              # Merchandise endpoints
+│   ├── users/              # User profile & data
+│   ├── pricing-plans/      # Public pricing data
+│   ├── categories/         # Public categories
+│   ├── tags/               # Public tags
+│   ├── newsletter/         # Newsletter subscription
+│   ├── refunds/            # Refund requests
+│   ├── og-image.tsx        # Dynamic OG images
+│   └── rss.ts              # RSS feed
 ├── drizzle/                # Database migrations
 ├── public/                 # Static assets
-├── scripts/                # Utility scripts
+│   ├── favicon.svg
+│   ├── manifest.json
+│   ├── og-image.svg
+│   └── sitemap.xml
+├── scripts/
+│   ├── seed.ts             # Database seeding
+│   └── supabase-setup.sql  # Supabase configuration
 ├── src/
 │   ├── api/                # Frontend API clients
-│   ├── components/         # React components
-│   │   ├── auth/           # Authentication components
-│   │   ├── layout/         # Layout components
-│   │   ├── podcast/        # Podcast components
-│   │   └── ui/             # Reusable UI components
-│   ├── db/                 # Database schema
-│   ├── lib/                # Utilities
-│   ├── pages/              # Page components
+│   ├── components/
+│   │   ├── auth/           # AuthModal
+│   │   ├── blog/           # BlogCard
+│   │   ├── cart/           # CartDrawer
+│   │   ├── effects/        # StarField, FloatingOrbs
+│   │   ├── layout/         # Navbar, Footer
+│   │   ├── podcast/        # PodcastCard, MediaPlayer
+│   │   └── ui/             # Button, Input, Modal, Select, etc.
+│   ├── db/
+│   │   └── schema.ts       # Drizzle schema
+│   ├── lib/
+│   │   ├── supabase.ts     # Supabase client
+│   │   ├── razorpay.ts     # Razorpay integration
+│   │   └── storage.ts      # Storage utilities
+│   ├── pages/
 │   │   ├── admin/          # Admin pages
-│   │   └── legal/          # Legal pages
-│   └── stores/             # Zustand stores
-├── .env.example            # Environment template
-├── drizzle.config.ts       # Drizzle configuration
-├── tailwind.config.js      # Tailwind configuration
-├── tsconfig.json           # TypeScript configuration
-├── vercel.json             # Vercel configuration
-└── vite.config.ts          # Vite configuration
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── PodcastManager.tsx
+│   │   │   ├── PodcastEditor.tsx
+│   │   │   ├── BlogManager.tsx
+│   │   │   ├── BlogEditor.tsx
+│   │   │   ├── UsersManager.tsx
+│   │   │   ├── PaymentsManager.tsx
+│   │   │   ├── InvoicesManager.tsx
+│   │   │   ├── SubscriptionsManager.tsx
+│   │   │   ├── RefundsManager.tsx
+│   │   │   ├── ProductsManager.tsx
+│   │   │   ├── PlansManager.tsx
+│   │   │   └── SettingsManager.tsx
+│   │   ├── legal/          # Legal pages
+│   │   │   ├── PrivacyPolicy.tsx
+│   │   │   ├── TermsOfService.tsx
+│   │   │   └── RefundPolicy.tsx
+│   │   ├── Home.tsx
+│   │   ├── Browse.tsx
+│   │   ├── PodcastDetail.tsx
+│   │   ├── Blog.tsx
+│   │   ├── BlogDetail.tsx
+│   │   ├── Pricing.tsx
+│   │   ├── Store.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── Settings.tsx
+│   │   ├── Billing.tsx
+│   │   ├── Downloads.tsx
+│   │   ├── AuthCallback.tsx
+│   │   └── NotFound.tsx
+│   ├── stores/             # Zustand stores
+│   │   ├── authStore.ts
+│   │   ├── podcastStore.ts
+│   │   ├── blogStore.ts
+│   │   ├── userStore.ts
+│   │   ├── cartStore.ts
+│   │   └── merchStore.ts
+│   ├── App.tsx
+│   ├── index.css
+│   └── main.tsx
+├── .env.example
+├── .gitignore
+├── .prettierrc
+├── drizzle.config.ts
+├── eslint.config.js
+├── index.html
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.json
+├── vercel.json
+└── vite.config.ts
 ```
 
-## 🚀 Getting Started
+## � Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm, yarn, or pnpm
+- Node.js 18+ (see `.nvmrc`)
+- npm 9+
 - Accounts: [Vercel](https://vercel.com), [Neon](https://neon.tech), [Supabase](https://supabase.com), [Razorpay](https://razorpay.com)
 
 ### Installation
@@ -126,25 +219,31 @@ tendertalks/
    ```
    Fill in your credentials (see [Environment Variables](#environment-variables))
 
-4. **Set up the database**
+4. **Set up Supabase**
+   - Create a new project at [supabase.com](https://supabase.com)
+   - Run the SQL from `scripts/supabase-setup.sql` in SQL Editor
+   - Create storage buckets: `podcasts`, `blogs`, `products`
+   - Enable Google OAuth in Authentication > Providers
+
+5. **Set up the database**
    ```bash
    npm run db:push
    npm run db:seed  # Optional: seed sample data
    ```
 
-5. **Start development server**
+6. **Start development server**
    ```bash
    npm run dev
    ```
 
-6. **Open** [http://localhost:5173](http://localhost:5173)
+7. **Open** [http://localhost:5173](http://localhost:5173)
 
 ### Environment Variables
 
 Create a `.env` file with the following variables:
 
 ```env
-# Supabase
+# Supabase (Authentication & Storage)
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_URL=https://your-project.supabase.co
@@ -153,13 +252,14 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Neon Database
 DATABASE_URL=postgresql://user:password@host/database?sslmode=require
 
-# Razorpay
+# Razorpay Payments
 VITE_RAZORPAY_KEY_ID=rzp_test_xxxxx
 RAZORPAY_KEY_ID=rzp_test_xxxxx
 RAZORPAY_KEY_SECRET=your-secret
 
-# App
+# App Configuration
 VITE_APP_URL=http://localhost:5173
+VITE_APP_NAME=TenderTalks
 ```
 
 ## 📜 Available Scripts
@@ -167,13 +267,18 @@ VITE_APP_URL=http://localhost:5173
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server |
-| `npm run build` | Build for production |
+| `npm run build` | TypeScript check + Vite build |
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
-| `npm run db:generate` | Generate migrations |
+| `npm run lint:fix` | Fix ESLint issues |
+| `npm run format` | Format with Prettier |
+| `npm run format:check` | Check formatting |
+| `npm run typecheck` | TypeScript type checking |
+| `npm run db:generate` | Generate Drizzle migrations |
 | `npm run db:push` | Push schema to database |
 | `npm run db:studio` | Open Drizzle Studio |
-| `npm run db:seed` | Seed database |
+| `npm run db:seed` | Seed database with sample data |
+| `npm run clean` | Clean build artifacts |
 
 ## 🚢 Deployment
 
@@ -188,18 +293,43 @@ VITE_APP_URL=http://localhost:5173
 
 Set all variables from `.env.example` in Vercel:
 - Use production Razorpay keys (`rzp_live_xxx`)
-- Set `VITE_APP_URL` to your domain
-- Configure OAuth redirect URLs in Supabase
+- Set `VITE_APP_URL` to your domain (e.g., `https://tendertalks.live`)
+- Configure OAuth redirect URLs in Supabase Dashboard
+
+### Supabase Configuration
+
+1. Add your production domain to Authentication > URL Configuration
+2. Set Site URL to your domain
+3. Add redirect URLs: `https://yourdomain.com/auth/callback`
 
 ## 🔐 Admin Access
 
-To grant admin access:
+To grant admin access to a user:
 
 ```sql
 UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
 ```
 
 Run this in Neon Console or Drizzle Studio after the user has signed in.
+
+## 📊 Database Schema
+
+Key tables:
+- `users` - User accounts with roles
+- `podcasts` - Audio/video content
+- `blogs` - Blog articles (content stored in Supabase Storage)
+- `categories` - Content categories
+- `tags` - Content tags
+- `pricing_plans` - Subscription tiers
+- `subscriptions` - User subscriptions
+- `purchases` - Individual podcast purchases
+- `payment_history` - All transactions
+- `refund_requests` - Refund processing
+- `merch_items` - Store products
+- `merch_orders` - Store orders
+- `downloads` - Download tracking
+- `play_history` - Playback progress
+- `newsletter_subscribers` - Email list
 
 ## 🤝 Contributing
 
@@ -211,12 +341,11 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-[![GitHub issues](https://img.shields.io/github/issues/Afnanksalal/tendertalks)](https://github.com/Afnanksalal/tendertalks/issues)
-[![GitHub stars](https://img.shields.io/github/stars/Afnanksalal/tendertalks)](https://github.com/Afnanksalal/tendertalks/stargazers)
-
 ## 🔒 Security
 
 For security issues, please see our [Security Policy](SECURITY.md).
+
+**Do not** create public issues for security vulnerabilities. Email security@tendertalks.live instead.
 
 ## 📄 License
 
@@ -225,18 +354,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Contact
 
 - **Website**: [tendertalks.live](https://tendertalks.live)
-- **Email**: support@tendertalks.live
+- **Support**: support@tendertalks.live
+- **Sales**: sales@tendertalks.live
+- **Security**: security@tendertalks.live
 - **Twitter**: [@tendertalks_](https://twitter.com/tendertalks_)
+- **Instagram**: [@tendertalks.live](https://instagram.com/tendertalks.live)
+- **YouTube**: [@tendertalks.live](https://youtube.com/@tendertalks.live)
 
 ## 🙏 Acknowledgments
 
 - [React](https://reactjs.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
+- [Framer Motion](https://www.framer.com/motion/)
 - [Supabase](https://supabase.com/)
 - [Neon](https://neon.tech/)
 - [Vercel](https://vercel.com/)
 - [Razorpay](https://razorpay.com/)
+- [Drizzle ORM](https://orm.drizzle.team/)
 - [Lucide Icons](https://lucide.dev/)
+- [Zustand](https://zustand-demo.pmnd.rs/)
 
 ---
 

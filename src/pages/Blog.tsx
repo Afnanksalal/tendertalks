@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Clock, Calendar, User, Star, FileText, Loader2 } from 'lucide-react';
+import { Search, Star, FileText, Loader2 } from 'lucide-react';
 import { useBlogStore } from '../stores/blogStore';
 import { usePodcastStore } from '../stores/podcastStore';
+import { BlogCard } from '../components/blog/BlogCard';
 import { Input } from '../components/ui/Input';
 import { SEO } from '../components/SEO';
 
@@ -144,65 +145,14 @@ export const BlogPage: React.FC = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {featuredBlogs.slice(0, 2).map((blog, idx) => (
-                    <Link
+                    <motion.div
                       key={blog.id}
-                      to={`/blog/${blog.slug}`}
-                      className="group"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + idx * 0.1 }}
                     >
-                      <motion.article
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 + idx * 0.1 }}
-                        className="bg-slate-900/50 border border-white/10 rounded-2xl overflow-hidden hover:border-neon-cyan/30 transition-all"
-                      >
-                        <div className="aspect-[16/9] relative overflow-hidden">
-                          {blog.bannerUrl ? (
-                            <img
-                              src={blog.bannerUrl}
-                              alt={blog.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-neon-purple/20 to-neon-cyan/20 flex items-center justify-center">
-                              <FileText size={48} className="text-white/20" />
-                            </div>
-                          )}
-                          <div className="absolute top-3 left-3">
-                            <span className="px-2.5 py-1 bg-amber-400/90 text-black text-xs font-bold rounded-lg flex items-center gap-1">
-                              <Star size={10} fill="currentColor" /> Featured
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-5">
-                          <h3 className="text-lg font-bold text-white mb-2 group-hover:text-neon-cyan transition-colors line-clamp-2">
-                            {blog.title}
-                          </h3>
-                          {blog.excerpt && (
-                            <p className="text-slate-400 text-sm mb-4 line-clamp-2">{blog.excerpt}</p>
-                          )}
-                          <div className="flex items-center gap-4 text-xs text-slate-500">
-                            {blog.creator && (
-                              <span className="flex items-center gap-1">
-                                <User size={12} />
-                                {blog.creator.name || 'Author'}
-                              </span>
-                            )}
-                            {blog.readTime && (
-                              <span className="flex items-center gap-1">
-                                <Clock size={12} />
-                                {blog.readTime} min read
-                              </span>
-                            )}
-                            {blog.publishedAt && (
-                              <span className="flex items-center gap-1">
-                                <Calendar size={12} />
-                                {new Date(blog.publishedAt).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </motion.article>
-                    </Link>
+                      <BlogCard blog={blog} featured />
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>
@@ -219,63 +169,14 @@ export const BlogPage: React.FC = () => {
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {regularBlogs.map((blog, idx) => (
-                  <Link
+                  <motion.div
                     key={blog.id}
-                    to={`/blog/${blog.slug}`}
-                    className="group"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + idx * 0.05 }}
                   >
-                    <motion.article
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + idx * 0.05 }}
-                      className="bg-slate-900/50 border border-white/10 rounded-xl overflow-hidden hover:border-neon-cyan/30 transition-all h-full flex flex-col"
-                    >
-                      <div className="aspect-[16/10] relative overflow-hidden">
-                        {blog.bannerUrl ? (
-                          <img
-                            src={blog.bannerUrl}
-                            alt={blog.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-neon-purple/10 to-neon-cyan/10 flex items-center justify-center">
-                            <FileText size={32} className="text-white/20" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4 flex-1 flex flex-col">
-                        <h3 className="text-base font-bold text-white mb-2 group-hover:text-neon-cyan transition-colors line-clamp-2">
-                          {blog.title}
-                        </h3>
-                        {blog.excerpt && (
-                          <p className="text-slate-400 text-sm mb-3 line-clamp-2 flex-1">{blog.excerpt}</p>
-                        )}
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-auto">
-                          {blog.readTime && (
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} />
-                              {blog.readTime} min
-                            </span>
-                          )}
-                          {blog.publishedAt && (
-                            <span className="flex items-center gap-1">
-                              <Calendar size={12} />
-                              {new Date(blog.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                          )}
-                        </div>
-                        {blog.tags && blog.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-3">
-                            {blog.tags.slice(0, 3).map((tag: any) => (
-                              <span key={tag.id} className="px-2 py-0.5 bg-white/5 rounded text-xs text-slate-500">
-                                #{tag.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </motion.article>
-                  </Link>
+                    <BlogCard blog={blog} />
+                  </motion.div>
                 ))}
               </div>
             </motion.div>

@@ -2,12 +2,13 @@
 Brief description of the changes in this PR.
 
 ## Type of Change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Code refactoring
-- [ ] Performance improvement
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📝 Documentation update
+- [ ] ♻️ Code refactoring
+- [ ] ⚡ Performance improvement
+- [ ] 🎨 UI/UX improvement
 
 ## Related Issues
 Fixes #(issue number)
@@ -20,17 +21,35 @@ Fixes #(issue number)
 ## Screenshots (if applicable)
 Add screenshots to show visual changes.
 
+| Before | After |
+|--------|-------|
+| screenshot | screenshot |
+
 ## Checklist
+
+### Code Quality
 - [ ] My code follows the project's style guidelines
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings
-- [ ] The build passes locally with my changes
-- [ ] I have tested on mobile devices (if UI changes)
 
-## Testing
-Describe the tests you ran to verify your changes.
+### Testing
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+- [ ] `npm run typecheck` passes
+- [ ] Tested on desktop browsers (Chrome, Firefox, Safari)
+- [ ] Tested on mobile devices (if UI changes)
+
+### Documentation
+- [ ] I have updated the documentation (if needed)
+- [ ] I have updated the README (if needed)
+
+### Database (if applicable)
+- [ ] Migration file included
+- [ ] Schema changes documented
+
+## Testing Instructions
+Describe how reviewers can test your changes.
 
 ## Additional Notes
 Any additional information that reviewers should know.

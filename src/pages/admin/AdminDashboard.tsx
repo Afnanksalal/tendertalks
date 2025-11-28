@@ -58,7 +58,7 @@ export const AdminLayout: React.FC = () => {
             <Plus size={18} /> New Podcast
           </Link>
           <Link to="/admin/blogs/new"
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-neon-purple/20 text-neon-purple font-bold rounded-xl border border-neon-purple/30 hover:bg-neon-purple/30 transition-colors">
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-white/5 text-slate-300 font-medium rounded-xl border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
             <Plus size={16} /> New Blog
           </Link>
         </div>
@@ -120,7 +120,7 @@ export const AdminLayout: React.FC = () => {
                 <Link
                   to="/admin/blogs/new"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-2 bg-neon-purple/20 text-neon-purple font-medium rounded-xl border border-neon-purple/30 hover:bg-neon-purple/30 transition-colors text-sm"
+                  className="flex items-center justify-center gap-2 w-full py-2 bg-white/5 text-slate-300 font-medium rounded-xl border border-white/10 hover:bg-white/10 hover:text-white transition-colors text-sm"
                 >
                   <Plus size={14} /> New Blog
                 </Link>

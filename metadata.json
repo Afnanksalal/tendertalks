@@ -3,10 +3,34 @@
   "version": "1.0.0",
   "description": "Come talk with Afnan & Jenna - Exploring the cutting edge of AI, Tech, and Human Connection. Future, unfiltered.",
   "author": "TenderTalks",
-  "keywords": ["podcast", "streaming", "audio", "video", "AI", "tech", "future", "Afnan", "Jenna"],
+  "keywords": [
+    "podcast",
+    "streaming",
+    "audio",
+    "video",
+    "blog",
+    "AI",
+    "tech",
+    "future",
+    "Afnan",
+    "Jenna",
+    "subscription",
+    "merchandise"
+  ],
   "url": "https://tendertalks.live",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/Afnanksalal/tendertalks.git"
+  },
+  "social": {
+    "twitter": "https://twitter.com/tendertalks_",
+    "instagram": "https://instagram.com/tendertalks.live",
+    "youtube": "https://youtube.com/@tendertalks.live",
+    "linkedin": "https://linkedin.com/company/tendertalks"
+  },
+  "contact": {
+    "support": "support@tendertalks.live",
+    "sales": "sales@tendertalks.live",
+    "security": "security@tendertalks.live"
   }
 }

@@ -37,7 +37,7 @@
       "label": "TenderTalks Homepage"
     }
   ],
-  "categories": ["entertainment", "education", "podcasts", "music"],
+  "categories": ["entertainment", "education", "podcasts", "music", "news"],
   "lang": "en",
   "dir": "ltr",
   "prefer_related_applications": false,
@@ -48,6 +48,13 @@
       "short_name": "Browse",
       "description": "Browse all available podcasts",
       "url": "/browse",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Read Blog",
+      "short_name": "Blog",
+      "description": "Read the latest articles",
+      "url": "/blog",
       "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     },
     {
