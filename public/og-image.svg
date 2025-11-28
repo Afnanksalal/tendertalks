@@ -1,63 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#030014"/>
-      <stop offset="50%" style="stop-color:#0a0520"/>
-      <stop offset="100%" style="stop-color:#030014"/>
+      <stop offset="0%" stop-color="#030014"/>
+      <stop offset="50%" stop-color="#0a0520"/>
+      <stop offset="100%" stop-color="#030014"/>
     </linearGradient>
     <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#00F0FF"/>
-      <stop offset="100%" style="stop-color:#7000FF"/>
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="100%" stop-color="#7000FF"/>
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
   
   <!-- Background -->
-  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  <rect width="1200" height="630" fill="#030014"/>
   
-  <!-- Grid pattern -->
-  <g opacity="0.1">
-    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#00F0FF" stroke-width="0.5"/>
-    </pattern>
-    <rect width="1200" height="630" fill="url(#grid)"/>
+  <!-- Gradient overlay -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" opacity="0.8"/>
+  
+  <!-- Glow effects -->
+  <ellipse cx="200" cy="500" rx="400" ry="300" fill="#7000FF" opacity="0.15"/>
+  <ellipse cx="1000" cy="130" rx="350" ry="250" fill="#00F0FF" opacity="0.1"/>
+  
+  <!-- Logo/Brand mark -->
+  <g transform="translate(100, 200)">
+    <!-- Microphone icon -->
+    <rect x="0" y="0" width="70" height="110" rx="35" fill="url(#accentGrad)"/>
+    <rect x="12" y="25" width="46" height="6" rx="3" fill="#030014"/>
+    <rect x="12" y="45" width="46" height="6" rx="3" fill="#030014"/>
+    <rect x="12" y="65" width="46" height="6" rx="3" fill="#030014"/>
+    <path d="M-15 85 Q-15 150 35 150 Q85 150 85 85" fill="none" stroke="url(#accentGrad)" stroke-width="8"/>
+    <line x1="35" y1="150" x2="35" y2="200" stroke="url(#accentGrad)" stroke-width="8"/>
+    <line x1="5" y1="200" x2="65" y2="200" stroke="url(#accentGrad)" stroke-width="8"/>
   </g>
   
-  <!-- Glow circles -->
-  <circle cx="200" cy="500" r="300" fill="#7000FF" opacity="0.1" filter="url(#glow)"/>
-  <circle cx="1000" cy="100" r="250" fill="#00F0FF" opacity="0.08" filter="url(#glow)"/>
-  
-  <!-- Microphone icon -->
-  <g transform="translate(150, 180)">
-    <rect x="0" y="0" width="80" height="130" rx="40" fill="url(#accentGrad)" filter="url(#glow)"/>
-    <line x1="12" y1="30" x2="68" y2="30" stroke="#030014" stroke-width="6" stroke-linecap="round"/>
-    <line x1="12" y1="55" x2="68" y2="55" stroke="#030014" stroke-width="6" stroke-linecap="round"/>
-    <line x1="12" y1="80" x2="68" y2="80" stroke="#030014" stroke-width="6" stroke-linecap="round"/>
-    <path d="M-20 100 Q-20 180 40 180 Q100 180 100 100" fill="none" stroke="url(#accentGrad)" stroke-width="10" stroke-linecap="round"/>
-    <line x1="40" y1="180" x2="40" y2="240" stroke="url(#accentGrad)" stroke-width="10" stroke-linecap="round"/>
-    <line x1="0" y1="240" x2="80" y2="240" stroke="url(#accentGrad)" stroke-width="10" stroke-linecap="round"/>
-  </g>
-  
-  <!-- Text -->
-  <text x="320" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="100" font-weight="700" fill="white">TenderTalks</text>
-  <text x="320" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="#94a3b8">Premium Podcast Platform</text>
+  <!-- Main Title -->
+  <text x="220" y="280" font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="90" font-weight="700" fill="#ffffff">TenderTalks</text>
   
   <!-- Tagline -->
-  <text x="320" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="url(#accentGrad)">AI • Technology • Future • Innovation</text>
+  <text x="220" y="350" font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="32" font-weight="500" fill="#00F0FF">Come talk with Afnan &amp; Jenna</text>
   
-  <!-- Bottom accent line -->
-  <rect x="320" y="480" width="400" height="4" rx="2" fill="url(#accentGrad)" opacity="0.8"/>
+  <!-- Description -->
+  <text x="220" y="420" font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="24" fill="#94a3b8">Exploring AI, Tech, and Human Connection</text>
   
-  <!-- Sound waves -->
-  <g transform="translate(950, 315)" opacity="0.6">
-    <path d="M0 -80 Q20 -80 20 0 Q20 80 0 80" fill="none" stroke="#00F0FF" stroke-width="4"/>
-    <path d="M30 -120 Q60 -120 60 0 Q60 120 30 120" fill="none" stroke="#00F0FF" stroke-width="4"/>
-    <path d="M70 -160 Q110 -160 110 0 Q110 160 70 160" fill="none" stroke="#00F0FF" stroke-width="4"/>
+  <!-- Accent line -->
+  <rect x="220" y="460" width="300" height="4" rx="2" fill="url(#accentGrad)"/>
+  
+  <!-- Sound waves on right -->
+  <g transform="translate(950, 315)" opacity="0.5">
+    <path d="M0 -60 Q15 -60 15 0 Q15 60 0 60" fill="none" stroke="#00F0FF" stroke-width="4"/>
+    <path d="M25 -100 Q50 -100 50 0 Q50 100 25 100" fill="none" stroke="#00F0FF" stroke-width="4"/>
+    <path d="M60 -140 Q95 -140 95 0 Q95 140 60 140" fill="none" stroke="#00F0FF" stroke-width="4"/>
   </g>
+  
+  <!-- URL -->
+  <text x="220" y="550" font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="20" fill="#64748b">tendertalks.live</text>
 </svg>

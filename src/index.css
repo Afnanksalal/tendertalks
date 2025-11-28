@@ -87,16 +87,26 @@ body {
 
 .glass {
   background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-dark {
   background: rgba(3, 0, 20, 0.8);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Safari fallback for backdrop-filter */
+@supports not ((-webkit-backdrop-filter: blur(12px)) or (backdrop-filter: blur(12px))) {
+  .glass {
+    background: rgba(15, 23, 42, 0.95);
+  }
+  .glass-dark {
+    background: rgba(3, 0, 20, 0.95);
+  }
 }
 
 /* ========================================
@@ -133,6 +143,7 @@ body {
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -140,6 +151,7 @@ body {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -147,6 +159,7 @@ body {
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -358,6 +371,7 @@ input[type="range"]::-moz-range-thumb {
 /* Prevent horizontal scroll */
 html, body {
   max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* Better touch targets */
@@ -386,6 +400,55 @@ html, body {
 /* Smooth momentum scrolling on iOS */
 .scroll-smooth {
   -webkit-overflow-scrolling: touch;
+}
+
+/* ========================================
+   SAFARI-SPECIFIC FIXES
+   ======================================== */
+
+/* Fix Safari flexbox gap support (older versions) */
+@supports not (gap: 1rem) {
+  .flex > * + * {
+    margin-left: 0.5rem;
+  }
+}
+
+/* Fix Safari sticky positioning */
+.sticky {
+  position: -webkit-sticky;
+  position: sticky;
+}
+
+/* Fix Safari 100vh issue on mobile */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Fix Safari button styling */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Fix Safari input styling */
+input, textarea, select {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+input[type="search"] {
+  -webkit-appearance: none;
+}
+
+/* Fix Safari transform flickering */
+.transform-gpu {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* ========================================

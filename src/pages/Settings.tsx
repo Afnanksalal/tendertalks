@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  User, Mail, Camera, Loader2, CreditCard, Calendar, 
+import {
+  User, Mail, Camera, Loader2, CreditCard, Calendar,
   AlertTriangle, RefreshCw, ArrowRight, Clock
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
@@ -11,6 +11,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { cancelSubscription, reactivateSubscription, requestRefund } from '../api/subscriptions';
 import toast from 'react-hot-toast';
+import { SEO } from '../components/SEO';
 
 export const SettingsPage: React.FC = () => {
   const { user, isLoading: authLoading, updateProfile } = useAuthStore();
@@ -107,6 +108,7 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
+      <SEO title="Settings" noIndex />
       <div className="max-w-2xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Settings</h1>

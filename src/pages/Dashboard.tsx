@@ -5,6 +5,7 @@ import { Play, Clock, Calendar, Crown, ArrowRight, Loader2, Download, Settings, 
 import { useAuthStore } from '../stores/authStore';
 import { useUserStore } from '../stores/userStore';
 import { Button } from '../components/ui/Button';
+import { SEO } from '../components/SEO';
 
 export const DashboardPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuthStore();
@@ -31,6 +32,7 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
+      <SEO title="Dashboard" noIndex />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-10">

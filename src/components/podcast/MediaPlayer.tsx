@@ -58,6 +58,28 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     };
   }, [isPlaying]);
 
+  // Handle fullscreen change events (including ESC key)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isCurrentlyFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   const togglePlay = useCallback(() => {
     if (!mediaRef.current) return;
     if (isPlaying) {
@@ -119,12 +141,29 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
     
-    if (!isFullscreen) {
-      await containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      await document.exitFullscreen();
-      setIsFullscreen(false);
+    try {
+      if (!isFullscreen) {
+        // Safari uses webkitRequestFullscreen
+        if (containerRef.current.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        } else if ((containerRef.current as any).webkitRequestFullscreen) {
+          await (containerRef.current as any).webkitRequestFullscreen();
+        } else if ((containerRef.current as any).msRequestFullscreen) {
+          await (containerRef.current as any).msRequestFullscreen();
+        }
+        setIsFullscreen(true);
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+        setIsFullscreen(false);
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err);
     }
   };
 
@@ -168,6 +207,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         onCanPlay={() => setIsLoading(false)}
         className={type === 'video' ? 'w-full h-full object-contain' : 'hidden'}
         poster={thumbnail}
+        playsInline // Required for iOS Safari inline playback
+        webkit-playsinline="" // Legacy iOS support
+        preload="metadata"
       />
 
       {/* Audio Visualization (for audio type) */}

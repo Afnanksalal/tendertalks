@@ -6,6 +6,7 @@ import { PodcastCard } from '../components/podcast/PodcastCard';
 import { usePodcastStore } from '../stores/podcastStore';
 import { StarField } from '../components/effects/StarField';
 import { FloatingOrbs } from '../components/effects/FloatingOrbs';
+import { SEO } from '../components/SEO';
 
 // Simple fade animation - no complex transforms on mobile
 const fadeIn = {
@@ -31,6 +32,10 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] overflow-x-hidden relative">
+      <SEO 
+        url="/"
+        keywords="podcast, technology, AI, artificial intelligence, tech talks, TenderTalks, Afnan, Jenna"
+      />
       {/* Background Effects Layer - Orbs and grid behind content */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <FloatingOrbs />

@@ -1,9 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { SEO } from '../../components/SEO';
 
 export const TermsOfServicePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
+      <SEO 
+        title="Terms of Service"
+        description="Read the terms and conditions for using TenderTalks podcast platform."
+        url="/terms"
+        noIndex
+      />
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

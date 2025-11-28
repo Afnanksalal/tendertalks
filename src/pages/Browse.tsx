@@ -5,6 +5,7 @@ import { PodcastCard } from '../components/podcast/PodcastCard';
 import { usePodcastStore } from '../stores/podcastStore';
 import { useUserStore } from '../stores/userStore';
 import { useAuthStore } from '../stores/authStore';
+import { SEO } from '../components/SEO';
 
 export const BrowsePage: React.FC = () => {
   const { podcasts, categories, fetchPodcasts, fetchCategories, isLoading, filters, setFilters, clearFilters } = usePodcastStore();
@@ -38,6 +39,12 @@ export const BrowsePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4 relative">
+      <SEO 
+        title="Browse Podcasts"
+        description="Explore our collection of podcasts on AI, Tech, and Human Connection. Find free and premium content."
+        url="/browse"
+        keywords="podcasts, browse, AI podcasts, tech podcasts, TenderTalks episodes"
+      />
       {/* Background Ambience */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[20%] right-[10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-neon-purple/10 rounded-full blur-[80px] md:blur-[100px]" />

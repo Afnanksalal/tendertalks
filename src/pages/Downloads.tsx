@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Download, Play, Clock, Loader2, HardDrive, Music, Video, Check } from 'lucide-react';
+import { Download, Clock, Loader2, HardDrive, Music, Video, Check } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useUserStore } from '../stores/userStore';
 import { Button } from '../components/ui/Button';
 import toast from 'react-hot-toast';
+import { SEO } from '../components/SEO';
 
 interface DownloadablePodcast {
   id: string;
@@ -20,7 +21,7 @@ interface DownloadablePodcast {
 
 export const DownloadsPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuthStore();
-  const { subscription, hasActiveSubscription, purchases, fetchPurchases, fetchSubscription } = useUserStore();
+  const { subscription, hasActiveSubscription, fetchPurchases, fetchSubscription } = useUserStore();
   const [downloadableContent, setDownloadableContent] = useState<DownloadablePodcast[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -116,6 +117,7 @@ export const DownloadsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
+      <SEO title="Downloads" noIndex />
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

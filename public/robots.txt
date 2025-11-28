@@ -9,9 +9,16 @@ Disallow: /admin
 Disallow: /api/
 Disallow: /auth/
 
+# Disallow private user pages
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /billing
+Disallow: /downloads
+
 # Allow specific API endpoints for SEO
 Allow: /api/podcasts
 Allow: /api/categories
+Allow: /api/og-image
 
 # Sitemap
 Sitemap: https://tendertalks.live/sitemap.xml

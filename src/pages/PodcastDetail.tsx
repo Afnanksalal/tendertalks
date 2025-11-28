@@ -13,6 +13,7 @@ import { useAuthStore } from '../stores/authStore';
 import { AuthModal } from '../components/auth/AuthModal';
 import { initiatePayment, createOrder } from '../lib/razorpay';
 import toast from 'react-hot-toast';
+import { SEO } from '../components/SEO';
 
 export const PodcastDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -261,6 +262,15 @@ export const PodcastDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-32 pb-20">
+      <SEO 
+        title={podcast.title}
+        description={podcast.description?.slice(0, 160) || `Listen to ${podcast.title} on TenderTalks`}
+        image={podcast.thumbnailUrl || `/api/og-image?title=${encodeURIComponent(podcast.title)}`}
+        url={`/podcast/${podcast.slug}`}
+        type="article"
+        publishedTime={podcast.publishedAt ? new Date(podcast.publishedAt).toISOString() : undefined}
+        keywords={`podcast, ${podcast.title}, TenderTalks, ${(podcast as any).category?.name || 'tech'}`}
+      />
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-neon-purple/10 rounded-full blur-[100px]" />
@@ -294,6 +304,8 @@ export const PodcastDetailPage: React.FC = () => {
                   onEnded={() => setIsPlaying(false)}
                   className="w-full h-full object-contain bg-black"
                   controls={false}
+                  playsInline
+                  preload="metadata"
                 />
               ) : (
                 /* Thumbnail - shown when not playing or for audio */

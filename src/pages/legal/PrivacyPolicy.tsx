@@ -1,9 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { SEO } from '../../components/SEO';
 
 export const PrivacyPolicyPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
+      <SEO 
+        title="Privacy Policy"
+        description="Learn how TenderTalks collects, uses, and protects your personal information."
+        url="/privacy"
+        noIndex
+      />
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

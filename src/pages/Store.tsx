@@ -5,6 +5,7 @@ import { useMerchStore } from '../stores/merchStore';
 import { useCartStore } from '../stores/cartStore';
 import type { MerchItem } from '../db/schema';
 import toast from 'react-hot-toast';
+import { SEO } from '../components/SEO';
 
 export const StorePage: React.FC = () => {
   const { items: merch, fetchMerch, isLoading, error } = useMerchStore();
@@ -58,6 +59,12 @@ export const StorePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4 relative overflow-x-hidden">
+      <SEO 
+        title="Store"
+        description="Shop official TenderTalks merchandise. Limited edition gear for our community."
+        url="/store"
+        keywords="merch, merchandise, TenderTalks store, podcast merch"
+      />
       {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-neon-purple/10 via-transparent to-transparent pointer-events-none" />
 
