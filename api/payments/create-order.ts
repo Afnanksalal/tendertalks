@@ -3,25 +3,39 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-// Lazy initialization to avoid errors at module load time
 function getDb() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is not set');
+  const sql = neon(process.env.DATABASE_URL!);
+  return drizzle(sql, { schema });
+}
+
+async function createRazorpayOrder(amount: number, receipt: string, notes: Record<string, string>) {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  
+  if (!keyId || !keySecret) {
+    throw new Error('Payment gateway not configured');
   }
-  const sql_client = neon(process.env.DATABASE_URL);
-  return drizzle(sql_client, { schema });
-}
 
-function getRazorpayCredentials() {
-  return {
-    keyId: process.env.RAZORPAY_KEY_ID,
-    keySecret: process.env.RAZORPAY_KEY_SECRET,
-  };
-}
+  const response = await fetch('https://api.razorpay.com/v1/orders', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${btoa(`${keyId}:${keySecret}`)}`,
+    },
+    body: JSON.stringify({
+      amount: Math.round(amount * 100),
+      currency: 'INR',
+      receipt,
+      notes,
+    }),
+  });
 
-// Edge-compatible base64 encoding
-function base64Encode(str: string): string {
-  return btoa(str);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error?.description || 'Failed to create payment order');
+  }
+
+  return { order: await response.json(), keyId };
 }
 
 export default async function handler(req: Request) {
@@ -41,8 +55,7 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const body = await req.json();
-    const { amount, currency = 'INR', podcastId, planId, type, userId } = body;
+    const { currency = 'INR', podcastId, planId, type, userId } = await req.json();
 
     if (!userId) {
       return new Response(JSON.stringify({ error: 'User ID required' }), { status: 401, headers });
@@ -52,30 +65,12 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Invalid payment type' }), { status: 400, headers });
     }
 
-    // Get credentials
-    const { keyId: RAZORPAY_KEY_ID, keySecret: RAZORPAY_KEY_SECRET } = getRazorpayCredentials();
-
-    // Validate Razorpay credentials
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-      console.error('Missing Razorpay credentials');
-      return new Response(JSON.stringify({ error: 'Payment gateway not configured' }), { status: 500, headers });
-    }
-
-    // Get database connection
-    let db;
-    try {
-      db = getDb();
-    } catch (dbError) {
-      console.error('Database connection error:', dbError);
-      return new Response(JSON.stringify({ error: 'Database connection failed' }), { status: 500, headers });
-    }
-
-    let finalAmount = amount;
+    const db = getDb();
+    let finalAmount = 0;
     let receipt = '';
-    let metadata: Record<string, any> = { userId, type };
+    const metadata: Record<string, string> = { userId, type };
 
     if (type === 'purchase' && podcastId) {
-      // Check for existing completed purchase
       const existing = await db.select().from(schema.purchases)
         .where(and(
           eq(schema.purchases.userId, userId),
@@ -101,7 +96,7 @@ export default async function handler(req: Request) {
 
       finalAmount = parseFloat(podcast.price || '0');
       receipt = `purchase_${podcastId.slice(0, 8)}_${Date.now()}`;
-      metadata = { ...metadata, podcastId, podcastTitle: podcast.title };
+      metadata.podcastId = podcastId;
 
     } else if (type === 'subscription' && planId) {
       const [plan] = await db.select().from(schema.pricingPlans)
@@ -113,57 +108,18 @@ export default async function handler(req: Request) {
 
       finalAmount = parseFloat(plan.price);
       receipt = `sub_${planId.slice(0, 8)}_${Date.now()}`;
-      metadata = { ...metadata, planId, planName: plan.name };
+      metadata.planId = planId;
 
     } else {
-      return new Response(JSON.stringify({ error: 'Invalid request parameters' }), { status: 400, headers });
+      return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400, headers });
     }
 
     if (finalAmount <= 0) {
       return new Response(JSON.stringify({ error: 'Invalid amount' }), { status: 400, headers });
     }
 
-    // Create Razorpay order using form-urlencoded format
-    const formData = new URLSearchParams();
-    formData.append('amount', String(Math.round(finalAmount * 100)));
-    formData.append('currency', currency);
-    formData.append('receipt', receipt);
-    // Add notes as nested params
-    Object.entries(metadata).forEach(([key, value]) => {
-      formData.append(`notes[${key}]`, String(value));
-    });
+    const { order: razorpayOrder, keyId } = await createRazorpayOrder(finalAmount, receipt, metadata);
 
-    const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${base64Encode(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
-      },
-      body: formData.toString(),
-    });
-
-    if (!razorpayResponse.ok) {
-      const errorText = await razorpayResponse.text();
-      console.error('Razorpay order creation failed:', razorpayResponse.status, errorText);
-      
-      let errorMessage = 'Failed to create payment order';
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.error?.description || errorJson.error?.reason || errorMessage;
-      } catch {}
-      
-      if (razorpayResponse.status === 401) {
-        errorMessage = 'Invalid payment gateway credentials';
-      } else if (razorpayResponse.status === 406) {
-        errorMessage = 'Payment request format error';
-      }
-      
-      return new Response(JSON.stringify({ error: errorMessage }), { status: 500, headers });
-    }
-
-    const razorpayOrder = await razorpayResponse.json();
-
-    // Create pending purchase record
     if (type === 'purchase' && podcastId) {
       await db.insert(schema.purchases).values({
         userId,
@@ -175,30 +131,14 @@ export default async function handler(req: Request) {
       });
     }
 
-    // Record in payment history (table may not exist yet - run migration)
-    try {
-      await db.insert(schema.paymentHistory).values({
-        userId,
-        type,
-        amount: finalAmount.toString(),
-        currency,
-        status: 'pending',
-        razorpayOrderId: razorpayOrder.id,
-        metadata: JSON.stringify(metadata),
-      });
-    } catch (historyError) {
-      console.warn('Payment history insert failed (run migration):', historyError);
-    }
-
     return new Response(JSON.stringify({
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
-      key: RAZORPAY_KEY_ID,
+      key: keyId,
     }), { status: 200, headers });
 
   } catch (error) {
-    console.error('Error creating order:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers }

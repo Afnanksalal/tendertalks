@@ -46,12 +46,24 @@ export const CustomCursor: React.FC = () => {
     let targetY = -100;
     let currentX = -100;
     let currentY = -100;
-    const ease = 0.15;
+    const ease = 0.2;
+    let isAnimating = true;
 
     const animate = () => {
+      if (!isAnimating) return;
+      
       // Lerp for smooth movement
-      currentX += (targetX - currentX) * ease;
-      currentY += (targetY - currentY) * ease;
+      const dx = targetX - currentX;
+      const dy = targetY - currentY;
+      
+      // Snap if very close to avoid endless tiny movements
+      if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+        currentX = targetX;
+        currentY = targetY;
+      } else {
+        currentX += dx * ease;
+        currentY += dy * ease;
+      }
 
       if (dotRef.current) {
         dotRef.current.style.transform = `translate(${currentX - 6}px, ${currentY - 6}px)`;
@@ -70,12 +82,29 @@ export const CustomCursor: React.FC = () => {
       if (!isVisible) setIsVisible(true);
     };
 
+    // Handle tab visibility changes to prevent jitter
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isAnimating = false;
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      } else {
+        // Snap to current position immediately when returning
+        currentX = targetX;
+        currentY = targetY;
+        isAnimating = true;
+        rafRef.current = requestAnimationFrame(animate);
+      }
+    };
+
     rafRef.current = requestAnimationFrame(animate);
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      isAnimating = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isEnabled, isVisible]);
 

@@ -307,40 +307,38 @@ export default function ProductsManager() {
       </Modal>
 
       {products.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-12 text-center">
-          <Package size={48} className="mx-auto mb-4 text-slate-600" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-8 sm:p-12 text-center">
+          <Package size={40} className="mx-auto mb-4 text-slate-600" />
           <p className="text-slate-400 mb-2">No products yet</p>
-          <p className="text-slate-500 text-sm">Click "Add Product" to create your first product</p>
+          <p className="text-slate-500 text-sm">Click "Add" to create your first product</p>
         </motion.div>
       ) : (
-        <div className="grid gap-3 sm:gap-4">
+        <div className="space-y-3">
           {products.map((item, idx) => (
-            <motion.div key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-              className={`bg-slate-900/50 border border-white/10 rounded-xl p-4 ${!item.isActive ? 'opacity-60' : ''}`}>
-              <div className="flex items-start gap-3 sm:gap-4">
+            <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.03, 0.15) }}
+              className={`bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4 ${!item.isActive ? 'opacity-60' : ''}`}>
+              <div className="flex items-center gap-3">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt="" className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
+                  <img src={item.imageUrl} alt="" className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0"><Package className="text-slate-600" /></div>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0"><Package size={20} className="text-slate-600" /></div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-white font-medium truncate">{item.name}</h3>
-                      <p className="text-slate-500 text-sm truncate">{item.slug} · <span className="capitalize">{item.category}</span></p>
-                    </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${item.isActive ? 'bg-neon-green/20 text-neon-green' : 'bg-slate-700 text-slate-400'}`}>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <h3 className="text-white font-medium text-sm sm:text-base truncate">{item.name}</h3>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex-shrink-0 ${item.isActive ? 'bg-neon-green/20 text-neon-green' : 'bg-slate-700 text-slate-400'}`}>
                       {item.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-3">
-                      <p className="text-neon-green font-mono font-bold">₹{parseFloat(item.price).toLocaleString()}</p>
+                  <p className="text-slate-500 text-xs truncate mb-1.5">{item.slug} · <span className="capitalize">{item.category}</span></p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <p className="text-neon-green font-mono font-bold text-sm">₹{parseFloat(item.price).toLocaleString()}</p>
                       <p className="text-slate-500 text-xs">{item.stockQuantity} in stock</p>
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => startEdit(item)} className="p-2 text-slate-400 hover:text-neon-cyan hover:bg-neon-cyan/10 rounded-lg transition-colors touch-feedback"><Edit2 size={16} /></button>
-                      <button onClick={() => setDeleteModal({ open: true, id: item.id, name: item.name })} className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors touch-feedback"><Trash2 size={16} /></button>
+                    <div className="flex items-center">
+                      <button onClick={() => startEdit(item)} className="p-1.5 sm:p-2 text-slate-400 hover:text-neon-cyan hover:bg-neon-cyan/10 rounded-lg transition-colors"><Edit2 size={14} /></button>
+                      <button onClick={() => setDeleteModal({ open: true, id: item.id, name: item.name })} className="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={14} /></button>
                     </div>
                   </div>
                 </div>

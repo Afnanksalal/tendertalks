@@ -57,11 +57,11 @@ export const StorePage: React.FC = () => {
     : merch;
 
   return (
-    <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4 relative">
+    <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4 relative overflow-x-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-neon-purple/10 via-transparent to-transparent pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10 w-full">
         {/* Header */}
         <div className="text-center mb-10 md:mb-16">
           <motion.h1
@@ -124,105 +124,76 @@ export const StorePage: React.FC = () => {
             <p className="text-slate-400 text-lg">No products available</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredMerch.map((item, idx) => (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="group relative bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl md:rounded-2xl overflow-hidden hover:border-neon-cyan/50 transition-all duration-500"
+                transition={{ delay: Math.min(idx * 0.05, 0.3) }}
+                className="group relative bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:border-neon-cyan/50 transition-all duration-300"
               >
                 {/* Product Image */}
-                <div className="relative aspect-square overflow-hidden bg-slate-800/50 p-4 md:p-6">
-                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(45deg,#000_25%,transparent_25%,transparent_75%,#000_75%,#000),linear-gradient(45deg,#000_25%,transparent_25%,transparent_75%,#000_75%,#000)] bg-[length:20px_20px] bg-[position:0_0,10px_10px]" />
+                <div className="relative aspect-square overflow-hidden bg-slate-800/50 p-4">
 
                   {item.imageUrl ? (
-                    <motion.img
+                    <img
                       src={item.imageUrl}
                       alt={item.name}
-                      className="w-full h-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] z-10 relative"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ type: 'spring', stiffness: 200 }}
+                      className="w-full h-full object-contain"
                       loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <ShoppingBag className="w-16 h-16 text-slate-600" />
+                      <ShoppingBag className="w-12 h-12 text-slate-600" />
                     </div>
                   )}
 
                   {/* Category Badge */}
-                  <div className="absolute top-3 md:top-4 left-3 md:left-4 z-20">
-                    <span className="px-2 py-1 bg-black/50 border border-white/10 rounded text-[10px] text-slate-300 uppercase tracking-widest backdrop-blur-sm">
-                      {item.category}
-                    </span>
-                  </div>
+                  <span className="absolute top-3 left-3 px-2 py-1 bg-black/60 rounded text-[10px] text-slate-300 uppercase tracking-wider">
+                    {item.category}
+                  </span>
 
-                  {/* Out of Stock Badge */}
+                  {/* Out of Stock */}
                   {!item.inStock && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
-                      <span className="px-4 py-2 bg-red-500/80 text-white text-sm font-bold rounded-lg">
-                        Out of Stock
-                      </span>
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="px-3 py-1.5 bg-red-500/80 text-white text-sm font-bold rounded">Out of Stock</span>
                     </div>
                   )}
 
-                  {/* Share Button */}
+                  {/* Share */}
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShareProduct(item);
-                    }}
-                    className="absolute top-3 md:top-4 right-3 md:right-4 z-20 p-2 bg-black/50 border border-white/10 rounded-lg text-slate-300 hover:text-white hover:bg-black/70 backdrop-blur-sm transition-all touch-feedback"
-                    title="Share"
+                    onClick={(e) => { e.stopPropagation(); handleShareProduct(item); }}
+                    className="absolute top-3 right-3 p-2 bg-black/60 rounded-lg text-slate-300 hover:text-white transition-colors"
                   >
                     <Share2 size={14} />
                   </button>
                 </div>
 
                 {/* Info */}
-                <div className="p-4 md:p-6 relative">
-                  <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-neon-cyan to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1 min-w-0 pr-3">
-                      <h3 className="text-base md:text-lg font-bold text-white leading-tight mb-1 group-hover:text-neon-cyan transition-colors truncate">
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h3 className="text-base font-bold text-white truncate group-hover:text-neon-cyan transition-colors">
                         {item.name}
                       </h3>
-                      <p className="text-xs text-slate-500 font-mono">
-                        {item.inStock ? 'In Stock' : 'Out of Stock'}
-                      </p>
+                      <p className="text-xs text-slate-500">{item.inStock ? 'In Stock' : 'Out of Stock'}</p>
                     </div>
-                    <span className="text-lg md:text-xl font-display text-white font-bold flex-shrink-0">
-                      ₹{parseFloat(item.price).toFixed(0)}
-                    </span>
+                    <span className="text-lg font-bold text-white flex-shrink-0">₹{parseFloat(item.price).toFixed(0)}</span>
                   </div>
 
                   {item.description && (
-                    <p className="text-slate-400 text-sm mb-4 line-clamp-2">{item.description}</p>
+                    <p className="text-slate-400 text-sm mb-3 line-clamp-2">{item.description}</p>
                   )}
 
                   <button
                     onClick={() => handleAddToCart(item)}
                     disabled={addedItems.has(item.id) || !item.inStock}
-                    className={`w-full relative overflow-hidden py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all touch-feedback disabled:opacity-50 ${
-                      addedItems.has(item.id)
-                        ? 'bg-neon-green text-black'
-                        : 'bg-white text-black hover:bg-neon-cyan'
+                    className={`w-full py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 ${
+                      addedItems.has(item.id) ? 'bg-neon-green text-black' : 'bg-white text-black hover:bg-neon-cyan'
                     }`}
                   >
-                    <span className="relative z-10 flex items-center gap-2">
-                      {addedItems.has(item.id) ? (
-                        <>
-                          Added <Check size={18} />
-                        </>
-                      ) : (
-                        <>
-                          Add to Cart <Plus size={18} />
-                        </>
-                      )}
-                    </span>
+                    {addedItems.has(item.id) ? <><Check size={16} /> Added</> : <><Plus size={16} /> Add to Cart</>}
                   </button>
                 </div>
               </motion.div>
