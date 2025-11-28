@@ -126,12 +126,12 @@ export const BlogManager: React.FC = () => {
             {filteredBlogs.map((blog) => (
               <div key={blog.id} className="bg-slate-900/50 border border-white/10 rounded-xl p-4">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-neon-purple/10">
+                  <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-neon-cyan/10">
                     {blog.bannerUrl ? (
                       <img src={blog.bannerUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <FileText size={20} className="text-neon-purple/60" />
+                        <FileText size={20} className="text-neon-cyan/60" />
                       </div>
                     )}
                   </div>
@@ -205,12 +205,12 @@ export const BlogManager: React.FC = () => {
                     <tr key={blog.id} className="border-b border-white/5 hover:bg-white/5">
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-neon-purple/10">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-neon-cyan/10">
                             {blog.bannerUrl ? (
                               <img src={blog.bannerUrl} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <FileText size={20} className="text-neon-purple/60" />
+                                <FileText size={20} className="text-neon-cyan/60" />
                               </div>
                             )}
                           </div>

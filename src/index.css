@@ -968,3 +968,369 @@ input[type="number"] {
     padding: 6px !important;
   }
 }
+
+
+/* ========================================
+   BLOG CONTENT STYLES (GitHub/Notion-like)
+   ======================================== */
+
+.blog-content {
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+/* Emoji support */
+.blog-content .emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+
+/* Figure and figcaption */
+.blog-content figure {
+  margin: 2rem 0;
+}
+
+.blog-content figcaption {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+/* Anchor links on headings */
+.blog-content h1 a,
+.blog-content h2 a,
+.blog-content h3 a,
+.blog-content h4 a {
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+/* Task list styling */
+.blog-content ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.blog-content li.task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+/* Callout/Alert boxes (using blockquote with specific patterns) */
+.blog-content blockquote {
+  position: relative;
+}
+
+.blog-content blockquote p:first-child strong:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Info callout */
+.blog-content blockquote:has(p:first-child strong:first-child:contains("ℹ️")),
+.blog-content blockquote:has(p:first-child strong:first-child:contains("Note")),
+.blog-content blockquote:has(p:first-child strong:first-child:contains("Info")) {
+  border-left-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Warning callout */
+.blog-content blockquote:has(p:first-child strong:first-child:contains("⚠️")),
+.blog-content blockquote:has(p:first-child strong:first-child:contains("Warning")) {
+  border-left-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+/* Tip callout */
+.blog-content blockquote:has(p:first-child strong:first-child:contains("💡")),
+.blog-content blockquote:has(p:first-child strong:first-child:contains("Tip")) {
+  border-left-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+/* Keyboard shortcuts */
+.blog-content kbd {
+  display: inline-block;
+  padding: 0.2em 0.4em;
+  font-size: 0.85em;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #e2e8f0;
+  background-color: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Footnotes */
+.blog-content .footnotes {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.875rem;
+}
+
+.blog-content .footnotes ol {
+  padding-left: 1.5rem;
+}
+
+.blog-content .footnote-ref {
+  font-size: 0.75em;
+  vertical-align: super;
+  text-decoration: none;
+  color: #00F0FF;
+}
+
+.blog-content .footnote-backref {
+  text-decoration: none;
+  color: #00F0FF;
+}
+
+/* Definition lists */
+.blog-content dl {
+  margin: 1.5rem 0;
+}
+
+.blog-content dt {
+  font-weight: 600;
+  color: #fff;
+  margin-top: 1rem;
+}
+
+.blog-content dd {
+  margin-left: 1.5rem;
+  color: #94a3b8;
+}
+
+/* Abbreviations */
+.blog-content abbr {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+/* Mark/highlight */
+.blog-content mark {
+  background-color: rgba(0, 240, 255, 0.2);
+  color: #fff;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+/* Subscript and superscript */
+.blog-content sub,
+.blog-content sup {
+  font-size: 0.75em;
+}
+
+/* Details/Summary (collapsible) */
+.blog-content details {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+}
+
+.blog-content summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #fff;
+  padding: 0.5rem 0;
+}
+
+.blog-content summary:hover {
+  color: #00F0FF;
+}
+
+.blog-content details[open] summary {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.75rem;
+}
+
+/* Video embeds */
+.blog-content iframe,
+.blog-content video {
+  max-width: 100%;
+  border-radius: 0.75rem;
+  margin: 2rem 0;
+}
+
+.blog-content .video-wrapper {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+  margin: 2rem 0;
+  border-radius: 0.75rem;
+}
+
+.blog-content .video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+/* Math equations (if using KaTeX) */
+.blog-content .math {
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+/* Mermaid diagrams */
+.blog-content .mermaid {
+  background-color: rgba(30, 41, 59, 0.5);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+/* Table of contents */
+.blog-content .toc {
+  background-color: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+
+.blog-content .toc-title {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+}
+
+.blog-content .toc ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.blog-content .toc li {
+  margin: 0.5rem 0;
+}
+
+.blog-content .toc a {
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.blog-content .toc a:hover {
+  color: #00F0FF;
+}
+
+/* Nested TOC levels */
+.blog-content .toc ul ul {
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Responsive images */
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Image gallery grid */
+.blog-content .image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.blog-content .image-gallery img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+/* Code block with filename */
+.blog-content .code-block-wrapper {
+  margin: 1.5rem 0;
+}
+
+.blog-content .code-block-filename {
+  background-color: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  border-radius: 0.75rem 0.75rem 0 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.blog-content .code-block-wrapper pre {
+  margin-top: 0;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .blog-content {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+  
+  .blog-content h1 {
+    font-size: 1.75rem;
+  }
+  
+  .blog-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .blog-content h3 {
+    font-size: 1.25rem;
+  }
+  
+  .blog-content pre {
+    font-size: 0.8rem;
+  }
+  
+  .blog-content table {
+    font-size: 0.875rem;
+  }
+  
+  .blog-content th,
+  .blog-content td {
+    padding: 0.5rem;
+  }
+}
+
+/* Print styles for blog */
+@media print {
+  .blog-content {
+    color: #000;
+    background: #fff;
+  }
+  
+  .blog-content a {
+    color: #000;
+    text-decoration: underline;
+  }
+  
+  .blog-content pre,
+  .blog-content code {
+    background-color: #f5f5f5;
+    color: #000;
+  }
+  
+  .blog-content blockquote {
+    border-left-color: #ccc;
+    background-color: #f9f9f9;
+  }
+}

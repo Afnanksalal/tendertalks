@@ -230,8 +230,8 @@ export const HomePage: React.FC = () => {
           <div className="max-w-7xl mx-auto relative z-[2]">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-8 sm:mb-12">
               <div>
-                <span className="inline-flex items-center gap-2 text-neon-purple text-xs sm:text-sm font-bold tracking-wider uppercase mb-1 sm:mb-2">
-                  <span className="w-6 sm:w-8 h-[2px] bg-neon-purple" />
+                <span className="inline-flex items-center gap-2 text-neon-cyan text-xs sm:text-sm font-bold tracking-wider uppercase mb-1 sm:mb-2">
+                  <span className="w-6 sm:w-8 h-[2px] bg-neon-cyan" />
                   From the Blog
                 </span>
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white">
@@ -240,7 +240,7 @@ export const HomePage: React.FC = () => {
               </div>
               <Link 
                 to="/blog" 
-                className="flex items-center gap-2 text-slate-400 hover:text-neon-purple transition-colors font-medium text-sm sm:text-base touch-feedback"
+                className="flex items-center gap-2 text-slate-400 hover:text-neon-cyan transition-colors font-medium text-sm sm:text-base touch-feedback"
               >
                 View All
                 <ArrowRight size={16} />

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Calendar, User, Share2, Tag, Loader2, FileText } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, User, Share2, Tag, Loader2, FileText, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkEmoji from 'remark-emoji';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSlug from 'rehype-slug';
 import { useBlogStore } from '../stores/blogStore';
 import { Button } from '../components/ui/Button';
 import { SEO } from '../components/SEO';
@@ -94,7 +95,7 @@ export const BlogDetailPage: React.FC = () => {
 
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-neon-purple/10 rounded-full blur-[100px]" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-neon-cyan/10 rounded-full blur-[100px]" />
       </div>
 
       <article className="max-w-4xl mx-auto px-4 relative z-10">
@@ -198,33 +199,165 @@ export const BlogDetailPage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="prose prose-lg prose-invert max-w-none
-            prose-headings:font-display prose-headings:font-bold prose-headings:text-white
-            prose-h1:text-3xl prose-h1:mt-12 prose-h1:mb-6
-            prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-5
-            prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4
-            prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-6
-            prose-a:text-neon-cyan prose-a:no-underline hover:prose-a:underline
-            prose-strong:text-white prose-strong:font-bold
-            prose-em:text-slate-300 prose-em:italic
-            prose-code:text-neon-cyan prose-code:bg-slate-800/80 prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-            prose-pre:bg-slate-800/80 prose-pre:border prose-pre:border-white/5 prose-pre:rounded-xl
-            prose-blockquote:border-l-4 prose-blockquote:border-neon-cyan/50 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-slate-400
-            prose-ul:text-slate-300 prose-ol:text-slate-300
-            prose-li:marker:text-neon-cyan
-            prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
-            prose-hr:border-white/10"
+          className="blog-content prose prose-lg prose-invert max-w-none"
         >
           {blog.content ? (
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw, rehypeSanitize]}
+              remarkPlugins={[remarkGfm, remarkEmoji]}
+              rehypePlugins={[rehypeRaw, rehypeSlug]}
               components={{
-                img: ({ node, ...props }) => (
-                  <img {...props} loading="lazy" className="rounded-xl shadow-lg my-8 max-w-full" />
+                // Images with lazy loading and styling
+                img: ({ node, src, alt, ...props }) => (
+                  <figure className="my-8">
+                    <img 
+                      src={src} 
+                      alt={alt || ''} 
+                      loading="lazy" 
+                      className="rounded-xl shadow-lg max-w-full mx-auto" 
+                      {...props}
+                    />
+                    {alt && <figcaption className="text-center text-sm text-slate-500 mt-3">{alt}</figcaption>}
+                  </figure>
                 ),
-                a: ({ node, ...props }) => (
-                  <a {...props} target="_blank" rel="noopener noreferrer" />
+                // External links open in new tab
+                a: ({ node, href, children, ...props }) => {
+                  const isExternal = href?.startsWith('http');
+                  const isAnchor = href?.startsWith('#');
+                  return (
+                    <a 
+                      href={href} 
+                      target={isExternal ? '_blank' : undefined}
+                      rel={isExternal ? 'noopener noreferrer' : undefined}
+                      className={isAnchor ? 'anchor-link' : ''}
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  );
+                },
+                // Tables with GitHub-style
+                table: ({ node, ...props }) => (
+                  <div className="overflow-x-auto my-8 rounded-xl border border-white/10">
+                    <table className="w-full" {...props} />
+                  </div>
+                ),
+                thead: ({ node, ...props }) => (
+                  <thead className="bg-slate-800/80" {...props} />
+                ),
+                th: ({ node, ...props }) => (
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border-b border-white/10" {...props} />
+                ),
+                td: ({ node, ...props }) => (
+                  <td className="px-4 py-3 text-sm text-slate-300 border-b border-white/5" {...props} />
+                ),
+                tr: ({ node, ...props }) => (
+                  <tr className="hover:bg-white/5 transition-colors" {...props} />
+                ),
+                // Code blocks with syntax highlighting placeholder
+                pre: ({ node, children, ...props }) => (
+                  <pre className="bg-slate-800/80 border border-white/5 rounded-xl p-4 overflow-x-auto my-6" {...props}>
+                    {children}
+                  </pre>
+                ),
+                code: ({ node, inline, className, children, ...props }: any) => {
+                  if (inline) {
+                    return (
+                      <code className="text-neon-cyan bg-slate-800/80 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+                  return (
+                    <code className="block text-slate-300 text-sm font-mono leading-relaxed" {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+                // Blockquotes with callout style
+                blockquote: ({ node, ...props }) => (
+                  <blockquote className="border-l-4 border-neon-cyan/50 bg-neon-cyan/5 pl-4 pr-4 py-3 my-6 rounded-r-lg italic text-slate-400" {...props} />
+                ),
+                // Task lists (checkboxes)
+                input: ({ node, type, checked, ...props }: any) => {
+                  if (type === 'checkbox') {
+                    return (
+                      <span className="inline-flex items-center justify-center w-5 h-5 mr-2 rounded border border-white/20 bg-slate-800/50">
+                        {checked ? (
+                          <Check size={14} className="text-neon-green" />
+                        ) : (
+                          <span className="w-3 h-3" />
+                        )}
+                      </span>
+                    );
+                  }
+                  return <input type={type} {...props} />;
+                },
+                // List items
+                li: ({ node, children, ...props }: any) => {
+                  // Check if this is a task list item
+                  const hasCheckbox = Array.isArray(children) && 
+                    children.some((child: any) => 
+                      child?.props?.type === 'checkbox' || 
+                      (typeof child === 'object' && child?.type === 'input')
+                    );
+                  return (
+                    <li className={hasCheckbox ? 'list-none flex items-start gap-1' : ''} {...props}>
+                      {children}
+                    </li>
+                  );
+                },
+                // Headings with anchor links
+                h1: ({ node, children, id, ...props }) => (
+                  <h1 id={id} className="group text-3xl font-display font-bold text-white mt-12 mb-6 scroll-mt-24" {...props}>
+                    {children}
+                    {id && <a href={`#${id}`} className="ml-2 opacity-0 group-hover:opacity-50 text-neon-cyan">#</a>}
+                  </h1>
+                ),
+                h2: ({ node, children, id, ...props }) => (
+                  <h2 id={id} className="group text-2xl font-display font-bold text-white mt-10 mb-5 scroll-mt-24" {...props}>
+                    {children}
+                    {id && <a href={`#${id}`} className="ml-2 opacity-0 group-hover:opacity-50 text-neon-cyan">#</a>}
+                  </h2>
+                ),
+                h3: ({ node, children, id, ...props }) => (
+                  <h3 id={id} className="group text-xl font-display font-bold text-white mt-8 mb-4 scroll-mt-24" {...props}>
+                    {children}
+                    {id && <a href={`#${id}`} className="ml-2 opacity-0 group-hover:opacity-50 text-neon-cyan">#</a>}
+                  </h3>
+                ),
+                h4: ({ node, children, id, ...props }) => (
+                  <h4 id={id} className="group text-lg font-display font-bold text-white mt-6 mb-3 scroll-mt-24" {...props}>
+                    {children}
+                    {id && <a href={`#${id}`} className="ml-2 opacity-0 group-hover:opacity-50 text-neon-cyan">#</a>}
+                  </h4>
+                ),
+                // Paragraphs
+                p: ({ node, ...props }) => (
+                  <p className="text-slate-300 leading-relaxed mb-6" {...props} />
+                ),
+                // Horizontal rule
+                hr: ({ node, ...props }) => (
+                  <hr className="border-white/10 my-10" {...props} />
+                ),
+                // Strong/bold
+                strong: ({ node, ...props }) => (
+                  <strong className="text-white font-bold" {...props} />
+                ),
+                // Emphasis/italic
+                em: ({ node, ...props }) => (
+                  <em className="text-slate-300 italic" {...props} />
+                ),
+                // Unordered list
+                ul: ({ node, ...props }) => (
+                  <ul className="text-slate-300 my-4 pl-6 space-y-2 list-disc marker:text-neon-cyan" {...props} />
+                ),
+                // Ordered list
+                ol: ({ node, ...props }) => (
+                  <ol className="text-slate-300 my-4 pl-6 space-y-2 list-decimal marker:text-neon-cyan" {...props} />
+                ),
+                // Delete/strikethrough
+                del: ({ node, ...props }) => (
+                  <del className="text-slate-500 line-through" {...props} />
                 ),
               }}
             >
