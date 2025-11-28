@@ -10,7 +10,7 @@ A modern podcast streaming platform with blog system, subscription management, m
 
 🌐 **Live Demo**: [tendertalks.live](https://tendertalks.live)
 
-![TenderTalks Screenshot](https://tendertalks.live/api/og-image)
+![TenderTalks Screenshot](./TenderTalks.png)
 
 ## ✨ Features
 
