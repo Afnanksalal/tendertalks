@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { usePodcastStore } from '../stores/podcastStore';
 import { useUserStore } from '../stores/userStore';
 import { useAuthStore } from '../stores/authStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { AuthModal } from '../components/auth/AuthModal';
 import { initiatePayment, createOrder } from '../lib/razorpay';
 import toast from 'react-hot-toast';
@@ -172,9 +173,10 @@ export const PodcastDetailPage: React.FC = () => {
   }
 
   const podcast = currentPodcast;
+  const { settings } = useSettingsStore();
   const hasAccess = canAccessPodcast(podcast.id, podcast.isFree);
   const price = parseFloat(podcast.price || '0');
-  const canDownload = hasAccess && (podcast.isDownloadable || subscription?.plan?.allowDownloads);
+  const canDownload = settings.feature_downloads && hasAccess && (podcast.isDownloadable || subscription?.plan?.allowDownloads);
 
   const formatTime = (seconds?: number | null) => {
     if (!seconds || isNaN(seconds)) return '0:00';
@@ -286,7 +288,9 @@ export const PodcastDetailPage: React.FC = () => {
               body: JSON.stringify({ ...response, type: 'purchase', podcastId: podcast.id, userId: user.id }),
             });
             toast.success('Purchase successful!');
-            window.location.reload();
+            // Refresh user data to update access
+            await fetchPurchases();
+            await fetchSubscription();
           } catch { toast.error('Payment verification failed'); }
         },
         modal: { ondismiss: () => setIsPurchasing(false) },

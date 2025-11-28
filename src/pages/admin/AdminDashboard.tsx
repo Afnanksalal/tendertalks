@@ -245,8 +245,8 @@ export const AdminOverview: React.FC = () => {
         setRecentPurchases(data.recentPurchases || []);
         setRecentUsers(data.recentUsers || []);
       }
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setIsLoading(false);
     }

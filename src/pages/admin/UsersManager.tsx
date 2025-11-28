@@ -39,8 +39,8 @@ export const UsersManager: React.FC = () => {
         const data = await response.json();
         setUsers(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setIsLoading(false);
     }

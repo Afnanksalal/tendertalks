@@ -59,8 +59,8 @@ export const RefundsManager: React.FC = () => {
         const data = await response.json();
         setRefunds(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch refunds:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setIsLoading(false);
     }

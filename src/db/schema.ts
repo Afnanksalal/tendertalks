@@ -227,6 +227,16 @@ export const newsletterSubscribers = pgTable('newsletter_subscribers', {
   unsubscribedAt: timestamp('unsubscribed_at'),
 });
 
+// Site Settings / Feature Toggles
+export const siteSettings = pgTable('site_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  key: text('key').notNull().unique(),
+  value: text('value').notNull(),
+  description: text('description'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id),
+});
+
 // Blogs
 export const blogs = pgTable('blogs', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -330,3 +340,4 @@ export type PaymentHistory = typeof paymentHistory.$inferSelect;
 export type RefundRequest = typeof refundRequests.$inferSelect;
 export type Blog = typeof blogs.$inferSelect;
 export type NewBlog = typeof blogs.$inferInsert;
+export type SiteSetting = typeof siteSettings.$inferSelect;

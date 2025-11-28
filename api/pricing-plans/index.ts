@@ -32,8 +32,6 @@ export default async function handler(req: Request) {
       .where(eq(schema.pricingPlans.isActive, true))
       .orderBy(asc(schema.pricingPlans.sortOrder));
 
-    console.log('Fetched pricing plans:', result.length);
-
     return new Response(JSON.stringify(result), {
       status: 200,
       headers,

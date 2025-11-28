@@ -51,7 +51,7 @@ export default function InvoicesManager() {
         setPayments(data.payments || []);
         setStats(data.stats);
       }
-    } catch (e) { console.error(e); }
+    } catch { /* Fetch failed silently */ }
     setLoading(false);
   };
 

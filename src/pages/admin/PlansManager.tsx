@@ -42,7 +42,7 @@ export default function PlansManager() {
     try {
       const res = await fetch(`/api/admin/plans?includeInactive=true`, { headers: { 'X-User-Id': user.id } });
       if (res.ok) setPlans(await res.json());
-    } catch (e) { console.error(e); }
+    } catch { /* Fetch failed silently */ }
     setLoading(false);
   };
 
@@ -57,7 +57,7 @@ export default function PlansManager() {
         body: JSON.stringify({ ...formData, price: parseFloat(formData.price) }),
       });
       if (res.ok) { fetchPlans(); resetForm(); }
-    } catch (e) { console.error(e); }
+    } catch { /* Save failed silently */ }
     setSaving(false);
   };
 

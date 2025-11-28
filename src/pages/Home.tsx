@@ -6,6 +6,7 @@ import { PodcastCard } from '../components/podcast/PodcastCard';
 import { BlogCard } from '../components/blog/BlogCard';
 import { usePodcastStore } from '../stores/podcastStore';
 import { useBlogStore } from '../stores/blogStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { StarField } from '../components/effects/StarField';
 import { FloatingOrbs } from '../components/effects/FloatingOrbs';
 import { SEO } from '../components/SEO';
@@ -20,6 +21,7 @@ const fadeIn = {
 export const HomePage: React.FC = () => {
   const { podcasts, fetchPodcasts, isLoading } = usePodcastStore();
   const { blogs, fetchBlogs } = useBlogStore();
+  const { settings } = useSettingsStore();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -31,8 +33,10 @@ export const HomePage: React.FC = () => {
 
   useEffect(() => {
     fetchPodcasts();
-    fetchBlogs({ limit: 3 });
-  }, [fetchPodcasts, fetchBlogs]);
+    if (settings.feature_blog) {
+      fetchBlogs({ limit: 3 });
+    }
+  }, [fetchPodcasts, fetchBlogs, settings.feature_blog]);
 
   return (
     <div className="min-h-screen bg-[#030014] overflow-x-hidden relative">
@@ -113,13 +117,15 @@ export const HomePage: React.FC = () => {
               Start Listening
               <Play size={18} fill="currentColor" />
             </Link>
-            <Link 
-              to="/pricing"
-              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-white/5 border border-white/10 text-white rounded-full font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2 touch-feedback"
-            >
-              View Plans
-              <ArrowRight size={18} />
-            </Link>
+            {settings.feature_subscriptions && (
+              <Link 
+                to="/pricing"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-white/5 border border-white/10 text-white rounded-full font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2 touch-feedback"
+              >
+                View Plans
+                <ArrowRight size={18} />
+              </Link>
+            )}
           </motion.div>
 
           {/* Stats row */}
@@ -224,8 +230,8 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Latest Blog Posts */}
-      {blogs.length > 0 && (
+      {/* Latest Blog Posts - only show if blog feature is enabled */}
+      {settings.feature_blog && blogs.length > 0 && (
         <section className="py-12 sm:py-16 md:py-24 px-4 relative">
           <div className="max-w-7xl mx-auto relative z-[2]">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-8 sm:mb-12">
@@ -347,12 +353,14 @@ export const HomePage: React.FC = () => {
                 >
                   Browse Free Content
                 </Link>
-                <Link 
-                  to="/pricing" 
-                  className="px-6 sm:px-8 py-3 sm:py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all touch-feedback"
-                >
-                  View Plans
-                </Link>
+                {settings.feature_subscriptions && (
+                  <Link 
+                    to="/pricing" 
+                    className="px-6 sm:px-8 py-3 sm:py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all touch-feedback"
+                  >
+                    View Plans
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>

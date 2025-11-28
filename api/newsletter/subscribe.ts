@@ -26,6 +26,20 @@ export default async function handler(req: Request) {
   }
 
   try {
+    // Check if newsletter feature is enabled
+    const [newsletterSetting] = await db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, 'feature_newsletter'))
+      .limit(1);
+    
+    if (newsletterSetting && newsletterSetting.value === 'false') {
+      return new Response(JSON.stringify({ error: 'Newsletter is currently disabled' }), {
+        status: 403,
+        headers,
+      });
+    }
+
     const body = await req.json();
     const { email } = body;
 

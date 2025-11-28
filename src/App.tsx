@@ -1,9 +1,11 @@
-import React, { useEffect, Suspense, lazy } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/react';
 import { useAuthStore } from './stores/authStore';
+import { useSettingsStore } from './stores/settingsStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { FeatureGuard } from './components/FeatureGuard';
 import { Loader2 } from 'lucide-react';
 
 // Layout
@@ -24,6 +26,7 @@ import { DownloadsPage } from './pages/Downloads';
 import { BillingPage } from './pages/Billing';
 import { AuthCallback } from './pages/AuthCallback';
 import { NotFoundPage } from './pages/NotFound';
+import { MaintenancePage } from './pages/Maintenance';
 
 // Legal Pages
 import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicy';
@@ -59,7 +62,8 @@ const PageLoader = () => (
 );
 
 function App() {
-  const { initialize } = useAuthStore();
+  const { initialize, isAdmin, isLoading: authLoading } = useAuthStore();
+  const { fetchSettings, settings, isLoaded: settingsLoaded } = useSettingsStore();
 
   useEffect(() => {
     // Remove initial loader once React mounts
@@ -68,8 +72,9 @@ function App() {
       loader.remove();
     }
     
-    // Initialize auth only once on mount
+    // Initialize auth and fetch settings
     initialize();
+    fetchSettings();
 
     // Prevent page reload on visibility change (mobile tab switching)
     let wasHidden = false;
@@ -86,14 +91,33 @@ function App() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Prevent iOS Safari from reloading on back/forward navigation
-    window.addEventListener('pageshow', (event) => {
+    window.addEventListener('pageshow', () => {
       // Page was restored from bfcache - no action needed
     });
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [initialize]);
+  }, [initialize, fetchSettings]);
+
+  // Show loading while checking auth and settings
+  if (authLoading || !settingsLoaded) {
+    return (
+      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+      </div>
+    );
+  }
+
+  // Show maintenance page for non-admin users when maintenance mode is enabled
+  if (settings.maintenance_mode && !isAdmin) {
+    return (
+      <ErrorBoundary>
+        <MaintenancePage />
+        <Analytics />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>
@@ -106,10 +130,10 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/browse" element={<BrowsePage />} />
             <Route path="/podcast/:slug" element={<PodcastDetailPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/store" element={<StorePage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/blog/:slug" element={<Suspense fallback={<PageLoader />}><BlogDetailPage /></Suspense>} />
+            <Route path="/pricing" element={<FeatureGuard feature="feature_subscriptions"><PricingPage /></FeatureGuard>} />
+            <Route path="/store" element={<FeatureGuard feature="feature_merch"><StorePage /></FeatureGuard>} />
+            <Route path="/blog" element={<FeatureGuard feature="feature_blog"><BlogPage /></FeatureGuard>} />
+            <Route path="/blog/:slug" element={<FeatureGuard feature="feature_blog"><Suspense fallback={<PageLoader />}><BlogDetailPage /></Suspense></FeatureGuard>} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
@@ -118,8 +142,8 @@ function App() {
             
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/billing" element={<BillingPage />} />
-            <Route path="/downloads" element={<DownloadsPage />} />
+            <Route path="/billing" element={<FeatureGuard feature="feature_subscriptions"><BillingPage /></FeatureGuard>} />
+            <Route path="/downloads" element={<FeatureGuard feature="feature_downloads"><DownloadsPage /></FeatureGuard>} />
             
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminOverview />} />

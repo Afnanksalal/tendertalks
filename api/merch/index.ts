@@ -40,8 +40,6 @@ export default async function handler(req: Request) {
       .from(schema.merchItems)
       .where(and(...conditions));
 
-    console.log('Fetched merch items:', items.length);
-
     return new Response(JSON.stringify(items), {
       status: 200,
       headers,

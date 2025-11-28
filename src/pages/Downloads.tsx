@@ -46,8 +46,8 @@ export const DownloadsPage: React.FC = () => {
         const data = await response.json();
         setDownloadableContent(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch downloadable content:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setIsLoading(false);
     }

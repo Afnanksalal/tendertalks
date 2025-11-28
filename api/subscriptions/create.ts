@@ -62,13 +62,24 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
     }
 
+    const db = getDb();
+
+    // Check if subscriptions feature is enabled
+    const [subsSetting] = await db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, 'feature_subscriptions'))
+      .limit(1);
+    
+    if (subsSetting && subsSetting.value === 'false') {
+      return new Response(JSON.stringify({ error: 'Subscriptions are currently disabled' }), { status: 403, headers });
+    }
+
     const { planId, currency = 'INR' } = await req.json();
 
     if (!planId) {
       return new Response(JSON.stringify({ error: 'Plan ID required' }), { status: 400, headers });
     }
-
-    const db = getDb();
 
     const [plan] = await db.select().from(schema.pricingPlans)
       .where(and(eq(schema.pricingPlans.id, planId), eq(schema.pricingPlans.isActive, true)))

@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
-import { inArray } from 'drizzle-orm';
+import { inArray, eq } from 'drizzle-orm';
 
 function getDb() {
   const sql = neon(process.env.DATABASE_URL!);
@@ -55,6 +55,19 @@ export default async function handler(req: Request) {
   }
 
   try {
+    const db = getDb();
+
+    // Check if merch feature is enabled
+    const [merchSetting] = await db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, 'feature_merch'))
+      .limit(1);
+    
+    if (merchSetting && merchSetting.value === 'false') {
+      return new Response(JSON.stringify({ error: 'Store is currently disabled' }), { status: 403, headers });
+    }
+
     const { userId, items, total, shippingAddress } = await req.json();
 
     if (!userId || !items?.length) {
@@ -64,8 +77,6 @@ export default async function handler(req: Request) {
     if (!total || total < 1) {
       return new Response(JSON.stringify({ error: 'Minimum order is ₹1' }), { status: 400, headers });
     }
-
-    const db = getDb();
 
     // Validate items
     const itemIds = items.map((i: any) => i.merchItemId);

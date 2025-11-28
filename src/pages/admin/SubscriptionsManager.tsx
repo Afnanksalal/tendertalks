@@ -35,7 +35,7 @@ export default function SubscriptionsManager() {
     try {
       const res = await fetch(`/api/admin/subscriptions?status=${filter}`, { headers: { 'X-User-Id': user.id } });
       if (res.ok) setSubscriptions(await res.json());
-    } catch (e) { console.error(e); }
+    } catch { /* Fetch failed silently */ }
     setLoading(false);
   };
 

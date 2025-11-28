@@ -81,8 +81,7 @@ export const useBlogStore = create<BlogState>((set, get) => ({
       }
       
       set({ blogs: await response.json(), isLoading: false, lastFetched: now });
-    } catch (error) {
-      console.error('Error fetching blogs:', error);
+    } catch {
       set({ blogs: [], isLoading: false });
     }
   },

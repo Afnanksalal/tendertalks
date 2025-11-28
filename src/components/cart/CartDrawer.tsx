@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, ShoppingBag, CreditCard, ChevronRight, Plus, Minus, Loader2 } from 'lucide-react';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { initiatePayment } from '../../lib/razorpay';
 import toast from 'react-hot-toast';
 
 export const CartDrawer: React.FC = () => {
   const { items, isOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
   const { user } = useAuthStore();
+  const { settings } = useSettingsStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Compute total and itemCount directly since zustand getters don't work with persist
@@ -16,13 +18,16 @@ export const CartDrawer: React.FC = () => {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && settings.feature_merch) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+  }, [isOpen, settings.feature_merch]);
+
+  // Don't render if merch is disabled
+  if (!settings.feature_merch) return null;
 
   const handleCheckout = async () => {
     if (!user) {

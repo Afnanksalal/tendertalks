@@ -56,8 +56,9 @@ export default async function handler(req: Request) {
         return new Response(JSON.stringify({ error: 'Tag ID required' }), { status: 400, headers });
       }
 
-      // Delete tag associations first
+      // Delete tag associations first (from both podcasts and blogs)
       await db.delete(schema.podcastTags).where(eq(schema.podcastTags.tagId, id));
+      await db.delete(schema.blogTags).where(eq(schema.blogTags.tagId, id));
       await db.delete(schema.tags).where(eq(schema.tags.id, id));
 
       return new Response(JSON.stringify({ success: true }), { status: 200, headers });

@@ -162,8 +162,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
         setIsFullscreen(false);
       }
-    } catch (err) {
-      console.error('Fullscreen error:', err);
+    } catch {
+      // Fullscreen not supported or denied
     }
   };
 

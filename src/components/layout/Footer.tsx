@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Twitter, Instagram, Linkedin, Youtube, Send, Loader2, Check, Mic2, Mail, Rss, MapPin } from 'lucide-react';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 export const Footer: React.FC = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const { settings } = useSettingsStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,12 +82,12 @@ export const Footer: React.FC = () => {
             <h4 className="text-white font-bold uppercase tracking-wider mb-4 text-xs">Platform</h4>
             <ul className="space-y-2.5">
               {[
-                { name: 'Browse', path: '/browse' },
-                { name: 'Blog', path: '/blog' },
-                { name: 'Store', path: '/store' },
-                { name: 'Pricing', path: '/pricing' },
-                { name: 'Dashboard', path: '/dashboard' },
-              ].map(link => (
+                { name: 'Browse', path: '/browse', enabled: true },
+                { name: 'Blog', path: '/blog', enabled: settings.feature_blog },
+                { name: 'Store', path: '/store', enabled: settings.feature_merch },
+                { name: 'Pricing', path: '/pricing', enabled: settings.feature_subscriptions },
+                { name: 'Dashboard', path: '/dashboard', enabled: true },
+              ].filter(link => link.enabled).map(link => (
                 <li key={link.path}>
                   <Link to={link.path} className="text-slate-400 hover:text-neon-cyan transition-colors text-sm">
                     {link.name}
@@ -142,38 +144,44 @@ export const Footer: React.FC = () => {
 
           {/* Newsletter */}
           <div className="col-span-2 md:col-span-1">
-            <h4 className="text-white font-bold uppercase tracking-wider mb-4 text-xs">Stay Updated</h4>
-            <form onSubmit={handleSubmit} className="space-y-2">
-              <div className="relative">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={status === 'loading' || status === 'success'}
-                  className="w-full bg-slate-900/80 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30 transition-all text-sm disabled:opacity-50 placeholder:text-slate-500"
-                />
-                <button 
-                  type="submit"
-                  disabled={status === 'loading' || status === 'success' || !email}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-whale-500 hover:text-neon-cyan transition-colors disabled:opacity-50 p-1"
-                >
-                  {status === 'loading' ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : status === 'success' ? (
-                    <Check size={18} className="text-neon-green" />
-                  ) : (
-                    <Send size={18} />
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-slate-500">
-                {status === 'success' ? 'Thanks for subscribing!' : 'No spam, just tech.'}
-              </p>
-            </form>
+            {settings.feature_newsletter ? (
+              <>
+                <h4 className="text-white font-bold uppercase tracking-wider mb-4 text-xs">Stay Updated</h4>
+                <form onSubmit={handleSubmit} className="space-y-2">
+                  <div className="relative">
+                    <input 
+                      type="email" 
+                      placeholder="Enter your email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={status === 'loading' || status === 'success'}
+                      className="w-full bg-slate-900/80 border border-white/10 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-neon-cyan/50 focus:ring-1 focus:ring-neon-cyan/30 transition-all text-sm disabled:opacity-50 placeholder:text-slate-500"
+                    />
+                    <button 
+                      type="submit"
+                      disabled={status === 'loading' || status === 'success' || !email}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-whale-500 hover:text-neon-cyan transition-colors disabled:opacity-50 p-1"
+                    >
+                      {status === 'loading' ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : status === 'success' ? (
+                        <Check size={18} className="text-neon-green" />
+                      ) : (
+                        <Send size={18} />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {status === 'success' ? 'Thanks for subscribing!' : 'No spam, just tech.'}
+                  </p>
+                </form>
+              </>
+            ) : (
+              <h4 className="text-white font-bold uppercase tracking-wider mb-4 text-xs">Contact Us</h4>
+            )}
 
             {/* Contact Emails */}
-            <div className="mt-4 space-y-1.5">
+            <div className={settings.feature_newsletter ? 'mt-4 space-y-1.5' : 'space-y-1.5'}>
               <a href="mailto:sales@tendertalks.live" className="text-xs text-slate-500 hover:text-neon-cyan transition-colors block">
                 sales@tendertalks.live
               </a>
@@ -187,12 +195,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="mt-10 md:mt-12 pt-6 md:pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-slate-500 text-xs md:text-sm">
           <p>&copy; {new Date().getFullYear()} TenderTalks. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <a href="/sitemap.xml" className="hover:text-neon-cyan transition-colors">Sitemap</a>
-            <a href="/api/rss" className="hover:text-neon-cyan transition-colors flex items-center gap-1">
-              <Rss size={12} /> RSS
-            </a>
-          </div>
+          <p className="text-slate-600">Made with ❤️ for the community</p>
         </div>
       </div>
     </footer>

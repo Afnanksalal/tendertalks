@@ -46,8 +46,8 @@ export const BillingPage: React.FC = () => {
         setPayments(data.payments || []);
         setRefunds(data.refunds || []);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Fetch failed silently
     }
     setLoading(false);
   };

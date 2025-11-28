@@ -45,8 +45,8 @@ export const PaymentsManager: React.FC = () => {
         const data = await response.json();
         setPayments(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch payments:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setIsLoading(false);
     }

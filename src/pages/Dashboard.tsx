@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Clock, Calendar, Crown, ArrowRight, Loader2, Download, Settings, ShoppingBag } from 'lucide-react';
+import { Play, Clock, Calendar, Crown, ArrowRight, Loader2, Download, Settings, ShoppingBag, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useUserStore } from '../stores/userStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { Button } from '../components/ui/Button';
 import { SEO } from '../components/SEO';
 
 export const DashboardPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuthStore();
   const { purchases, subscription, fetchPurchases, fetchSubscription, isLoading, hasActiveSubscription } = useUserStore();
+  const { settings } = useSettingsStore();
 
   useEffect(() => {
     if (user) {
@@ -110,26 +112,39 @@ export const DashboardPage: React.FC = () => {
                 <Play size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
                 <span className="text-sm text-slate-300">Browse</span>
               </Link>
+              {settings.feature_downloads && (
+                <Link
+                  to="/downloads"
+                  className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                >
+                  <Download size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                  <span className="text-sm text-slate-300">Downloads</span>
+                </Link>
+              )}
+              {settings.feature_merch && (
+                <Link
+                  to="/store"
+                  className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                >
+                  <ShoppingBag size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                  <span className="text-sm text-slate-300">Store</span>
+                </Link>
+              )}
+              {settings.feature_subscriptions && (
+                <Link
+                  to="/billing"
+                  className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                >
+                  <CreditCard size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                  <span className="text-sm text-slate-300">Billing</span>
+                </Link>
+              )}
               <Link
-                to="/downloads"
-                className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
-              >
-                <Download size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                <span className="text-sm text-slate-300">Downloads</span>
-              </Link>
-              <Link
-                to="/store"
-                className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
-              >
-                <ShoppingBag size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                <span className="text-sm text-slate-300">Store</span>
-              </Link>
-              <Link
-                to="/billing"
+                to="/settings"
                 className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
               >
                 <Settings size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                <span className="text-sm text-slate-300">Billing</span>
+                <span className="text-sm text-slate-300">Settings</span>
               </Link>
             </motion.div>
 
@@ -280,7 +295,7 @@ export const DashboardPage: React.FC = () => {
             </motion.div>
 
             {/* Upgrade CTA */}
-            {!hasActiveSubscription() && (
+            {settings.feature_subscriptions && !hasActiveSubscription() && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

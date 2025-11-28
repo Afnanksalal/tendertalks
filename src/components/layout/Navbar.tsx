@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Mic2, User, LogOut, Settings, LayoutDashboard, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Menu, X, Mic2, User, LogOut, Settings, LayoutDashboard, ChevronRight, ShoppingBag, Wrench } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useCartStore } from '../../stores/cartStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { AuthModal } from '../auth/AuthModal';
 
 export const Navbar: React.FC = () => {
@@ -16,6 +17,7 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuthStore();
   const { items: cartItems, openCart } = useCartStore();
+  const { settings } = useSettingsStore();
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
@@ -34,12 +36,13 @@ export const Navbar: React.FC = () => {
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  // Build nav links based on feature toggles
   const navLinks = [
-    { name: 'Browse', path: '/browse' },
-    { name: 'Blog', path: '/blog' },
-    { name: 'Store', path: '/store' },
-    { name: 'Pricing', path: '/pricing' },
-  ];
+    { name: 'Browse', path: '/browse', enabled: true },
+    { name: 'Blog', path: '/blog', enabled: settings.feature_blog },
+    { name: 'Store', path: '/store', enabled: settings.feature_merch },
+    { name: 'Pricing', path: '/pricing', enabled: settings.feature_subscriptions },
+  ].filter(link => link.enabled);
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,7 +51,16 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-2' : 'py-3'}`}>
+      {/* Maintenance Mode Banner for Admins */}
+      {settings.maintenance_mode && isAdmin && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-black text-center py-1.5 px-4 text-sm font-medium flex items-center justify-center gap-2">
+          <Wrench size={14} />
+          <span>Maintenance mode is active. Only admins can access the site.</span>
+          <Link to="/admin/settings" className="underline hover:no-underline ml-1">Manage</Link>
+        </div>
+      )}
+      
+      <nav className={`fixed left-0 right-0 z-50 transition-all duration-300 ${settings.maintenance_mode && isAdmin ? 'top-8' : 'top-0'} ${scrolled ? 'py-2' : 'py-3'}`}>
         <div className="max-w-6xl mx-auto px-4">
           <div className={`
             relative px-4 md:px-6 py-3 rounded-2xl flex items-center justify-between gap-4
@@ -95,19 +107,21 @@ export const Navbar: React.FC = () => {
 
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center gap-2">
-              {/* Cart */}
-              <button
-                onClick={openCart}
-                className="relative p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                aria-label="Shopping cart"
-              >
-                <ShoppingBag size={20} />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-neon-cyan text-black text-xs font-bold rounded-full flex items-center justify-center">
-                    {cartItemCount > 9 ? '9+' : cartItemCount}
-                  </span>
-                )}
-              </button>
+              {/* Cart - only show if merch is enabled */}
+              {settings.feature_merch && (
+                <button
+                  onClick={openCart}
+                  className="relative p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                  aria-label="Shopping cart"
+                >
+                  <ShoppingBag size={20} />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-neon-cyan text-black text-xs font-bold rounded-full flex items-center justify-center">
+                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                    </span>
+                  )}
+                </button>
+              )}
               
               {user ? (
                 <div className="relative">
@@ -190,18 +204,20 @@ export const Navbar: React.FC = () => {
 
             {/* Mobile Actions */}
             <div className="lg:hidden flex items-center gap-1">
-              <button
-                onClick={openCart}
-                className="relative p-2 text-slate-400 hover:text-white transition-colors"
-                aria-label="Shopping cart"
-              >
-                <ShoppingBag size={22} />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-neon-cyan text-black text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {cartItemCount > 9 ? '9+' : cartItemCount}
-                  </span>
-                )}
-              </button>
+              {settings.feature_merch && (
+                <button
+                  onClick={openCart}
+                  className="relative p-2 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Shopping cart"
+                >
+                  <ShoppingBag size={22} />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-neon-cyan text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                    </span>
+                  )}
+                </button>
+              )}
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="p-2 text-slate-300 hover:text-white transition-colors"

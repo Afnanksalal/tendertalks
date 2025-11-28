@@ -71,7 +71,7 @@ export default function ProductsManager() {
         body: JSON.stringify({ ...formData, price: parseFloat(formData.price) }),
       });
       if (res.ok) { fetchProducts(); resetForm(); }
-    } catch (e) { console.error(e); }
+    } catch { /* Save failed silently */ }
     setSaving(false);
   };
 

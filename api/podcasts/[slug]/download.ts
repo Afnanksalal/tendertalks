@@ -41,6 +41,17 @@ export default async function handler(req: Request) {
   }
 
   try {
+    // Check if downloads feature is enabled
+    const [downloadsSetting] = await db
+      .select()
+      .from(schema.siteSettings)
+      .where(eq(schema.siteSettings.key, 'feature_downloads'))
+      .limit(1);
+    
+    if (downloadsSetting && downloadsSetting.value === 'false') {
+      return new Response(JSON.stringify({ error: 'Downloads are currently disabled' }), { status: 403, headers });
+    }
+
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);
     const slug = pathParts[pathParts.length - 2];
