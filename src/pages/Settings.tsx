@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, Mail, Camera, Loader2, CreditCard, Calendar,
-  AlertTriangle, RefreshCw, ArrowRight, Clock
+  AlertTriangle, RefreshCw, ArrowRight, Clock, X
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useUserStore } from '../stores/userStore';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { cancelSubscription, reactivateSubscription, requestRefund } from '../api/subscriptions';
+import { uploadFile, STORAGE_BUCKETS } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { SEO } from '../components/SEO';
+
+const IMAGE_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif';
+const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export const SettingsPage: React.FC = () => {
   const { user, isLoading: authLoading, updateProfile } = useAuthStore();
   const { subscription, fetchSubscription, hasActiveSubscription } = useUserStore();
   const [name, setName] = useState(user?.name || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [isRequestingRefund, setIsRequestingRefund] = useState(false);
@@ -25,12 +31,77 @@ export const SettingsPage: React.FC = () => {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [refundReason, setRefundReason] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
       fetchSubscription();
+      setName(user.name || '');
     }
   }, [user, fetchSubscription]);
+
+  // Handle avatar file selection
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!IMAGE_MIME_TYPES.includes(file.type)) {
+      toast.error('Please select a valid image file (JPG, PNG, WebP, GIF)');
+      return;
+    }
+
+    // Max 2MB for avatars
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    // Show preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+    setIsUploadingAvatar(true);
+
+    try {
+      // Upload to Supabase Storage
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { url, error } = await uploadFile(STORAGE_BUCKETS.AVATARS, path, file, { upsert: true });
+
+      if (error) {
+        throw error;
+      }
+
+      // Update profile with new avatar URL
+      await updateProfile({ avatarUrl: url });
+      toast.success('Profile picture updated!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload image');
+      setAvatarPreview(null);
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Remove avatar
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    
+    setIsUploadingAvatar(true);
+    try {
+      await updateProfile({ avatarUrl: null });
+      setAvatarPreview(null);
+      toast.success('Profile picture removed');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove image');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -115,27 +186,79 @@ export const SettingsPage: React.FC = () => {
           <p className="text-slate-400 mb-8">Manage your account and subscription</p>
 
           {/* Profile Section */}
-          <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 mb-6">
+          <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
             <h2 className="text-lg font-bold text-white mb-6">Profile</h2>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative">
-                {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="w-20 h-20 rounded-full object-cover border-2 border-white/10" />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-neon-cyan/20 flex items-center justify-center border-2 border-neon-cyan/30">
-                    <User size={32} className="text-neon-cyan" />
-                  </div>
-                )}
-                <button className="absolute bottom-0 right-0 w-8 h-8 bg-slate-800 border border-white/10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
-                  <Camera size={14} />
-                </button>
+            
+            {/* Avatar Section */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6 pb-6 border-b border-white/5">
+              <div className="relative group">
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={IMAGE_EXTENSIONS}
+                  onChange={handleAvatarSelect}
+                  className="hidden"
+                />
+                
+                {/* Avatar display */}
+                <div className="relative">
+                  {avatarPreview || user.avatarUrl ? (
+                    <img 
+                      src={avatarPreview || user.avatarUrl || ''} 
+                      alt="" 
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-white/10" 
+                    />
+                  ) : (
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-neon-cyan/20 flex items-center justify-center border-2 border-neon-cyan/30">
+                      <User size={40} className="text-neon-cyan" />
+                    </div>
+                  )}
+                  
+                  {/* Loading overlay */}
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 text-neon-cyan animate-spin" />
+                    </div>
+                  )}
+                  
+                  {/* Camera button */}
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="absolute bottom-0 right-0 w-9 h-9 bg-neon-cyan text-black rounded-full flex items-center justify-center hover:bg-neon-cyan/90 transition-colors shadow-lg disabled:opacity-50"
+                  >
+                    <Camera size={16} />
+                  </button>
+                </div>
               </div>
-              <div>
-                <p className="text-white font-medium">{user.name || 'User'}</p>
-                <p className="text-sm text-slate-400">{user.email}</p>
+              
+              <div className="text-center sm:text-left flex-1">
+                <p className="text-white font-medium text-lg">{user.name || 'User'}</p>
+                <p className="text-sm text-slate-400 mb-3">{user.email}</p>
+                <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    Change Photo
+                  </button>
+                  {(user.avatarUrl || avatarPreview) && (
+                    <button
+                      onClick={handleRemoveAvatar}
+                      disabled={isUploadingAvatar}
+                      className="px-3 py-1.5 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2">JPG, PNG, WebP or GIF. Max 2MB.</p>
               </div>
             </div>
 
+            {/* Profile Form */}
             <form onSubmit={handleSave} className="space-y-4">
               <Input
                 label="Display Name"
@@ -153,8 +276,8 @@ export const SettingsPage: React.FC = () => {
                 leftIcon={<Mail size={18} />}
                 helperText="Email cannot be changed"
               />
-              <div className="pt-4">
-                <Button type="submit" isLoading={isSaving}>
+              <div className="pt-2">
+                <Button type="submit" isLoading={isSaving} className="w-full sm:w-auto">
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>

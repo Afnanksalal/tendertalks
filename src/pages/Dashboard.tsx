@@ -33,41 +33,43 @@ export const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
+    <div className="min-h-screen bg-[#030014] pt-24 sm:pt-28 md:pt-36 pb-20 px-4">
       <SEO title="Dashboard" noIndex />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">
+        <div className="mb-6 sm:mb-10">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white mb-1 sm:mb-2">
             Welcome back, {user.name || 'there'}!
           </h1>
-          <p className="text-slate-400">Manage your content and subscription</p>
+          <p className="text-slate-400 text-sm sm:text-base">Manage your content and subscription</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Mobile: Sidebar first, then main content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Subscription Status */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-slate-900/50 border border-white/10 rounded-2xl p-6"
+              className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${
                     hasActiveSubscription() ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-neon-green/20 text-neon-green'
                   }`}>
-                    <Crown size={24} />
+                    <Crown size={20} className="sm:hidden" />
+                    <Crown size={24} className="hidden sm:block" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Subscription</h3>
-                    <p className="text-sm text-slate-400">
+                    <h3 className="text-base sm:text-lg font-bold text-white">Subscription</h3>
+                    <p className="text-xs sm:text-sm text-slate-400">
                       {subscription ? subscription.plan?.name : 'Free Plan'}
                     </p>
                   </div>
                 </div>
-                <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                <span className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold rounded-full ${
                   hasActiveSubscription() 
                     ? 'bg-neon-cyan/20 text-neon-cyan' 
                     : 'bg-neon-green/20 text-neon-green'
@@ -77,7 +79,7 @@ export const DashboardPage: React.FC = () => {
               </div>
 
               {subscription && hasActiveSubscription() ? (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-slate-400">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-400">
                   <span className="flex items-center gap-1">
                     <Calendar size={14} />
                     Renews {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
@@ -103,48 +105,48 @@ export const DashboardPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+              className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3"
             >
               <Link
                 to="/browse"
-                className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                className="p-3 sm:p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group touch-feedback"
               >
-                <Play size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                <span className="text-sm text-slate-300">Browse</span>
+                <Play size={20} className="mx-auto mb-1.5 sm:mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                <span className="text-xs sm:text-sm text-slate-300">Browse</span>
               </Link>
               {settings.feature_downloads && (
                 <Link
                   to="/downloads"
-                  className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                  className="p-3 sm:p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group touch-feedback"
                 >
-                  <Download size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                  <span className="text-sm text-slate-300">Downloads</span>
+                  <Download size={20} className="mx-auto mb-1.5 sm:mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                  <span className="text-xs sm:text-sm text-slate-300">Downloads</span>
                 </Link>
               )}
               {settings.feature_merch && (
                 <Link
                   to="/store"
-                  className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                  className="p-3 sm:p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group touch-feedback"
                 >
-                  <ShoppingBag size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                  <span className="text-sm text-slate-300">Store</span>
+                  <ShoppingBag size={20} className="mx-auto mb-1.5 sm:mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                  <span className="text-xs sm:text-sm text-slate-300">Store</span>
                 </Link>
               )}
               {settings.feature_subscriptions && (
                 <Link
                   to="/billing"
-                  className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                  className="p-3 sm:p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group touch-feedback"
                 >
-                  <CreditCard size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                  <span className="text-sm text-slate-300">Billing</span>
+                  <CreditCard size={20} className="mx-auto mb-1.5 sm:mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                  <span className="text-xs sm:text-sm text-slate-300">Billing</span>
                 </Link>
               )}
               <Link
                 to="/settings"
-                className="p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group"
+                className="p-3 sm:p-4 bg-slate-900/50 border border-white/10 rounded-xl hover:border-neon-cyan/30 transition-colors text-center group touch-feedback"
               >
-                <Settings size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
-                <span className="text-sm text-slate-300">Settings</span>
+                <Settings size={20} className="mx-auto mb-1.5 sm:mb-2 text-slate-400 group-hover:text-neon-cyan transition-colors" />
+                <span className="text-xs sm:text-sm text-slate-300">Settings</span>
               </Link>
             </motion.div>
 
@@ -153,21 +155,21 @@ export const DashboardPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-slate-900/50 border border-white/10 rounded-2xl p-6"
+              className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white">Your Library</h3>
-                <span className="text-sm text-slate-500">{purchases.length} items</span>
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-bold text-white">Your Library</h3>
+                <span className="text-xs sm:text-sm text-slate-500">{purchases.length} items</span>
               </div>
 
               {isLoading ? (
-                <div className="flex items-center justify-center py-10">
+                <div className="flex items-center justify-center py-8 sm:py-10">
                   <Loader2 className="w-6 h-6 text-neon-cyan animate-spin" />
                 </div>
               ) : purchases.length === 0 ? (
-                <div className="text-center py-10">
-                  <Play className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-400 mb-4">You haven't purchased any content yet</p>
+                <div className="text-center py-8 sm:py-10">
+                  <Play className="w-10 h-10 sm:w-12 sm:h-12 text-slate-600 mx-auto mb-3 sm:mb-4" />
+                  <p className="text-slate-400 mb-3 sm:mb-4 text-sm sm:text-base">You haven't purchased any content yet</p>
                   <Link to="/browse">
                     <Button variant="outline" size="sm">
                       Browse Content
@@ -175,7 +177,7 @@ export const DashboardPage: React.FC = () => {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {purchases.slice(0, 5).map((item: any) => {
                     const podcast = item.podcast || item;
                     const purchase = item.purchase || item;
@@ -184,9 +186,9 @@ export const DashboardPage: React.FC = () => {
                       <Link
                         key={purchase.id || item.id}
                         to={`/podcast/${podcast.slug}`}
-                        className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors group"
+                        className="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors group touch-feedback"
                       >
-                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-slate-700 flex-shrink-0">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-slate-700 flex-shrink-0">
                           {podcast.thumbnailUrl ? (
                             <img
                               src={podcast.thumbnailUrl}
@@ -195,18 +197,19 @@ export const DashboardPage: React.FC = () => {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <Play size={20} className="text-slate-500" />
+                              <Play size={16} className="text-slate-500" />
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-white font-medium truncate group-hover:text-neon-cyan transition-colors">
+                          <h4 className="text-white font-medium truncate group-hover:text-neon-cyan transition-colors text-sm sm:text-base">
                             {podcast.title}
                           </h4>
-                          <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                          <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1">
                             {podcast.duration && (
                               <span className="flex items-center gap-1">
-                                <Clock size={12} />
+                                <Clock size={10} className="sm:hidden" />
+                                <Clock size={12} className="hidden sm:block" />
                                 {Math.floor(podcast.duration / 60)} min
                               </span>
                             )}
@@ -215,7 +218,7 @@ export const DashboardPage: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <Play size={20} className="text-slate-500 group-hover:text-neon-cyan transition-colors flex-shrink-0" />
+                        <Play size={18} className="text-slate-500 group-hover:text-neon-cyan transition-colors flex-shrink-0" />
                       </Link>
                     );
                   })}
@@ -223,7 +226,7 @@ export const DashboardPage: React.FC = () => {
                   {purchases.length > 5 && (
                     <Link
                       to="/downloads"
-                      className="block text-center text-sm text-neon-cyan hover:underline py-2"
+                      className="block text-center text-xs sm:text-sm text-neon-cyan hover:underline py-2"
                     >
                       View all {purchases.length} items →
                     </Link>
@@ -233,30 +236,30 @@ export const DashboardPage: React.FC = () => {
             </motion.div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
+          {/* Sidebar - Shows first on mobile via order */}
+          <div className="space-y-4 sm:space-y-6 order-first lg:order-last">
             {/* Profile Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-slate-900/50 border border-white/10 rounded-2xl p-6"
+              className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6"
             >
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-3 sm:gap-4 mb-4">
                 {user.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
                     alt=""
-                    className="w-16 h-16 rounded-full object-cover border-2 border-white/10"
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white/10"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-neon-cyan/20 flex items-center justify-center text-neon-cyan text-xl font-bold border-2 border-neon-cyan/30">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-neon-cyan/20 flex items-center justify-center text-neon-cyan text-lg sm:text-xl font-bold border-2 border-neon-cyan/30">
                     {user.name?.[0] || user.email[0].toUpperCase()}
                   </div>
                 )}
-                <div className="min-w-0">
-                  <h3 className="text-white font-bold truncate">{user.name || 'User'}</h3>
-                  <p className="text-sm text-slate-400 truncate">{user.email}</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-white font-bold truncate text-sm sm:text-base">{user.name || 'User'}</h3>
+                  <p className="text-xs sm:text-sm text-slate-400 truncate">{user.email}</p>
                 </div>
               </div>
               <Link to="/settings">
@@ -266,27 +269,27 @@ export const DashboardPage: React.FC = () => {
               </Link>
             </motion.div>
 
-            {/* Quick Stats */}
+            {/* Quick Stats - Horizontal on mobile, vertical on desktop */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-slate-900/50 border border-white/10 rounded-2xl p-6"
+              className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6"
             >
-              <h3 className="text-sm font-medium text-slate-400 mb-4">Quick Stats</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-sm">Purchased</span>
-                  <span className="text-white font-bold">{purchases.length}</span>
+              <h3 className="text-xs sm:text-sm font-medium text-slate-400 mb-3 sm:mb-4">Quick Stats</h3>
+              <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4">
+                <div className="flex flex-col lg:flex-row items-center lg:justify-between text-center lg:text-left">
+                  <span className="text-slate-400 text-xs sm:text-sm">Purchased</span>
+                  <span className="text-white font-bold text-lg sm:text-base">{purchases.length}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-sm">Plan</span>
-                  <span className={`font-bold ${hasActiveSubscription() ? 'text-neon-cyan' : 'text-neon-green'}`}>
+                <div className="flex flex-col lg:flex-row items-center lg:justify-between text-center lg:text-left">
+                  <span className="text-slate-400 text-xs sm:text-sm">Plan</span>
+                  <span className={`font-bold text-lg sm:text-base ${hasActiveSubscription() ? 'text-neon-cyan' : 'text-neon-green'}`}>
                     {subscription?.plan?.name || 'Free'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-sm">Member Since</span>
+                <div className="flex flex-col lg:flex-row items-center lg:justify-between text-center lg:text-left">
+                  <span className="text-slate-400 text-xs sm:text-sm">Member Since</span>
                   <span className="text-white text-sm">
                     {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </span>
@@ -300,11 +303,11 @@ export const DashboardPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 border border-neon-cyan/30 rounded-2xl p-6 text-center"
+                className="bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 border border-neon-cyan/30 rounded-2xl p-4 sm:p-6 text-center"
               >
-                <Crown className="w-10 h-10 text-neon-cyan mx-auto mb-3" />
-                <h3 className="text-white font-bold mb-2">Go Premium</h3>
-                <p className="text-slate-400 text-sm mb-4">
+                <Crown className="w-8 h-8 sm:w-10 sm:h-10 text-neon-cyan mx-auto mb-2 sm:mb-3" />
+                <h3 className="text-white font-bold mb-1 sm:mb-2 text-sm sm:text-base">Go Premium</h3>
+                <p className="text-slate-400 text-xs sm:text-sm mb-3 sm:mb-4">
                   Unlock all content, downloads, and exclusive features
                 </p>
                 <Link to="/pricing">
