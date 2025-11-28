@@ -1,231 +1,243 @@
-# TenderTalks
+# TenderTalks 🎙️
 
-A modern podcast streaming platform with subscription management, merchandise store, and comprehensive admin dashboard. Built with React, Vite, and deployed on Vercel with Neon PostgreSQL.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61dafb)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8)](https://tailwindcss.com/)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://vercel.com)
 
-## Tech Stack
+A modern podcast streaming platform with subscription management, merchandise store, and comprehensive admin dashboard. Built with React, TypeScript, and deployed on Vercel.
 
-**Frontend:**
-- React 18 with TypeScript
-- Vite for build tooling
-- Tailwind CSS for styling
-- Framer Motion for animations
-- Zustand for state management
-- React Router for navigation
+🌐 **Live Demo**: [tendertalks.live](https://tendertalks.live)
 
-**Backend:**
-- Vercel Edge Functions (serverless API)
-- Neon PostgreSQL (serverless database)
-- Drizzle ORM for database operations
-- Supabase for authentication & file storage
+![TenderTalks Screenshot](https://tendertalks.live/api/og-image)
 
-**Payments:**
-- Razorpay for payment processing (INR)
+## ✨ Features
 
-**Analytics:**
-- Vercel Analytics
+### 🎧 Podcast Platform
+- Audio & video podcast streaming
+- Playback speed control (0.5x - 2x)
+- Volume control with mute toggle
+- Progress tracking & resume playback
+- Lock screen media controls (Media Session API)
+- Download for offline listening
 
-## Features
-
-### Public Pages
-- **Home** - Landing page with featured content
-- **Browse** - Podcast catalog with category/tag filtering
-- **Podcast Detail** - Individual podcast page with media player
-- **Pricing** - Subscription plans with upgrade/downgrade support
-- **Store** - Merchandise shop with cart functionality
-
-### User Features
-- Google OAuth authentication via Supabase
-- Dashboard with listening history and progress tracking
-- Subscription management (subscribe, upgrade, downgrade, cancel)
+### 💳 Subscription System
+- Multiple pricing tiers
+- Upgrade/downgrade with prorated billing
+- Cancel & reactivate subscriptions
+- 7-day refund window
 - Individual podcast purchases
-- Merchandise ordering with shipping
-- Download management for offline content
-- Billing history and payment records
 
-### Admin Dashboard
-- **Overview** - Revenue analytics, user metrics, charts
-- **Podcasts** - Create, edit, publish, delete podcasts
-- **Users** - User management and role assignment
-- **Payments** - Transaction history
-- **Invoices** - Invoice management
-- **Subscriptions** - Active subscription management
-- **Refunds** - Process refund requests
-- **Products** - Merchandise inventory management
-- **Plans** - Pricing plan configuration
-- **Settings** - Platform configuration
+### 🛍️ Merchandise Store
+- Product catalog with categories
+- Shopping cart functionality
+- Razorpay payment integration
+- Order tracking
 
-### Media Support
-- Audio podcasts (MP3, WAV, etc.)
-- Video podcasts (MP4, WebM, etc.)
-- Thumbnail images
-- Progress tracking and resume playback
+### 👤 User Features
+- Google OAuth authentication
+- User dashboard
+- Billing history
+- Download management
 
-## Project Structure
+### 🔧 Admin Dashboard
+- Revenue analytics & charts
+- Podcast management (CRUD)
+- User management
+- Payment & invoice tracking
+- Subscription management
+- Refund processing
+- Product inventory
+- Pricing plan configuration
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Frontend | React 18, TypeScript, Vite |
+| Styling | Tailwind CSS, Framer Motion |
+| State | Zustand |
+| Database | Neon PostgreSQL, Drizzle ORM |
+| Auth | Supabase Auth |
+| Storage | Supabase Storage |
+| Payments | Razorpay |
+| Hosting | Vercel (Edge Functions) |
+| Analytics | Vercel Analytics |
+
+## 📁 Project Structure
 
 ```
+tendertalks/
 ├── api/                    # Vercel serverless functions
 │   ├── admin/              # Admin-only endpoints
-│   ├── categories/         # Category endpoints
-│   ├── merch/              # Merchandise & orders
-│   ├── newsletter/         # Newsletter subscription
-│   ├── payments/           # Payment processing
 │   ├── podcasts/           # Podcast CRUD & streaming
-│   ├── pricing-plans/      # Subscription plans
-│   ├── refunds/            # Refund requests
+│   ├── payments/           # Payment processing
 │   ├── subscriptions/      # Subscription management
-│   ├── tags/               # Tag endpoints
 │   └── users/              # User profile & data
 ├── drizzle/                # Database migrations
 ├── public/                 # Static assets
 ├── scripts/                # Utility scripts
-│   ├── seed.ts             # Database seeding
-│   └── supabase-setup.sql  # Supabase SQL setup
 ├── src/
 │   ├── api/                # Frontend API clients
 │   ├── components/         # React components
+│   │   ├── auth/           # Authentication components
+│   │   ├── layout/         # Layout components
+│   │   ├── podcast/        # Podcast components
+│   │   └── ui/             # Reusable UI components
 │   ├── db/                 # Database schema
-│   ├── lib/                # Utilities (Supabase, Razorpay, storage)
+│   ├── lib/                # Utilities
 │   ├── pages/              # Page components
+│   │   ├── admin/          # Admin pages
+│   │   └── legal/          # Legal pages
 │   └── stores/             # Zustand stores
-└── vercel.json             # Vercel configuration
+├── .env.example            # Environment template
+├── drizzle.config.ts       # Drizzle configuration
+├── tailwind.config.js      # Tailwind configuration
+├── tsconfig.json           # TypeScript configuration
+├── vercel.json             # Vercel configuration
+└── vite.config.ts          # Vite configuration
 ```
 
-## Setup
+## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
-- npm or yarn
-- Accounts: Vercel, Neon, Supabase, Razorpay
+- npm, yarn, or pnpm
+- Accounts: [Vercel](https://vercel.com), [Neon](https://neon.tech), [Supabase](https://supabase.com), [Razorpay](https://razorpay.com)
 
-### 1. Clone and Install
+### Installation
 
-```bash
-git clone <repository-url>
-cd tendertalks
-npm install
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Afnanksalal/tendertalks.git
+   cd tendertalks
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   Fill in your credentials (see [Environment Variables](#environment-variables))
+
+4. **Set up the database**
+   ```bash
+   npm run db:push
+   npm run db:seed  # Optional: seed sample data
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Open** [http://localhost:5173](http://localhost:5173)
+
+### Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+# Supabase
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Neon Database
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+
+# Razorpay
+VITE_RAZORPAY_KEY_ID=rzp_test_xxxxx
+RAZORPAY_KEY_ID=rzp_test_xxxxx
+RAZORPAY_KEY_SECRET=your-secret
+
+# App
+VITE_APP_URL=http://localhost:5173
 ```
 
-### 2. Environment Variables
+## 📜 Available Scripts
 
-Copy `.env.example` to `.env` and fill in your credentials:
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+| `npm run db:generate` | Generate migrations |
+| `npm run db:push` | Push schema to database |
+| `npm run db:studio` | Open Drizzle Studio |
+| `npm run db:seed` | Seed database |
 
-```bash
-cp .env.example .env
-```
-
-### 3. Database Setup
-
-**Neon PostgreSQL:**
-1. Create a project at [neon.tech](https://neon.tech)
-2. Copy the connection string to `DATABASE_URL`
-
-**Run migrations:**
-```bash
-npm run db:push
-```
-
-**Seed initial data (optional):**
-```bash
-npm run db:seed
-```
-
-### 4. Supabase Setup
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Enable Google OAuth in Authentication > Providers
-3. Create storage buckets: `podcasts`, `thumbnails`, `merch`
-4. Run the SQL from `scripts/supabase-setup.sql` in SQL Editor
-5. Copy credentials to environment variables
-
-### 5. Razorpay Setup
-
-1. Create account at [razorpay.com](https://razorpay.com)
-2. Get API keys from Dashboard > Settings > API Keys
-3. Copy Key ID and Secret to environment variables
-
-### 6. Run Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173)
-
-## Deployment
+## 🚢 Deployment
 
 ### Vercel (Recommended)
 
 1. Push to GitHub
-2. Import project in Vercel
-3. Add all environment variables in Project Settings
+2. Import project in [Vercel](https://vercel.com/new)
+3. Add environment variables in Project Settings
 4. Deploy
 
-**Required Environment Variables in Vercel:**
-- All variables from `.env.example`
-- Set `VITE_APP_URL` to your production domain
+### Environment Variables for Production
 
-### Custom Domain
+Set all variables from `.env.example` in Vercel:
+- Use production Razorpay keys (`rzp_live_xxx`)
+- Set `VITE_APP_URL` to your domain
+- Configure OAuth redirect URLs in Supabase
 
-1. Add domain in Vercel Dashboard > Settings > Domains
-2. Configure DNS records as instructed
-3. Update `VITE_APP_URL` to your domain
+## 🔐 Admin Access
 
-## Database Commands
+To grant admin access:
 
-```bash
-# Generate migrations from schema changes
-npm run db:generate
-
-# Push schema to database
-npm run db:push
-
-# Open Drizzle Studio (database GUI)
-npm run db:studio
-
-# Seed database with sample data
-npm run db:seed
-```
-
-## Admin Access
-
-To make a user an admin:
-
-1. User must sign in first (creates user record)
-2. Run SQL in Neon or Drizzle Studio:
 ```sql
 UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
 ```
 
-## API Endpoints
+Run this in Neon Console or Drizzle Studio after the user has signed in.
 
-### Public
-- `GET /api/podcasts` - List podcasts
-- `GET /api/podcasts/:slug` - Get podcast details
-- `GET /api/categories` - List categories
-- `GET /api/tags` - List tags
-- `GET /api/pricing-plans` - List subscription plans
-- `GET /api/merch` - List merchandise
-- `POST /api/newsletter/subscribe` - Subscribe to newsletter
+## 🤝 Contributing
 
-### Authenticated (requires X-User-Id header)
-- `GET /api/users/profile` - Get user profile
-- `GET /api/users/subscription` - Get user subscription
-- `GET /api/users/purchases` - Get user purchases
-- `GET /api/users/downloads` - Get user downloads
-- `POST /api/payments/create-order` - Create payment order
-- `POST /api/payments/verify` - Verify payment
-- `POST /api/subscriptions/create` - Create subscription
-- `POST /api/subscriptions/cancel` - Cancel subscription
-- `POST /api/merch/create-order` - Create merch order
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Admin (requires admin role)
-- `GET /api/admin/stats` - Dashboard statistics
-- `GET/POST /api/admin/podcasts` - Manage podcasts
-- `GET/POST /api/admin/users` - Manage users
-- `GET/POST /api/admin/plans` - Manage pricing plans
-- `GET/POST /api/admin/products` - Manage merchandise
-- `GET/POST /api/admin/refunds` - Process refunds
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## License
+[![GitHub issues](https://img.shields.io/github/issues/Afnanksalal/tendertalks)](https://github.com/Afnanksalal/tendertalks/issues)
+[![GitHub stars](https://img.shields.io/github/stars/Afnanksalal/tendertalks)](https://github.com/Afnanksalal/tendertalks/stargazers)
 
-Private - All rights reserved.
+## 🔒 Security
+
+For security issues, please see our [Security Policy](SECURITY.md).
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📧 Contact
+
+- **Website**: [tendertalks.live](https://tendertalks.live)
+- **Email**: support@tendertalks.live
+- **Twitter**: [@tendertalks_](https://twitter.com/tendertalks_)
+
+## 🙏 Acknowledgments
+
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Supabase](https://supabase.com/)
+- [Neon](https://neon.tech/)
+- [Vercel](https://vercel.com/)
+- [Razorpay](https://razorpay.com/)
+- [Lucide Icons](https://lucide.dev/)
+
+---
+
+Made with ❤️ by Afnan & Jenna

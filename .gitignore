@@ -1,28 +1,49 @@
+# ===========================================
+# TenderTalks - Git Ignore Configuration
+# ===========================================
+
 # Dependencies
 node_modules/
 .pnp
 .pnp.js
+.yarn/
 
 # Build outputs
 dist/
 build/
 .next/
 out/
+*.tsbuildinfo
 
-# Environment files - CRITICAL: Never commit these
+# Environment files - NEVER commit these
 .env
-.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
 !.env.example
 
-# IDE
+# IDE and Editor
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/launch.json
 .idea/
 *.swp
 *.swo
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
 # Logs
 logs/
@@ -31,28 +52,77 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
 # Testing
 coverage/
 .nyc_output/
+*.lcov
+.coverage
 
-# Misc
+# Temporary files
 *.local
-*.tsbuildinfo
-
-# Drizzle - Keep migrations in version control for production
-# Only ignore if you want to regenerate migrations each time
-# drizzle/
+tmp/
+temp/
+.tmp/
+.temp/
+.cache/
 
 # Vercel
 .vercel
 
-# TypeScript cache
-*.tsbuildinfo
-
-# Security - never commit secrets
+# Security - NEVER commit secrets
 *.pem
 *.key
 *.crt
+*.p12
+*.pfx
 secrets/
 credentials/
+.secrets
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Drizzle
+# Keep migrations in version control
+# drizzle/meta/ # Uncomment if you want to ignore meta
+
+# Package manager locks (keep one, ignore others if not using)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Debug
+.debug/
+debug.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Storybook
+storybook-static/
+
+# PWA files (generated)
+sw.js
+workbox-*.js
