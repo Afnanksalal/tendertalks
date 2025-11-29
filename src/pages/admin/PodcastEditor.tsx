@@ -594,13 +594,13 @@ export const PodcastEditor: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleChange('isDownloadable', !formData.isDownloadable)}
-                    className={`relative w-10 h-[22px] sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 ${
+                    className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${
                       formData.isDownloadable ? 'bg-neon-cyan' : 'bg-slate-600'
                     }`}
                   >
                     <div
-                      className={`absolute top-[2px] sm:top-0.5 w-[18px] h-[18px] sm:w-5 sm:h-5 rounded-full bg-white shadow-md transition-transform ${
-                        formData.isDownloadable ? 'translate-x-[18px] sm:translate-x-5' : 'translate-x-0.5'
+                      className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                        formData.isDownloadable ? 'translate-x-5' : 'translate-x-0'
                       }`}
                     />
                   </button>

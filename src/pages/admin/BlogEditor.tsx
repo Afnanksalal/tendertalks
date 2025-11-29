@@ -628,8 +628,8 @@ export const BlogEditor: React.FC = () => {
                     </div>
                   </div>
                   <button type="button" onClick={() => handleChange('isFeatured', !formData.isFeatured)}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${formData.isFeatured ? 'bg-amber-400' : 'bg-slate-600'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${formData.isFeatured ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${formData.isFeatured ? 'bg-amber-400' : 'bg-slate-600'}`}>
+                    <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.isFeatured ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                 </div>
               </div>
