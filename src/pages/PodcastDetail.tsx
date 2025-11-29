@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, Lock, Clock, Calendar, Tag, ArrowLeft, Loader2,
   Download, Share2, Volume2, VolumeX, SkipBack, SkipForward,
-  Video, Music, Maximize, Settings
+  Video, Music, Maximize, Minimize, Settings, RotateCcw, RotateCw
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { usePodcastStore } from '../stores/podcastStore';
@@ -18,6 +18,21 @@ import { SEO } from '../components/SEO';
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
+// Double tap seek indicator component
+const SeekIndicator: React.FC<{ direction: 'left' | 'right'; seconds: number }> = ({ direction, seconds }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.8 }}
+    className={`absolute top-1/2 -translate-y-1/2 ${direction === 'left' ? 'left-8' : 'right-8'} flex flex-col items-center`}
+  >
+    <div className="w-14 h-14 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+      {direction === 'left' ? <RotateCcw size={24} className="text-white" /> : <RotateCw size={24} className="text-white" />}
+    </div>
+    <span className="text-white text-sm font-medium mt-1">{seconds}s</span>
+  </motion.div>
+);
+
 export const PodcastDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -29,6 +44,7 @@ export const PodcastDetailPage: React.FC = () => {
   const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const volumeRef = useRef<HTMLDivElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
 
   // Restore playback state from sessionStorage
   const getStoredState = useCallback(() => {
@@ -56,10 +72,16 @@ export const PodcastDetailPage: React.FC = () => {
   const [isBuffering, setIsBuffering] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [doubleTapSide, setDoubleTapSide] = useState<'left' | 'right' | null>(null);
+  const [seekAmount, setSeekAmount] = useState(10);
 
   // Refs for tracking
   const hasFetchedRef = useRef<string | null>(null);
   const userFetchedRef = useRef(false);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTapRef = useRef<{ time: number; x: number }>({ time: 0, x: 0 });
+  const doubleTapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
   // Fetch podcast data
@@ -205,6 +227,102 @@ export const PodcastDetailPage: React.FC = () => {
     };
   }, []);
 
+  // Auto-hide controls
+  const resetControlsTimeout = useCallback(() => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    setShowControls(true);
+    
+    if (isPlaying && showPlayer && podcast?.mediaType === 'video') {
+      controlsTimeoutRef.current = setTimeout(() => {
+        if (!showSpeedMenu && !showVolumeSlider) {
+          setShowControls(false);
+        }
+      }, 3500);
+    }
+  }, [isPlaying, showPlayer, showSpeedMenu, showVolumeSlider]);
+
+  useEffect(() => {
+    resetControlsTimeout();
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, [isPlaying, resetControlsTimeout]);
+
+  // Handle double tap to seek (mobile gesture)
+  const handleDoubleTap = useCallback((clientX: number, containerWidth: number) => {
+    const isLeftSide = clientX < containerWidth / 2;
+    const seekSeconds = isLeftSide ? -10 : 10;
+    
+    if (mediaRef.current) {
+      mediaRef.current.currentTime = Math.max(0, Math.min(duration, mediaRef.current.currentTime + seekSeconds));
+      setCurrentTime(mediaRef.current.currentTime);
+    }
+    
+    setDoubleTapSide(isLeftSide ? 'left' : 'right');
+    setSeekAmount(10);
+    
+    // Clear indicator after animation
+    if (doubleTapTimeoutRef.current) {
+      clearTimeout(doubleTapTimeoutRef.current);
+    }
+    doubleTapTimeoutRef.current = setTimeout(() => {
+      setDoubleTapSide(null);
+    }, 600);
+  }, [duration]);
+
+  // Video tap handler - defined as regular function to access hasAccess after it's declared
+  const handleVideoTapRef = useRef<(e: React.MouseEvent | React.TouchEvent) => void>(() => {});
+  
+  useEffect(() => {
+    handleVideoTapRef.current = (e: React.MouseEvent | React.TouchEvent) => {
+      if (!showPlayer) return;
+      
+      const now = Date.now();
+      const clientX = 'touches' in e ? e.changedTouches[0].clientX : e.clientX;
+      const container = playerContainerRef.current;
+      if (!container) return;
+      
+      const rect = container.getBoundingClientRect();
+      const relativeX = clientX - rect.left;
+      
+      // Check for double tap (within 300ms and similar position)
+      if (now - lastTapRef.current.time < 300 && Math.abs(relativeX - lastTapRef.current.x) < 50) {
+        handleDoubleTap(relativeX, rect.width);
+        lastTapRef.current = { time: 0, x: 0 }; // Reset to prevent triple tap
+      } else {
+        // Single tap - toggle controls or play/pause
+        lastTapRef.current = { time: now, x: relativeX };
+        
+        // On mobile, single tap toggles controls
+        const isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
+        if (isMobile) {
+          if (showControls) {
+            setShowControls(false);
+          } else {
+            resetControlsTimeout();
+          }
+        } else {
+          // On desktop, click toggles play/pause
+          if (mediaRef.current) {
+            if (mediaRef.current.paused) {
+              mediaRef.current.play();
+            } else {
+              mediaRef.current.pause();
+            }
+          }
+        }
+      }
+    };
+  }, [showPlayer, handleDoubleTap, showControls, resetControlsTimeout]);
+  
+  const handleVideoTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    handleVideoTapRef.current(e);
+  }, []);
+
   if (isLoading || !currentPodcast) {
     return (
       <div className="min-h-screen bg-[#030014] flex items-center justify-center">
@@ -300,11 +418,29 @@ export const PodcastDetailPage: React.FC = () => {
   };
 
   const handleFullscreen = async () => {
-    const video = mediaRef.current as HTMLVideoElement;
-    if (!video) return;
+    const container = playerContainerRef.current;
+    if (!container) return;
+    
     try {
-      if (video.requestFullscreen) await video.requestFullscreen();
-      else if ((video as any).webkitEnterFullscreen) (video as any).webkitEnterFullscreen();
+      if (!isFullscreen) {
+        // Enter fullscreen on the container (includes custom controls)
+        if (container.requestFullscreen) {
+          await container.requestFullscreen();
+        } else if ((container as any).webkitRequestFullscreen) {
+          await (container as any).webkitRequestFullscreen();
+        } else if ((container as any).msRequestFullscreen) {
+          await (container as any).msRequestFullscreen();
+        }
+      } else {
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+      }
     } catch { /* ignore */ }
   };
 
@@ -408,22 +544,26 @@ export const PodcastDetailPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           <div className="lg:col-span-2">
-            {/* Media Container */}
-            <div className={`relative aspect-video rounded-xl overflow-hidden mb-4 ${podcast.mediaType === 'video' ? 'bg-black' : 'bg-neon-cyan/5'}`}>
+            {/* Media Container - This goes fullscreen */}
+            <div 
+              ref={playerContainerRef}
+              className={`relative rounded-xl overflow-hidden select-none ${isFullscreen ? 'fixed inset-0 z-50 rounded-none bg-black flex flex-col' : 'aspect-video mb-4'} ${podcast.mediaType === 'video' ? 'bg-black' : 'bg-neon-cyan/5'}`}
+              onMouseMove={resetControlsTimeout}
+            >
               {hasAccess && podcast.mediaUrl && showPlayer && podcast.mediaType === 'video' ? (
                 <video
                   ref={mediaRef as React.RefObject<HTMLVideoElement>}
                   src={podcast.mediaUrl}
                   poster={podcast.thumbnailUrl || undefined}
-                  controls={isFullscreen}
+                  controls={false}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  onEnded={() => setIsPlaying(false)}
+                  onPlay={() => { setIsPlaying(true); resetControlsTimeout(); }}
+                  onPause={() => { setIsPlaying(false); setShowControls(true); }}
+                  onEnded={() => { setIsPlaying(false); setShowControls(true); }}
                   onWaiting={() => setIsBuffering(true)}
                   onCanPlay={() => setIsBuffering(false)}
-                  className="w-full h-full object-contain"
+                  className={`w-full object-contain ${isFullscreen ? 'h-full' : 'h-full'}`}
                   playsInline
                   preload="metadata"
                   webkit-playsinline="true"
@@ -440,7 +580,14 @@ export const PodcastDetailPage: React.FC = () => {
                 </>
               )}
 
-              {/* Media Type Badge */}
+              {/* Double tap seek indicators */}
+              <AnimatePresence>
+                {doubleTapSide && (
+                  <SeekIndicator direction={doubleTapSide} seconds={seekAmount} />
+                )}
+              </AnimatePresence>
+
+              {/* Media Type Badge - Always visible */}
               <div className="absolute top-3 left-3 z-20">
                 <span className={`px-2.5 py-1 backdrop-blur text-xs font-bold rounded-lg flex items-center gap-1.5 ${
                   podcast.mediaType === 'video' ? 'bg-neon-purple/90 text-white' : 'bg-neon-cyan/90 text-black'
@@ -450,33 +597,62 @@ export const PodcastDetailPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Overlay */}
-              {!(showPlayer && podcast.mediaType === 'video' && isPlaying) && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              {/* Gradient overlay for controls visibility */}
+              <AnimatePresence>
+                {(showControls || !isPlaying || !showPlayer || podcast.mediaType === 'audio') && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" 
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Tap area for video controls toggle / double tap seek */}
+              {showPlayer && podcast.mediaType === 'video' && hasAccess && (
+                <div 
+                  className="absolute inset-0 z-10 cursor-pointer" 
+                  onClick={handleVideoTap}
+                  onTouchEnd={handleVideoTap}
+                />
               )}
 
-              {/* Center Play Button */}
-              {(!showPlayer || !isPlaying || podcast.mediaType === 'audio') && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  {hasAccess ? (
-                    <button onClick={togglePlay} className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-neon-cyan hover:text-black active:scale-95 transition-all">
-                      {isBuffering ? <Loader2 size={28} className="animate-spin" /> : isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
-                    </button>
-                  ) : (
-                    <div className="text-center">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-3 mx-auto">
-                        <Lock size={28} />
+              {/* Center Play Button - Shows when paused or controls visible */}
+              <AnimatePresence>
+                {((!showPlayer || !isPlaying || podcast.mediaType === 'audio') || (showControls && showPlayer && podcast.mediaType === 'video')) && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                  >
+                    {hasAccess ? (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); togglePlay(); }} 
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-white hover:bg-neon-cyan hover:text-black active:scale-90 transition-all pointer-events-auto touch-manipulation"
+                      >
+                        {isBuffering ? (
+                          <Loader2 size={28} className="animate-spin sm:w-8 sm:h-8" />
+                        ) : isPlaying ? (
+                          <Pause size={28} fill="currentColor" className="sm:w-8 sm:h-8" />
+                        ) : (
+                          <Play size={28} fill="currentColor" className="ml-1 sm:w-8 sm:h-8" />
+                        )}
+                      </button>
+                    ) : (
+                      <div className="text-center pointer-events-auto">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-3 mx-auto">
+                          <Lock size={28} />
+                        </div>
+                        <p className="text-white font-medium text-sm">Premium Content</p>
                       </div>
-                      <p className="text-white font-medium text-sm">Premium Content</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Video tap to pause */}
-              {showPlayer && isPlaying && podcast.mediaType === 'video' && (
-                <div className="absolute inset-0 cursor-pointer" onClick={togglePlay} />
-              )}
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Audio element */}
               {hasAccess && podcast.mediaUrl && showPlayer && podcast.mediaType === 'audio' && (
@@ -493,11 +669,126 @@ export const PodcastDetailPage: React.FC = () => {
                   preload="metadata"
                 />
               )}
+
+              {/* Fullscreen Controls - Inside container */}
+              <AnimatePresence>
+                {showPlayer && hasAccess && isFullscreen && showControls && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-30"
+                    style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Progress Bar - Touch optimized with larger hit area */}
+                    <div className="mb-4">
+                      <div className="py-2 -my-2"> {/* Larger touch target */}
+                        <div
+                          className="h-1.5 bg-white/20 rounded-full cursor-pointer group relative"
+                          onClick={handleSeek}
+                          onTouchStart={handleSeekStart}
+                          onTouchMove={handleSeek}
+                          onTouchEnd={handleSeekEnd}
+                        >
+                          <div className="h-full bg-neon-cyan rounded-full relative transition-all" style={{ width: `${progressPercent}%` }}>
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg scale-100 sm:scale-0 sm:group-hover:scale-100 sm:group-active:scale-100 transition-transform" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-xs sm:text-sm text-white/80 mt-2 font-mono">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                      </div>
+                    </div>
+
+                    {/* Controls Row - Mobile optimized layout */}
+                    <div className="flex items-center justify-between gap-2">
+                      {/* Left: Skip & Play */}
+                      <div className="flex items-center gap-1 sm:gap-3">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); skip(-10); }} 
+                          className="p-3 text-white/80 hover:text-white active:scale-90 transition-all rounded-full hover:bg-white/10 touch-manipulation"
+                          aria-label="Rewind 10 seconds"
+                        >
+                          <SkipBack size={20} className="sm:w-6 sm:h-6" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white flex items-center justify-center text-black active:scale-90 transition-transform shadow-lg touch-manipulation"
+                          aria-label={isPlaying ? 'Pause' : 'Play'}
+                        >
+                          {isBuffering ? (
+                            <Loader2 size={22} className="animate-spin sm:w-6 sm:h-6" />
+                          ) : isPlaying ? (
+                            <Pause size={22} fill="currentColor" className="sm:w-6 sm:h-6" />
+                          ) : (
+                            <Play size={22} fill="currentColor" className="ml-0.5 sm:w-6 sm:h-6" />
+                          )}
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); skip(10); }} 
+                          className="p-3 text-white/80 hover:text-white active:scale-90 transition-all rounded-full hover:bg-white/10 touch-manipulation"
+                          aria-label="Forward 10 seconds"
+                        >
+                          <SkipForward size={20} className="sm:w-6 sm:h-6" />
+                        </button>
+                      </div>
+
+                      {/* Right: Volume, Speed, Exit Fullscreen */}
+                      <div className="flex items-center gap-0.5 sm:gap-2">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); toggleMute(); }} 
+                          className="p-2.5 sm:p-2 text-white/80 hover:text-white active:scale-90 transition-all rounded-full hover:bg-white/10 touch-manipulation"
+                          aria-label={isMuted ? 'Unmute' : 'Mute'}
+                        >
+                          {isMuted ? <VolumeX size={20} className="sm:w-5 sm:h-5" /> : <Volume2 size={20} className="sm:w-5 sm:h-5" />}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); changeSpeed(PLAYBACK_SPEEDS[(PLAYBACK_SPEEDS.indexOf(playbackSpeed) + 1) % PLAYBACK_SPEEDS.length]); }}
+                          className="px-2.5 py-2 text-white/80 hover:text-white active:scale-95 text-xs sm:text-sm font-mono rounded-lg hover:bg-white/10 min-w-[44px] text-center touch-manipulation"
+                          aria-label="Change playback speed"
+                        >
+                          {playbackSpeed}x
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleFullscreen(); }} 
+                          className="p-2.5 sm:p-2 text-white/80 hover:text-white active:scale-90 transition-all rounded-full hover:bg-white/10 touch-manipulation"
+                          aria-label="Exit fullscreen"
+                        >
+                          <Minimize size={20} className="sm:w-5 sm:h-5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Mobile hint */}
+                    <p className="text-white/40 text-[10px] text-center mt-3 sm:hidden">Double tap sides to seek • Tap to hide controls</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Fullscreen title bar */}
+              <AnimatePresence>
+                {isFullscreen && showControls && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent z-30"
+                    style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 className="text-white font-medium text-sm sm:text-lg truncate pr-4">{podcast.title}</h3>
+                    <p className="text-white/60 text-xs mt-0.5">TenderTalks</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-
-            {/* Enhanced Player Controls */}
-            {showPlayer && hasAccess && (
+            {/* Enhanced Player Controls - Outside container (non-fullscreen) */}
+            {showPlayer && hasAccess && !isFullscreen && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-3 sm:p-4 bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-xl">
                 {/* Audio Now Playing */}
                 {podcast.mediaType === 'audio' && podcast.thumbnailUrl && (
@@ -510,103 +801,155 @@ export const PodcastDetailPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Progress Bar - Touch optimized */}
+                {/* Progress Bar - Touch optimized with larger hit area */}
                 <div className="mb-3">
-                  <div
-                    ref={progressRef}
-                    className="h-2 sm:h-1.5 bg-white/10 rounded-full cursor-pointer group touch-none"
-                    onClick={handleSeek}
-                    onTouchStart={handleSeekStart}
-                    onTouchMove={handleSeek}
-                    onTouchEnd={handleSeekEnd}
-                  >
-                    <div className="h-full bg-neon-cyan rounded-full relative" style={{ width: `${progressPercent}%` }}>
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg scale-0 group-hover:scale-100 group-active:scale-100 transition-transform" />
+                  <div className="py-2 -my-2"> {/* Larger touch target */}
+                    <div
+                      ref={progressRef}
+                      className="h-1.5 bg-white/10 rounded-full cursor-pointer group relative"
+                      onClick={handleSeek}
+                      onTouchStart={handleSeekStart}
+                      onTouchMove={handleSeek}
+                      onTouchEnd={handleSeekEnd}
+                    >
+                      <div className="h-full bg-neon-cyan rounded-full relative transition-all" style={{ width: `${progressPercent}%` }}>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg scale-100 sm:scale-0 sm:group-hover:scale-100 sm:group-active:scale-100 transition-transform" />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <div className="flex justify-between text-xs text-slate-500 mt-1.5 font-mono">
                     <span>{formatTime(currentTime)}</span>
                     <span>-{formatTime(duration - currentTime)}</span>
                   </div>
                 </div>
 
-                {/* Controls Row */}
+                {/* Controls Row - Mobile optimized */}
                 <div className="flex items-center justify-between">
                   {/* Left: Skip & Play */}
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <button onClick={() => skip(-10)} className="p-2 text-slate-400 hover:text-white active:scale-90 transition-all" aria-label="Rewind 10s">
-                      <SkipBack size={20} />
+                  <div className="flex items-center gap-0.5 sm:gap-2">
+                    <button 
+                      onClick={() => skip(-10)} 
+                      className="p-2.5 sm:p-2 text-slate-400 hover:text-white active:scale-90 transition-all rounded-full hover:bg-white/5 touch-manipulation" 
+                      aria-label="Rewind 10s"
+                    >
+                      <SkipBack size={18} className="sm:w-5 sm:h-5" />
                     </button>
                     <button
                       onClick={togglePlay}
-                      className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center active:scale-95 transition-transform ${
-                        podcast.mediaType === 'video' ? 'bg-neon-purple text-white' : 'bg-neon-cyan text-black'
+                      className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center active:scale-90 transition-transform touch-manipulation shadow-lg ${
+                        podcast.mediaType === 'video' ? 'bg-neon-purple text-white shadow-neon-purple/20' : 'bg-neon-cyan text-black shadow-neon-cyan/20'
                       }`}
                       aria-label={isPlaying ? 'Pause' : 'Play'}
                     >
-                      {isBuffering ? <Loader2 size={22} className="animate-spin" /> : isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" className="ml-0.5" />}
+                      {isBuffering ? (
+                        <Loader2 size={20} className="animate-spin sm:w-6 sm:h-6" />
+                      ) : isPlaying ? (
+                        <Pause size={20} fill="currentColor" className="sm:w-6 sm:h-6" />
+                      ) : (
+                        <Play size={20} fill="currentColor" className="ml-0.5 sm:w-6 sm:h-6" />
+                      )}
                     </button>
-                    <button onClick={() => skip(10)} className="p-2 text-slate-400 hover:text-white active:scale-90 transition-all" aria-label="Forward 10s">
-                      <SkipForward size={20} />
+                    <button 
+                      onClick={() => skip(10)} 
+                      className="p-2.5 sm:p-2 text-slate-400 hover:text-white active:scale-90 transition-all rounded-full hover:bg-white/5 touch-manipulation" 
+                      aria-label="Forward 10s"
+                    >
+                      <SkipForward size={18} className="sm:w-5 sm:h-5" />
                     </button>
                   </div>
 
                   {/* Right: Volume, Speed, Fullscreen */}
-                  <div className="flex items-center gap-1">
-                    {/* Volume Control */}
+                  <div className="flex items-center gap-0.5 sm:gap-1">
+                    {/* Volume Control - Desktop slider, mobile mute toggle */}
                     <div className="relative volume-control">
-                      <button onClick={(e) => { e.stopPropagation(); setShowVolumeSlider(!showVolumeSlider); setShowSpeedMenu(false); }} className="p-2 text-slate-400 hover:text-white transition-colors">
-                        {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (window.innerWidth < 640) {
+                            toggleMute();
+                          } else {
+                            setShowVolumeSlider(!showVolumeSlider); 
+                            setShowSpeedMenu(false); 
+                          }
+                        }} 
+                        className="p-2.5 sm:p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5 touch-manipulation"
+                      >
+                        {isMuted || volume === 0 ? <VolumeX size={18} className="sm:w-5 sm:h-5" /> : <Volume2 size={18} className="sm:w-5 sm:h-5" />}
                       </button>
-                      {showVolumeSlider && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-50">
-                          <div
-                            ref={volumeRef}
-                            className="w-24 h-2 bg-white/10 rounded-full cursor-pointer"
-                            onClick={handleVolumeChange}
-                            onTouchMove={handleVolumeChange}
+                      <AnimatePresence>
+                        {showVolumeSlider && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-slate-800/95 backdrop-blur-md border border-white/10 rounded-xl shadow-xl z-50"
                           >
-                            <div className="h-full bg-neon-cyan rounded-full" style={{ width: `${isMuted ? 0 : volume * 100}%` }} />
-                          </div>
-                          <button onClick={toggleMute} className="mt-2 text-xs text-slate-400 hover:text-white w-full text-center">
-                            {isMuted ? 'Unmute' : 'Mute'}
-                          </button>
-                        </div>
-                      )}
+                            <div
+                              ref={volumeRef}
+                              className="w-24 h-2 bg-white/10 rounded-full cursor-pointer"
+                              onClick={handleVolumeChange}
+                              onTouchMove={handleVolumeChange}
+                            >
+                              <div className="h-full bg-neon-cyan rounded-full transition-all" style={{ width: `${isMuted ? 0 : volume * 100}%` }} />
+                            </div>
+                            <button onClick={toggleMute} className="mt-2 text-xs text-slate-400 hover:text-white w-full text-center">
+                              {isMuted ? 'Unmute' : 'Mute'}
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Speed Control */}
                     <div className="relative speed-menu">
-                      <button onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(!showSpeedMenu); setShowVolumeSlider(false); }} className="p-2 text-slate-400 hover:text-white transition-colors flex items-center gap-1">
-                        <Settings size={18} />
-                        <span className="text-xs hidden sm:inline">{playbackSpeed}x</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(!showSpeedMenu); setShowVolumeSlider(false); }} 
+                        className="p-2 sm:px-2.5 sm:py-1.5 text-slate-400 hover:text-white transition-colors flex items-center gap-1 rounded-lg hover:bg-white/5 touch-manipulation"
+                      >
+                        <span className="text-xs font-mono">{playbackSpeed}x</span>
                       </button>
-                      {showSpeedMenu && (
-                        <div className="absolute bottom-full right-0 mb-2 p-2 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-50 min-w-[100px]">
-                          <p className="text-xs text-slate-500 px-2 mb-1">Speed</p>
-                          {PLAYBACK_SPEEDS.map((speed) => (
-                            <button
-                              key={speed}
-                              onClick={() => changeSpeed(speed)}
-                              className={`w-full px-3 py-1.5 text-left text-sm rounded transition-colors ${
-                                playbackSpeed === speed ? 'bg-neon-cyan/20 text-neon-cyan' : 'text-slate-300 hover:bg-white/5'
-                              }`}
-                            >
-                              {speed}x
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      <AnimatePresence>
+                        {showSpeedMenu && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-full right-0 mb-2 p-2 bg-slate-800/95 backdrop-blur-md border border-white/10 rounded-xl shadow-xl z-50 min-w-[100px]"
+                          >
+                            <p className="text-[10px] text-slate-500 px-2 mb-1 uppercase tracking-wider">Speed</p>
+                            {PLAYBACK_SPEEDS.map((speed) => (
+                              <button
+                                key={speed}
+                                onClick={() => changeSpeed(speed)}
+                                className={`w-full px-3 py-2 text-left text-sm rounded-lg transition-colors touch-manipulation ${
+                                  playbackSpeed === speed ? 'bg-neon-cyan/20 text-neon-cyan' : 'text-slate-300 hover:bg-white/5 active:bg-white/10'
+                                }`}
+                              >
+                                {speed}x
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Fullscreen (video only) */}
                     {podcast.mediaType === 'video' && (
-                      <button onClick={handleFullscreen} className="p-2 text-slate-400 hover:text-white transition-colors" aria-label="Fullscreen">
-                        <Maximize size={18} />
+                      <button 
+                        onClick={handleFullscreen} 
+                        className="p-2.5 sm:p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-white/5 touch-manipulation" 
+                        aria-label="Fullscreen"
+                      >
+                        <Maximize size={18} className="sm:w-5 sm:h-5" />
                       </button>
                     )}
                   </div>
                 </div>
+
+                {/* Mobile hint for video */}
+                {podcast.mediaType === 'video' && (
+                  <p className="text-slate-500 text-[10px] text-center mt-3 sm:hidden">Double tap video sides to seek 10s</p>
+                )}
               </motion.div>
             )}
 

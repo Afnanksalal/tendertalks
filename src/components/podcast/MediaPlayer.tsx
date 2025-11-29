@@ -583,17 +583,18 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                   e.stopPropagation();
                   togglePlay();
                 }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white hover:bg-white/30 active:scale-95 transition-all"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-white hover:bg-white/25 active:scale-90 transition-all touch-manipulation shadow-lg"
+                aria-label={hasEnded ? 'Replay' : isPlaying ? 'Pause' : 'Play'}
               >
                 {hasEnded ? (
-                  <RotateCcw size={28} className="sm:w-8 sm:h-8" />
+                  <RotateCcw size={24} className="sm:w-7 sm:h-7 md:w-8 md:h-8" />
                 ) : isPlaying ? (
-                  <Pause size={28} fill="currentColor" className="sm:w-8 sm:h-8" />
+                  <Pause size={24} fill="currentColor" className="sm:w-7 sm:h-7 md:w-8 md:h-8" />
                 ) : (
                   <Play
-                    size={28}
+                    size={24}
                     fill="currentColor"
-                    className="ml-1 sm:w-8 sm:h-8"
+                    className="ml-0.5 sm:w-7 sm:h-7 md:w-8 md:h-8"
                   />
                 )}
               </button>
@@ -601,41 +602,56 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
             {/* Bottom Controls */}
             <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 space-y-2 sm:space-y-3">
-              {/* Progress Bar */}
-              <div
-                ref={progressRef}
-                className="relative h-1.5 sm:h-2 bg-white/20 rounded-full cursor-pointer group"
-                onMouseDown={handleProgressMouseDown}
-                onTouchStart={handleProgressTouchStart}
-                onTouchMove={handleProgressTouchMove}
-                onTouchEnd={handleProgressTouchEnd}
-              >
-                {/* Buffered */}
+              {/* Progress Bar - Touch optimized with larger hit area */}
+              <div className="py-2 -my-2"> {/* Larger touch target */}
                 <div
-                  className="absolute inset-y-0 left-0 bg-white/30 rounded-full"
-                  style={{ width: `${buffered}%` }}
-                />
-                {/* Progress */}
-                <div
-                  className="absolute inset-y-0 left-0 bg-neon-cyan rounded-full"
-                  style={{ width: `${progressPercent}%` }}
+                  ref={progressRef}
+                  className="relative h-1.5 bg-white/20 rounded-full cursor-pointer group"
+                  onMouseDown={handleProgressMouseDown}
+                  onTouchStart={handleProgressTouchStart}
+                  onTouchMove={handleProgressTouchMove}
+                  onTouchEnd={handleProgressTouchEnd}
                 >
-                  {/* Thumb */}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity" />
+                  {/* Buffered */}
+                  <div
+                    className="absolute inset-y-0 left-0 bg-white/30 rounded-full"
+                    style={{ width: `${buffered}%` }}
+                  />
+                  {/* Progress */}
+                  <div
+                    className="absolute inset-y-0 left-0 bg-neon-cyan rounded-full transition-all"
+                    style={{ width: `${progressPercent}%` }}
+                  >
+                    {/* Thumb - Always visible on mobile, hover on desktop */}
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg scale-100 sm:scale-0 sm:group-hover:scale-100 sm:group-active:scale-100 transition-transform" />
+                  </div>
                 </div>
               </div>
 
-              {/* Control Buttons */}
-              <div className="flex items-center justify-between gap-2">
+              {/* Control Buttons - Mobile optimized */}
+              <div className="flex items-center justify-between gap-1 sm:gap-2">
                 {/* Left Controls */}
-                <div className="flex items-center gap-1 sm:gap-2">
+                <div className="flex items-center gap-0.5 sm:gap-2">
+                  {/* Skip Back */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      skip(-10);
+                    }}
+                    className="p-2.5 sm:p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-90 touch-manipulation"
+                    aria-label="Rewind 10 seconds"
+                  >
+                    <SkipBack size={18} className="sm:w-5 sm:h-5" />
+                  </button>
+
                   {/* Play/Pause */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePlay();
                     }}
-                    className="p-2 sm:p-2.5 text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
+                    className="p-2.5 sm:p-2.5 text-white hover:bg-white/10 rounded-full transition-colors active:scale-90 touch-manipulation"
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
                   >
                     {hasEnded ? (
                       <RotateCcw size={20} className="sm:w-6 sm:h-6" />
@@ -646,36 +662,26 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     )}
                   </button>
 
-                  {/* Skip Back */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      skip(-10);
-                    }}
-                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
-                  >
-                    <SkipBack size={18} className="sm:w-5 sm:h-5" />
-                  </button>
-
                   {/* Skip Forward */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       skip(10);
                     }}
-                    className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
+                    className="p-2.5 sm:p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-90 touch-manipulation"
+                    aria-label="Forward 10 seconds"
                   >
                     <SkipForward size={18} className="sm:w-5 sm:h-5" />
                   </button>
 
                   {/* Time Display */}
-                  <span className="text-white/80 text-xs sm:text-sm ml-1 whitespace-nowrap font-mono">
+                  <span className="text-white/80 text-[10px] sm:text-sm ml-1 whitespace-nowrap font-mono">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
                 </div>
 
                 {/* Right Controls */}
-                <div className="flex items-center gap-1 sm:gap-2">
+                <div className="flex items-center gap-0.5 sm:gap-2">
                   {/* Volume (Desktop) */}
                   <div className="hidden sm:flex items-center gap-1 group">
                     <button
@@ -683,12 +689,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         e.stopPropagation();
                         toggleMute();
                       }}
-                      className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                      className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                      aria-label={isMuted ? 'Unmute' : 'Mute'}
                     >
                       {isMuted || volume === 0 ? (
-                        <VolumeX size={20} />
+                        <VolumeX size={18} />
                       ) : (
-                        <Volume2 size={20} />
+                        <Volume2 size={18} />
                       )}
                     </button>
                     <input
@@ -709,12 +716,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                       e.stopPropagation();
                       toggleMute();
                     }}
-                    className="sm:hidden p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
+                    className="sm:hidden p-2.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-90 touch-manipulation"
+                    aria-label={isMuted ? 'Unmute' : 'Mute'}
                   >
                     {isMuted || volume === 0 ? (
-                      <VolumeX size={18} />
+                      <VolumeX size={16} />
                     ) : (
-                      <Volume2 size={18} />
+                      <Volume2 size={16} />
                     )}
                   </button>
 
@@ -725,7 +733,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         e.stopPropagation();
                         setShowSpeedMenu(!showSpeedMenu);
                       }}
-                      className="px-2 py-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-xs sm:text-sm font-mono active:scale-95"
+                      className="px-2 py-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-[10px] sm:text-sm font-mono active:scale-95 touch-manipulation min-w-[36px] text-center"
+                      aria-label="Playback speed"
                     >
                       {playbackRate}x
                     </button>
@@ -737,17 +746,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          className="absolute bottom-full right-0 mb-2 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden shadow-xl"
+                          className="absolute bottom-full right-0 mb-2 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-xl"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {speedOptions.map((speed) => (
                             <button
                               key={speed}
                               onClick={() => setSpeed(speed)}
-                              className={`block w-full px-4 py-2 text-sm text-left transition-colors ${
+                              className={`block w-full px-4 py-2.5 text-sm text-left transition-colors touch-manipulation ${
                                 playbackRate === speed
                                   ? 'bg-neon-cyan/20 text-neon-cyan'
-                                  : 'text-white hover:bg-white/10'
+                                  : 'text-white hover:bg-white/10 active:bg-white/15'
                               }`}
                             >
                               {speed}x
@@ -765,12 +774,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         e.stopPropagation();
                         toggleFullscreen();
                       }}
-                      className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
+                      className="p-2.5 sm:p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-90 touch-manipulation"
+                      aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
                     >
                       {isFullscreen ? (
-                        <Minimize size={18} className="sm:w-5 sm:h-5" />
+                        <Minimize size={16} className="sm:w-5 sm:h-5" />
                       ) : (
-                        <Maximize size={18} className="sm:w-5 sm:h-5" />
+                        <Maximize size={16} className="sm:w-5 sm:h-5" />
                       )}
                     </button>
                   )}

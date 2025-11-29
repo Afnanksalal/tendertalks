@@ -201,6 +201,63 @@ body {
 }
 
 /* ========================================
+   VIDEO PLAYER MOBILE OPTIMIZATIONS
+   ======================================== */
+
+/* Prevent text selection during video interactions */
+.select-none {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Touch manipulation for smoother scrolling/zooming */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Video controls touch targets - minimum 44px for accessibility */
+@media (hover: none) and (pointer: coarse) {
+  .player-controls button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Larger progress bar hit area on touch devices */
+  .player-controls .progress-bar {
+    padding: 12px 0;
+    margin: -12px 0;
+  }
+}
+
+/* Fullscreen video container */
+.video-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 9999 !important;
+  background: black !important;
+  border-radius: 0 !important;
+}
+
+/* Safe area inset for fullscreen controls */
+.safe-area-inset {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Prevent iOS bounce scroll in fullscreen */
+.no-bounce {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+/* ========================================
    SKELETON LOADING
    ======================================== */
 
