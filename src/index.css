@@ -601,6 +601,32 @@ input[type="number"] {
   }
 }
 
+/* CRITICAL: Override custom-cursor-active in fullscreen mode to show native cursor */
+/* The custom cursor component removes the class in fullscreen, but this is a fallback */
+:fullscreen,
+:-webkit-full-screen,
+:-moz-full-screen {
+  cursor: default !important;
+}
+
+/* Video player cursor - always visible in fullscreen */
+.video-cursor-visible,
+.video-cursor-visible * {
+  cursor: default !important;
+}
+
+/* Ensure buttons and interactive elements always show pointer cursor */
+:fullscreen button,
+:fullscreen [role="button"],
+:fullscreen a,
+:fullscreen .cursor-pointer,
+:-webkit-full-screen button,
+:-webkit-full-screen [role="button"],
+:-webkit-full-screen a,
+:-webkit-full-screen .cursor-pointer {
+  cursor: pointer !important;
+}
+
 /* ========================================
    FLOATING ORB ANIMATIONS (CSS-based for performance)
    ======================================== */

@@ -43,12 +43,6 @@ export const CustomCursor: React.FC = () => {
       
       const shouldEnable = hasHover && hasPointer && isLargeScreen && noTouch;
       setIsEnabled(shouldEnable);
-      
-      if (shouldEnable) {
-        document.documentElement.classList.add('custom-cursor-active');
-      } else {
-        document.documentElement.classList.remove('custom-cursor-active');
-      }
     };
 
     const timeout = setTimeout(checkDevice, 50);
@@ -60,6 +54,20 @@ export const CustomCursor: React.FC = () => {
       document.documentElement.classList.remove('custom-cursor-active');
     };
   }, []);
+
+  // Manage custom-cursor-active class based on enabled state AND fullscreen state
+  useEffect(() => {
+    // Only show custom cursor when enabled AND not in fullscreen
+    if (isEnabled && !isFullscreen) {
+      document.documentElement.classList.add('custom-cursor-active');
+    } else {
+      document.documentElement.classList.remove('custom-cursor-active');
+    }
+    
+    return () => {
+      document.documentElement.classList.remove('custom-cursor-active');
+    };
+  }, [isEnabled, isFullscreen]);
 
   // Use RAF for smooth cursor movement
   useEffect(() => {

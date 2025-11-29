@@ -145,54 +145,104 @@ export const PodcastDetailPage: React.FC = () => {
     }
   }, [showPlayer]);
 
-  // Media Session API for lock screen controls
+  // Media Session API for lock screen AND notification bar controls
   useEffect(() => {
     if (!showPlayer || !currentPodcast || !('mediaSession' in navigator)) return;
 
+    // Set metadata with multiple artwork sizes for better compatibility
+    const artworkSizes = ['96x96', '128x128', '192x192', '256x256', '384x384', '512x512'];
     navigator.mediaSession.metadata = new MediaMetadata({
       title: currentPodcast.title,
       artist: 'TenderTalks',
-      album: 'Podcast',
-      artwork: currentPodcast.thumbnailUrl ? [
-        { src: currentPodcast.thumbnailUrl, sizes: '512x512', type: 'image/jpeg' }
-      ] : [],
+      album: currentPodcast.mediaType === 'video' ? 'Video' : 'Podcast',
+      artwork: currentPodcast.thumbnailUrl 
+        ? artworkSizes.map(size => ({
+            src: currentPodcast.thumbnailUrl!,
+            sizes: size,
+            type: 'image/jpeg'
+          }))
+        : [],
     });
 
-    navigator.mediaSession.setActionHandler('play', () => mediaRef.current?.play());
-    navigator.mediaSession.setActionHandler('pause', () => mediaRef.current?.pause());
-    navigator.mediaSession.setActionHandler('seekbackward', () => skip(-10));
-    navigator.mediaSession.setActionHandler('seekforward', () => skip(10));
-    navigator.mediaSession.setActionHandler('previoustrack', () => skip(-30));
-    navigator.mediaSession.setActionHandler('nexttrack', () => skip(30));
+    // Action handlers - using inline functions to ensure they work
+    const actionHandlers: [MediaSessionAction, MediaSessionActionHandler][] = [
+      ['play', () => {
+        mediaRef.current?.play();
+      }],
+      ['pause', () => {
+        mediaRef.current?.pause();
+      }],
+      ['stop', () => {
+        if (mediaRef.current) {
+          mediaRef.current.pause();
+          mediaRef.current.currentTime = 0;
+        }
+      }],
+      ['seekbackward', (details) => {
+        if (mediaRef.current) {
+          const skipTime = details?.seekOffset || 10;
+          mediaRef.current.currentTime = Math.max(0, mediaRef.current.currentTime - skipTime);
+        }
+      }],
+      ['seekforward', (details) => {
+        if (mediaRef.current) {
+          const skipTime = details?.seekOffset || 10;
+          mediaRef.current.currentTime = Math.min(mediaRef.current.duration || 0, mediaRef.current.currentTime + skipTime);
+        }
+      }],
+      ['seekto', (details) => {
+        if (mediaRef.current && details?.seekTime !== undefined) {
+          mediaRef.current.currentTime = details.seekTime;
+        }
+      }],
+    ];
+
+    // Set all action handlers
+    for (const [action, handler] of actionHandlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch {
+        // Action not supported on this device
+      }
+    }
 
     return () => {
-      navigator.mediaSession.setActionHandler('play', null);
-      navigator.mediaSession.setActionHandler('pause', null);
-      navigator.mediaSession.setActionHandler('seekbackward', null);
-      navigator.mediaSession.setActionHandler('seekforward', null);
-      navigator.mediaSession.setActionHandler('previoustrack', null);
-      navigator.mediaSession.setActionHandler('nexttrack', null);
+      // Clean up action handlers
+      for (const [action] of actionHandlers) {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
     };
   }, [showPlayer, currentPodcast]);
 
   // Update Media Session position state for notification bar progress
   useEffect(() => {
-    if (!showPlayer || !('mediaSession' in navigator) || !duration) return;
+    if (!showPlayer || !('mediaSession' in navigator) || !duration || duration <= 0) return;
     
     try {
+      // Ensure position is valid (not NaN, not negative, not greater than duration)
+      const validPosition = Math.max(0, Math.min(currentTime || 0, duration));
+      const validDuration = Math.max(0, duration);
+      const validPlaybackRate = playbackSpeed > 0 ? playbackSpeed : 1;
+      
       navigator.mediaSession.setPositionState({
-        duration: duration,
-        playbackRate: playbackSpeed,
-        position: Math.min(currentTime, duration),
+        duration: validDuration,
+        playbackRate: validPlaybackRate,
+        position: validPosition,
       });
     } catch {
-      // Position state not supported
+      // Position state not supported or invalid values
     }
   }, [showPlayer, currentTime, duration, playbackSpeed]);
 
-  // Update Media Session playback state
+  // Update Media Session playback state - this is crucial for notification bar
   useEffect(() => {
     if (!showPlayer || !('mediaSession' in navigator)) return;
+    
+    // Set playback state immediately
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }, [showPlayer, isPlaying]);
 
@@ -571,9 +621,8 @@ export const PodcastDetailPage: React.FC = () => {
             {/* Media Container - This goes fullscreen */}
             <div 
               ref={playerContainerRef}
-              className={`relative rounded-xl overflow-hidden select-none ${isFullscreen ? 'fixed inset-0 z-50 rounded-none bg-black flex flex-col' : 'aspect-video mb-4'} ${podcast.mediaType === 'video' ? 'bg-black' : 'bg-neon-cyan/5'}`}
+              className={`relative rounded-xl overflow-hidden select-none ${isFullscreen ? 'fixed inset-0 z-50 rounded-none bg-black flex flex-col video-cursor-visible' : 'aspect-video mb-4'} ${podcast.mediaType === 'video' ? 'bg-black' : 'bg-neon-cyan/5'}`}
               onMouseMove={resetControlsTimeout}
-              style={{ cursor: isFullscreen ? (showControls ? 'default' : 'none') : 'default' }}
             >
               {hasAccess && podcast.mediaUrl && showPlayer && podcast.mediaType === 'video' ? (
                 <video
@@ -640,9 +689,15 @@ export const PodcastDetailPage: React.FC = () => {
               {/* Tap area for video controls toggle / double tap seek */}
               {showPlayer && podcast.mediaType === 'video' && hasAccess && (
                 <div 
-                  className="absolute inset-0 z-10 cursor-pointer" 
+                  className="absolute inset-0 z-25" 
+                  style={{ zIndex: 25 }}
                   onClick={handleVideoClick}
-                  onTouchEnd={handleVideoTouch}
+                  onTouchEnd={(e) => {
+                    // Don't handle if touching controls area
+                    const target = e.target as HTMLElement;
+                    if (target.closest('.player-controls') || target.closest('button')) return;
+                    handleVideoTouch(e);
+                  }}
                 />
               )}
 
@@ -705,22 +760,26 @@ export const PodcastDetailPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-30"
+                    className="player-controls absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-30"
                     style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
                     onClick={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
                   >
                     {/* Progress Bar - Touch optimized with larger hit area */}
                     <div className="mb-4">
-                      <div className="py-3 -my-3"> {/* Larger touch target */}
+                      <div 
+                        className="py-4 -my-4 cursor-pointer"
+                        onMouseDown={handleSeekStart}
+                        onTouchStart={handleSeekStart}
+                        onTouchMove={handleSeek}
+                        onTouchEnd={handleSeekEnd}
+                      >
                         <div
-                          className="h-2 bg-white/20 rounded-full cursor-pointer group relative touch-none"
-                          onMouseDown={handleSeekStart}
-                          onTouchStart={handleSeekStart}
-                          onTouchMove={handleSeek}
-                          onTouchEnd={handleSeekEnd}
+                          ref={progressRef}
+                          className="h-2 bg-white/20 rounded-full group relative pointer-events-none"
                         >
                           <div className="h-full bg-neon-cyan rounded-full relative transition-all" style={{ width: `${progressPercent}%` }}>
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg scale-100 sm:scale-0 sm:group-hover:scale-100 sm:group-active:scale-100 transition-transform" />
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg" />
                           </div>
                         </div>
                       </div>
@@ -803,9 +862,10 @@ export const PodcastDetailPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute top-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent z-30"
+                    className="player-controls absolute top-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent z-30"
                     style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
                     onClick={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
                   >
                     <h3 className="text-white font-medium text-sm sm:text-lg truncate pr-4">{podcast.title}</h3>
                     <p className="text-white/60 text-xs mt-0.5">TenderTalks</p>
@@ -830,17 +890,19 @@ export const PodcastDetailPage: React.FC = () => {
 
                 {/* Progress Bar - Touch optimized with larger hit area */}
                 <div className="mb-3">
-                  <div className="py-3 -my-3"> {/* Larger touch target */}
+                  <div 
+                    className="py-4 -my-4 cursor-pointer"
+                    onMouseDown={handleSeekStart}
+                    onTouchStart={handleSeekStart}
+                    onTouchMove={handleSeek}
+                    onTouchEnd={handleSeekEnd}
+                  >
                     <div
                       ref={progressRef}
-                      className="h-2 bg-white/10 rounded-full cursor-pointer group relative touch-none"
-                      onMouseDown={handleSeekStart}
-                      onTouchStart={handleSeekStart}
-                      onTouchMove={handleSeek}
-                      onTouchEnd={handleSeekEnd}
+                      className="h-2 bg-white/10 rounded-full group relative pointer-events-none"
                     >
                       <div className="h-full bg-neon-cyan rounded-full relative transition-all" style={{ width: `${progressPercent}%` }}>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg scale-100 sm:scale-0 sm:group-hover:scale-100 sm:group-active:scale-100 transition-transform" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg" />
                       </div>
                     </div>
                   </div>
