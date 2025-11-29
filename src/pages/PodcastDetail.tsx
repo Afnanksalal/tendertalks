@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, Lock, Clock, Calendar, Tag, ArrowLeft, Loader2,
   Download, Share2, Volume2, VolumeX, SkipBack, SkipForward,
-  Video, Music, Maximize, Minimize, Settings, RotateCcw, RotateCw
+  Video, Music, Maximize, Minimize, RotateCcw, RotateCw
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { usePodcastStore } from '../stores/podcastStore';
@@ -274,54 +274,55 @@ export const PodcastDetailPage: React.FC = () => {
     }, 600);
   }, [duration]);
 
-  // Video tap handler - defined as regular function to access hasAccess after it's declared
-  const handleVideoTapRef = useRef<(e: React.MouseEvent | React.TouchEvent) => void>(() => {});
+  // Video tap handler - separate mouse and touch to prevent double firing
+  const lastTouchTimeRef = useRef(0);
   
-  useEffect(() => {
-    handleVideoTapRef.current = (e: React.MouseEvent | React.TouchEvent) => {
-      if (!showPlayer) return;
-      
-      const now = Date.now();
-      const clientX = 'touches' in e ? e.changedTouches[0].clientX : e.clientX;
-      const container = playerContainerRef.current;
-      if (!container) return;
-      
-      const rect = container.getBoundingClientRect();
-      const relativeX = clientX - rect.left;
-      
-      // Check for double tap (within 300ms and similar position)
-      if (now - lastTapRef.current.time < 300 && Math.abs(relativeX - lastTapRef.current.x) < 50) {
-        handleDoubleTap(relativeX, rect.width);
-        lastTapRef.current = { time: 0, x: 0 }; // Reset to prevent triple tap
+  const handleVideoClick = useCallback((e: React.MouseEvent) => {
+    // Ignore click if it was triggered by a recent touch (prevents double firing)
+    if (Date.now() - lastTouchTimeRef.current < 500) return;
+    if (!showPlayer) return;
+    
+    // Desktop: click toggles play/pause
+    if (mediaRef.current) {
+      if (mediaRef.current.paused) {
+        mediaRef.current.play();
       } else {
-        // Single tap - toggle controls or play/pause
-        lastTapRef.current = { time: now, x: relativeX };
-        
-        // On mobile, single tap toggles controls
-        const isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
-        if (isMobile) {
-          if (showControls) {
-            setShowControls(false);
-          } else {
-            resetControlsTimeout();
-          }
-        } else {
-          // On desktop, click toggles play/pause
-          if (mediaRef.current) {
-            if (mediaRef.current.paused) {
-              mediaRef.current.play();
-            } else {
-              mediaRef.current.pause();
-            }
-          }
-        }
+        mediaRef.current.pause();
       }
-    };
+    }
+  }, [showPlayer]);
+
+  const handleVideoTouch = useCallback((e: React.TouchEvent) => {
+    if (!showPlayer) return;
+    lastTouchTimeRef.current = Date.now();
+    
+    const now = Date.now();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    
+    const container = playerContainerRef.current;
+    if (!container) return;
+    
+    const rect = container.getBoundingClientRect();
+    const relativeX = touch.clientX - rect.left;
+    
+    // Check for double tap (within 300ms and similar position)
+    if (now - lastTapRef.current.time < 300 && Math.abs(relativeX - lastTapRef.current.x) < 80) {
+      // Double tap - seek
+      e.preventDefault();
+      handleDoubleTap(relativeX, rect.width);
+      lastTapRef.current = { time: 0, x: 0 }; // Reset to prevent triple tap
+    } else {
+      // Single tap - toggle controls visibility
+      lastTapRef.current = { time: now, x: relativeX };
+      
+      if (showControls) {
+        setShowControls(false);
+      } else {
+        resetControlsTimeout();
+      }
+    }
   }, [showPlayer, handleDoubleTap, showControls, resetControlsTimeout]);
-  
-  const handleVideoTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    handleVideoTapRef.current(e);
-  }, []);
 
   if (isLoading || !currentPodcast) {
     return (
@@ -371,18 +372,41 @@ export const PodcastDetailPage: React.FC = () => {
     }
   };
 
+  // Progress bar seeking - handles both mouse and touch
   const handleSeek = (e: React.MouseEvent | React.TouchEvent) => {
     if (!progressRef.current || !mediaRef.current) return;
+    e.stopPropagation();
+    
     const rect = progressRef.current.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    let clientX: number;
+    
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+    } else if ('changedTouches' in e && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+    } else if ('clientX' in e) {
+      clientX = e.clientX;
+    } else {
+      return;
+    }
+    
     const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const time = percent * duration;
     mediaRef.current.currentTime = time;
     setCurrentTime(time);
   };
 
-  const handleSeekStart = () => setIsSeeking(true);
-  const handleSeekEnd = () => setIsSeeking(false);
+  const handleSeekStart = (e: React.TouchEvent | React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSeeking(true);
+    handleSeek(e);
+  };
+  
+  const handleSeekEnd = (e: React.TouchEvent | React.MouseEvent) => {
+    e.stopPropagation();
+    handleSeek(e);
+    setIsSeeking(false);
+  };
 
   const skip = (seconds: number) => {
     if (mediaRef.current) {
@@ -549,6 +573,7 @@ export const PodcastDetailPage: React.FC = () => {
               ref={playerContainerRef}
               className={`relative rounded-xl overflow-hidden select-none ${isFullscreen ? 'fixed inset-0 z-50 rounded-none bg-black flex flex-col' : 'aspect-video mb-4'} ${podcast.mediaType === 'video' ? 'bg-black' : 'bg-neon-cyan/5'}`}
               onMouseMove={resetControlsTimeout}
+              style={{ cursor: isFullscreen ? (showControls ? 'default' : 'none') : 'default' }}
             >
               {hasAccess && podcast.mediaUrl && showPlayer && podcast.mediaType === 'video' ? (
                 <video
@@ -587,15 +612,17 @@ export const PodcastDetailPage: React.FC = () => {
                 )}
               </AnimatePresence>
 
-              {/* Media Type Badge - Always visible */}
-              <div className="absolute top-3 left-3 z-20">
-                <span className={`px-2.5 py-1 backdrop-blur text-xs font-bold rounded-lg flex items-center gap-1.5 ${
-                  podcast.mediaType === 'video' ? 'bg-neon-purple/90 text-white' : 'bg-neon-cyan/90 text-black'
-                }`}>
-                  {podcast.mediaType === 'video' ? <Video size={12} /> : <Music size={12} />}
-                  {podcast.mediaType.toUpperCase()}
-                </span>
-              </div>
+              {/* Media Type Badge - Hidden in fullscreen */}
+              {!isFullscreen && (
+                <div className="absolute top-3 left-3 z-20">
+                  <span className={`px-2.5 py-1 backdrop-blur text-xs font-bold rounded-lg flex items-center gap-1.5 ${
+                    podcast.mediaType === 'video' ? 'bg-neon-purple/90 text-white' : 'bg-neon-cyan/90 text-black'
+                  }`}>
+                    {podcast.mediaType === 'video' ? <Video size={12} /> : <Music size={12} />}
+                    {podcast.mediaType.toUpperCase()}
+                  </span>
+                </div>
+              )}
 
               {/* Gradient overlay for controls visibility */}
               <AnimatePresence>
@@ -614,8 +641,8 @@ export const PodcastDetailPage: React.FC = () => {
               {showPlayer && podcast.mediaType === 'video' && hasAccess && (
                 <div 
                   className="absolute inset-0 z-10 cursor-pointer" 
-                  onClick={handleVideoTap}
-                  onTouchEnd={handleVideoTap}
+                  onClick={handleVideoClick}
+                  onTouchEnd={handleVideoTouch}
                 />
               )}
 
@@ -684,10 +711,10 @@ export const PodcastDetailPage: React.FC = () => {
                   >
                     {/* Progress Bar - Touch optimized with larger hit area */}
                     <div className="mb-4">
-                      <div className="py-2 -my-2"> {/* Larger touch target */}
+                      <div className="py-3 -my-3"> {/* Larger touch target */}
                         <div
-                          className="h-1.5 bg-white/20 rounded-full cursor-pointer group relative"
-                          onClick={handleSeek}
+                          className="h-2 bg-white/20 rounded-full cursor-pointer group relative touch-none"
+                          onMouseDown={handleSeekStart}
                           onTouchStart={handleSeekStart}
                           onTouchMove={handleSeek}
                           onTouchEnd={handleSeekEnd}
@@ -803,17 +830,17 @@ export const PodcastDetailPage: React.FC = () => {
 
                 {/* Progress Bar - Touch optimized with larger hit area */}
                 <div className="mb-3">
-                  <div className="py-2 -my-2"> {/* Larger touch target */}
+                  <div className="py-3 -my-3"> {/* Larger touch target */}
                     <div
                       ref={progressRef}
-                      className="h-1.5 bg-white/10 rounded-full cursor-pointer group relative"
-                      onClick={handleSeek}
+                      className="h-2 bg-white/10 rounded-full cursor-pointer group relative touch-none"
+                      onMouseDown={handleSeekStart}
                       onTouchStart={handleSeekStart}
                       onTouchMove={handleSeek}
                       onTouchEnd={handleSeekEnd}
                     >
                       <div className="h-full bg-neon-cyan rounded-full relative transition-all" style={{ width: `${progressPercent}%` }}>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg scale-100 sm:scale-0 sm:group-hover:scale-100 sm:group-active:scale-100 transition-transform" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg scale-100 sm:scale-0 sm:group-hover:scale-100 sm:group-active:scale-100 transition-transform" />
                       </div>
                     </div>
                   </div>

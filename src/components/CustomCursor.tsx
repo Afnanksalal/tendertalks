@@ -5,11 +5,34 @@ export const CustomCursor: React.FC = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef({ x: -100, y: -100 });
   const rafRef = useRef<number | null>(null);
+
+  // Detect fullscreen mode
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFs = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isFs);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     const checkDevice = () => {
@@ -149,7 +172,8 @@ export const CustomCursor: React.FC = () => {
     };
   }, [isEnabled, handleMouseOver]);
 
-  if (!isEnabled || !isVisible) return null;
+  // Hide cursor when not enabled, not visible, or in fullscreen mode
+  if (!isEnabled || !isVisible || isFullscreen) return null;
 
   const dotScale = isClicking ? 0.6 : isHovering ? 0.4 : 1;
   const ringScale = isClicking ? 0.6 : isHovering ? 1.5 : 1;
