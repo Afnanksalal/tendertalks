@@ -276,9 +276,9 @@ export default function ProductsManager() {
               <button
                 type="button"
                 onClick={() => setFormData({...formData, inStock: !formData.inStock})}
-                className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${formData.inStock ? 'bg-neon-green' : 'bg-slate-600'}`}
+                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.inStock ? 'bg-neon-green' : 'bg-slate-600'}`}
               >
-                <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.inStock ? 'translate-x-5' : 'translate-x-0'}`} />
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.inStock ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </div>
             <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
@@ -286,9 +286,9 @@ export default function ProductsManager() {
               <button
                 type="button"
                 onClick={() => setFormData({...formData, isActive: !formData.isActive})}
-                className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${formData.isActive ? 'bg-neon-cyan' : 'bg-slate-600'}`}
+                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.isActive ? 'bg-neon-cyan' : 'bg-slate-600'}`}
               >
-                <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </div>
           </div>

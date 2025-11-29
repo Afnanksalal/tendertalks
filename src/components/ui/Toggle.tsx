@@ -43,11 +43,11 @@ export const Toggle: React.FC<ToggleProps> = ({
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className={`relative rounded-full transition-colors flex-shrink-0 touch-feedback ${
-          isSmall ? 'w-10 h-6' : 'w-12 h-7'
+          isSmall ? 'w-9 h-5' : 'w-11 h-6'
         } ${checked ? colors[color] : 'bg-slate-600'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div
-          className={`absolute top-1 left-1 rounded-full bg-white shadow-md transition-transform duration-200 ${
+          className={`absolute top-0.5 left-0.5 rounded-full bg-white shadow-md transition-transform duration-200 ${
             isSmall 
               ? `w-4 h-4 ${checked ? 'translate-x-4' : 'translate-x-0'}`
               : `w-5 h-5 ${checked ? 'translate-x-5' : 'translate-x-0'}`
