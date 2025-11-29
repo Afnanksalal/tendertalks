@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, Package, Save, X, Loader2, AlertTriangle, Upload, Image as ImageIcon, DollarSign, Hash, FileText, Tag } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, Save, X, Loader2, AlertTriangle, Upload, Image as ImageIcon, DollarSign, Hash, FileText, Tag, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -276,9 +276,13 @@ export default function ProductsManager() {
               <button
                 type="button"
                 onClick={() => setFormData({...formData, inStock: !formData.inStock})}
-                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.inStock ? 'bg-neon-green' : 'bg-slate-600'}`}
+                className="flex-shrink-0"
               >
-                <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.inStock ? 'translate-x-5' : 'translate-x-0'}`} />
+                {formData.inStock ? (
+                  <ToggleRight size={32} className="text-neon-green" />
+                ) : (
+                  <ToggleLeft size={32} className="text-slate-500" />
+                )}
               </button>
             </div>
             <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
@@ -286,9 +290,13 @@ export default function ProductsManager() {
               <button
                 type="button"
                 onClick={() => setFormData({...formData, isActive: !formData.isActive})}
-                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.isActive ? 'bg-neon-cyan' : 'bg-slate-600'}`}
+                className="flex-shrink-0"
               >
-                <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
+                {formData.isActive ? (
+                  <ToggleRight size={32} className="text-neon-cyan" />
+                ) : (
+                  <ToggleLeft size={32} className="text-slate-500" />
+                )}
               </button>
             </div>
           </div>

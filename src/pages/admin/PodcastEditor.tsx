@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Music, Video, Image, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Music, Video, Image, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
@@ -594,15 +594,13 @@ export const PodcastEditor: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleChange('isDownloadable', !formData.isDownloadable)}
-                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                      formData.isDownloadable ? 'bg-neon-cyan' : 'bg-slate-600'
-                    }`}
+                    className="flex-shrink-0"
                   >
-                    <div
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
-                        formData.isDownloadable ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
+                    {formData.isDownloadable ? (
+                      <ToggleRight size={32} className="text-neon-cyan" />
+                    ) : (
+                      <ToggleLeft size={32} className="text-slate-500" />
+                    )}
                   </button>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ToggleLeft, ToggleRight } from 'lucide-react';
 
 interface ToggleProps {
   checked: boolean;
@@ -10,11 +11,11 @@ interface ToggleProps {
   size?: 'sm' | 'md';
 }
 
-const colors = {
-  cyan: 'bg-neon-cyan',
-  green: 'bg-neon-green',
-  purple: 'bg-neon-purple',
-  amber: 'bg-amber-400',
+const colorClasses = {
+  cyan: 'text-neon-cyan',
+  green: 'text-neon-green',
+  purple: 'text-neon-purple',
+  amber: 'text-amber-400',
 };
 
 export const Toggle: React.FC<ToggleProps> = ({
@@ -26,7 +27,7 @@ export const Toggle: React.FC<ToggleProps> = ({
   color = 'cyan',
   size = 'md',
 }) => {
-  const isSmall = size === 'sm';
+  const iconSize = size === 'sm' ? 28 : 32;
   
   return (
     <div className={`flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5 ${disabled ? 'opacity-50' : ''}`}>
@@ -42,17 +43,13 @@ export const Toggle: React.FC<ToggleProps> = ({
         aria-checked={checked}
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
-        className={`relative rounded-full transition-colors flex-shrink-0 touch-feedback ${
-          isSmall ? 'w-9 h-5' : 'w-11 h-6'
-        } ${checked ? colors[color] : 'bg-slate-600'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`flex-shrink-0 transition-colors ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
-        <div
-          className={`absolute top-0.5 left-0.5 rounded-full bg-white shadow-md transition-transform duration-200 ${
-            isSmall 
-              ? `w-4 h-4 ${checked ? 'translate-x-4' : 'translate-x-0'}`
-              : `w-5 h-5 ${checked ? 'translate-x-5' : 'translate-x-0'}`
-          }`}
-        />
+        {checked ? (
+          <ToggleRight size={iconSize} className={colorClasses[color]} />
+        ) : (
+          <ToggleLeft size={iconSize} className="text-slate-500" />
+        )}
       </button>
     </div>
   );

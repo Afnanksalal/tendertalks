@@ -4,7 +4,7 @@ import {
   ArrowLeft, Save, Eye, Image, X, Star, Bold, Italic, List, ListOrdered, Link2, Quote, Code, 
   Heading1, Heading2, Heading3, Minus, CheckSquare, EyeOff, Maximize2, Minimize2, Table, 
   Strikethrough, Smile, FileCode, MoreHorizontal, Undo2, Redo2, AtSign, Hash, AlertCircle,
-  Lightbulb, Info, AlertTriangle, Type, Subscript, Superscript, Keyboard
+  Lightbulb, Info, AlertTriangle, Type, Subscript, Superscript, Keyboard, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -627,9 +627,12 @@ export const BlogEditor: React.FC = () => {
                       <p className="text-xs text-slate-500">Show on homepage</p>
                     </div>
                   </div>
-                  <button type="button" onClick={() => handleChange('isFeatured', !formData.isFeatured)}
-                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.isFeatured ? 'bg-amber-400' : 'bg-slate-600'}`}>
-                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ${formData.isFeatured ? 'translate-x-5' : 'translate-x-0'}`} />
+                  <button type="button" onClick={() => handleChange('isFeatured', !formData.isFeatured)} className="flex-shrink-0">
+                    {formData.isFeatured ? (
+                      <ToggleRight size={32} className="text-amber-400" />
+                    ) : (
+                      <ToggleLeft size={32} className="text-slate-500" />
+                    )}
                   </button>
                 </div>
               </div>

@@ -148,10 +148,32 @@ export const PodcastDetailPage: React.FC = () => {
       navigator.mediaSession.setActionHandler('pause', null);
       navigator.mediaSession.setActionHandler('seekbackward', null);
       navigator.mediaSession.setActionHandler('seekforward', null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+      navigator.mediaSession.setActionHandler('nexttrack', null);
     };
   }, [showPlayer, currentPodcast]);
 
-  // Close menus on outside click
+  // Update Media Session position state for notification bar progress
+  useEffect(() => {
+    if (!showPlayer || !('mediaSession' in navigator) || !duration) return;
+    
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        playbackRate: playbackSpeed,
+        position: Math.min(currentTime, duration),
+      });
+    } catch {
+      // Position state not supported
+    }
+  }, [showPlayer, currentTime, duration, playbackSpeed]);
+
+  // Update Media Session playback state
+  useEffect(() => {
+    if (!showPlayer || !('mediaSession' in navigator)) return;
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+  }, [showPlayer, isPlaying]);
+
   // Close menus on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
