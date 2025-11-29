@@ -270,25 +270,25 @@ export default function ProductsManager() {
           </div>
 
           {/* Toggle Switches */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/5">
-              <span className="text-sm text-slate-300">In Stock</span>
+          <div className="space-y-2 sm:space-y-3 pt-2">
+            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
+              <span className="text-xs sm:text-sm text-slate-300">In Stock</span>
               <button
                 type="button"
                 onClick={() => setFormData({...formData, inStock: !formData.inStock})}
-                className={`relative w-11 h-6 rounded-full transition-colors ${formData.inStock ? 'bg-neon-green' : 'bg-slate-600'}`}
+                className={`relative w-10 h-[22px] sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 ${formData.inStock ? 'bg-neon-green' : 'bg-slate-600'}`}
               >
-                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${formData.inStock ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                <div className={`absolute top-[2px] sm:top-0.5 w-[18px] h-[18px] sm:w-5 sm:h-5 rounded-full bg-white shadow-md transition-transform ${formData.inStock ? 'translate-x-[18px] sm:translate-x-5' : 'translate-x-0.5'}`} />
               </button>
             </div>
-            <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/5">
-              <span className="text-sm text-slate-300">Active (visible in store)</span>
+            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
+              <span className="text-xs sm:text-sm text-slate-300">Active (visible in store)</span>
               <button
                 type="button"
                 onClick={() => setFormData({...formData, isActive: !formData.isActive})}
-                className={`relative w-11 h-6 rounded-full transition-colors ${formData.isActive ? 'bg-neon-cyan' : 'bg-slate-600'}`}
+                className={`relative w-10 h-[22px] sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 ${formData.isActive ? 'bg-neon-cyan' : 'bg-slate-600'}`}
               >
-                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${formData.isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                <div className={`absolute top-[2px] sm:top-0.5 w-[18px] h-[18px] sm:w-5 sm:h-5 rounded-full bg-white shadow-md transition-transform ${formData.isActive ? 'translate-x-[18px] sm:translate-x-5' : 'translate-x-0.5'}`} />
               </button>
             </div>
           </div>

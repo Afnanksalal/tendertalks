@@ -55,6 +55,7 @@ export const PodcastDetailPage: React.FC = () => {
   const [shareText, setShareText] = useState('Share');
   const [isBuffering, setIsBuffering] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Refs for tracking
   const hasFetchedRef = useRef<string | null>(null);
@@ -151,6 +152,7 @@ export const PodcastDetailPage: React.FC = () => {
   }, [showPlayer, currentPodcast]);
 
   // Close menus on outside click
+  // Close menus on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (showSpeedMenu || showVolumeSlider) {
@@ -164,6 +166,22 @@ export const PodcastDetailPage: React.FC = () => {
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, [showSpeedMenu, showVolumeSlider]);
+
+  // Track fullscreen state
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(isFs);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   if (isLoading || !currentPodcast) {
     return (
@@ -375,6 +393,7 @@ export const PodcastDetailPage: React.FC = () => {
                   ref={mediaRef as React.RefObject<HTMLVideoElement>}
                   src={podcast.mediaUrl}
                   poster={podcast.thumbnailUrl || undefined}
+                  controls={isFullscreen}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onPlay={() => setIsPlaying(true)}

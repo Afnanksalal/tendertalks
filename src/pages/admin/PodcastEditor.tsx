@@ -586,21 +586,21 @@ export const PodcastEditor: React.FC = () => {
                 )}
 
                 {/* Downloads Toggle */}
-                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/5">
+                <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
                   <div className="flex-1 min-w-0 pr-3">
-                    <span className="text-sm font-medium text-slate-300 block">Downloads</span>
-                    <p className="text-xs text-slate-500 mt-0.5">Allow users to download</p>
+                    <span className="text-xs sm:text-sm font-medium text-slate-300 block">Downloads</span>
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">Allow users to download</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleChange('isDownloadable', !formData.isDownloadable)}
-                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                    className={`relative w-10 h-[22px] sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 ${
                       formData.isDownloadable ? 'bg-neon-cyan' : 'bg-slate-600'
                     }`}
                   >
                     <div
-                      className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                        formData.isDownloadable ? 'translate-x-5' : 'translate-x-0.5'
+                      className={`absolute top-[2px] sm:top-0.5 w-[18px] h-[18px] sm:w-5 sm:h-5 rounded-full bg-white shadow-md transition-transform ${
+                        formData.isDownloadable ? 'translate-x-[18px] sm:translate-x-5' : 'translate-x-0.5'
                       }`}
                     />
                   </button>

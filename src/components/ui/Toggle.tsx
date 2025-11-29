@@ -6,13 +6,15 @@ interface ToggleProps {
   label?: string;
   description?: string;
   disabled?: boolean;
-  color?: 'cyan' | 'green' | 'purple';
+  color?: 'cyan' | 'green' | 'purple' | 'amber';
+  size?: 'sm' | 'md';
 }
 
 const colors = {
   cyan: 'bg-neon-cyan',
   green: 'bg-neon-green',
   purple: 'bg-neon-purple',
+  amber: 'bg-amber-400',
 };
 
 export const Toggle: React.FC<ToggleProps> = ({
@@ -22,13 +24,16 @@ export const Toggle: React.FC<ToggleProps> = ({
   description,
   disabled = false,
   color = 'cyan',
+  size = 'md',
 }) => {
+  const isSmall = size === 'sm';
+  
   return (
-    <div className={`flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/5 ${disabled ? 'opacity-50' : ''}`}>
+    <div className={`flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5 ${disabled ? 'opacity-50' : ''}`}>
       {(label || description) && (
         <div className="flex-1 min-w-0 pr-3">
-          {label && <span className="text-sm font-medium text-slate-300 block">{label}</span>}
-          {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
+          {label && <span className="text-xs sm:text-sm font-medium text-slate-300 block">{label}</span>}
+          {description && <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">{description}</p>}
         </div>
       )}
       <button
@@ -37,13 +42,15 @@ export const Toggle: React.FC<ToggleProps> = ({
         aria-checked={checked}
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-          checked ? colors[color] : 'bg-slate-600'
-        } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`relative rounded-full transition-colors flex-shrink-0 touch-feedback ${
+          isSmall ? 'w-9 h-5' : 'w-10 h-[22px] sm:w-11 sm:h-6'
+        } ${checked ? colors[color] : 'bg-slate-600'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div
-          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-5' : 'translate-x-0.5'
+          className={`absolute rounded-full bg-white shadow-md transition-transform ${
+            isSmall 
+              ? `top-0.5 w-4 h-4 ${checked ? 'translate-x-4' : 'translate-x-0.5'}`
+              : `top-[2px] w-[18px] h-[18px] sm:top-0.5 sm:w-5 sm:h-5 ${checked ? 'translate-x-[18px] sm:translate-x-5' : 'translate-x-0.5'}`
           }`}
         />
       </button>
