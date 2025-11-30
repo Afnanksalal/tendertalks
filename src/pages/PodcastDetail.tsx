@@ -423,13 +423,14 @@ export const PodcastDetailPage: React.FC = () => {
   };
 
   // Progress bar seeking - handles both mouse and touch
-  const handleSeek = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!progressRef.current || !mediaRef.current) return;
-    e.stopPropagation();
+  const calculateSeekTime = (e: React.MouseEvent | React.TouchEvent): number | null => {
+    if (!duration) return null;
     
-    const rect = progressRef.current.getBoundingClientRect();
+    // Use currentTarget (the element with the event handler) for calculations
+    const element = e.currentTarget as HTMLElement;
+    const rect = element.getBoundingClientRect();
+    
     let clientX: number;
-    
     if ('touches' in e && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
     } else if ('changedTouches' in e && e.changedTouches.length > 0) {
@@ -437,25 +438,47 @@ export const PodcastDetailPage: React.FC = () => {
     } else if ('clientX' in e) {
       clientX = e.clientX;
     } else {
-      return;
+      return null;
     }
     
     const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const time = percent * duration;
+    return percent * duration;
+  };
+
+  const handleSeek = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!mediaRef.current) return;
+    e.stopPropagation();
+    
+    const time = calculateSeekTime(e);
+    if (time === null) return;
+    
     mediaRef.current.currentTime = time;
     setCurrentTime(time);
   };
 
   const handleSeekStart = (e: React.TouchEvent | React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsSeeking(true);
-    handleSeek(e);
+    
+    const time = calculateSeekTime(e);
+    if (time !== null && mediaRef.current) {
+      mediaRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
   };
   
   const handleSeekEnd = (e: React.TouchEvent | React.MouseEvent) => {
     e.stopPropagation();
-    handleSeek(e);
-    setIsSeeking(false);
+    
+    const time = calculateSeekTime(e);
+    if (time !== null && mediaRef.current) {
+      mediaRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+    
+    // Small delay before allowing time updates again
+    setTimeout(() => setIsSeeking(false), 100);
   };
 
   const skip = (seconds: number) => {
@@ -709,11 +732,13 @@ export const PodcastDetailPage: React.FC = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    style={{ zIndex: 26 }}
                   >
                     {hasAccess ? (
                       <button 
-                        onClick={(e) => { e.stopPropagation(); togglePlay(); }} 
+                        onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                        onTouchEnd={(e) => { e.stopPropagation(); togglePlay(); }}
                         className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-white hover:bg-neon-cyan hover:text-black active:scale-90 transition-all pointer-events-auto touch-manipulation"
                       >
                         {isBuffering ? (
@@ -768,16 +793,14 @@ export const PodcastDetailPage: React.FC = () => {
                     {/* Progress Bar - Touch optimized with larger hit area */}
                     <div className="mb-4">
                       <div 
-                        className="py-4 -my-4 cursor-pointer"
+                        ref={progressRef}
+                        className="py-4 -my-4 cursor-pointer relative"
                         onMouseDown={handleSeekStart}
                         onTouchStart={handleSeekStart}
                         onTouchMove={handleSeek}
                         onTouchEnd={handleSeekEnd}
                       >
-                        <div
-                          ref={progressRef}
-                          className="h-2 bg-white/20 rounded-full group relative pointer-events-none"
-                        >
+                        <div className="h-2 bg-white/20 rounded-full group relative">
                           <div className="h-full bg-neon-cyan rounded-full relative transition-all" style={{ width: `${progressPercent}%` }}>
                             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg" />
                           </div>
@@ -891,16 +914,13 @@ export const PodcastDetailPage: React.FC = () => {
                 {/* Progress Bar - Touch optimized with larger hit area */}
                 <div className="mb-3">
                   <div 
-                    className="py-4 -my-4 cursor-pointer"
+                    className="py-4 -my-4 cursor-pointer relative"
                     onMouseDown={handleSeekStart}
                     onTouchStart={handleSeekStart}
                     onTouchMove={handleSeek}
                     onTouchEnd={handleSeekEnd}
                   >
-                    <div
-                      ref={progressRef}
-                      className="h-2 bg-white/10 rounded-full group relative pointer-events-none"
-                    >
+                    <div className="h-2 bg-white/10 rounded-full group relative">
                       <div className="h-full bg-neon-cyan rounded-full relative transition-all" style={{ width: `${progressPercent}%` }}>
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg" />
                       </div>
