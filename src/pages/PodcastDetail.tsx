@@ -414,6 +414,14 @@ export const PodcastDetailPage: React.FC = () => {
     }
   };
 
+  // Called when seek operation completes
+  const handleSeeked = () => {
+    if (mediaRef.current) {
+      setCurrentTime(mediaRef.current.currentTime);
+      setIsSeeking(false);
+    }
+  };
+
   const handleLoadedMetadata = () => {
     if (mediaRef.current) {
       setDuration(mediaRef.current.duration);
@@ -477,8 +485,9 @@ export const PodcastDetailPage: React.FC = () => {
       setCurrentTime(time);
     }
     
-    // Small delay before allowing time updates again
-    setTimeout(() => setIsSeeking(false), 100);
+    // The handleSeeked event will set isSeeking to false when seek completes
+    // But also set a fallback timeout in case seeked event doesn't fire
+    setTimeout(() => setIsSeeking(false), 300);
   };
 
   const skip = (seconds: number) => {
@@ -655,6 +664,7 @@ export const PodcastDetailPage: React.FC = () => {
                   controls={false}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
+                  onSeeked={handleSeeked}
                   onPlay={() => { setIsPlaying(true); resetControlsTimeout(); }}
                   onPause={() => { setIsPlaying(false); setShowControls(true); }}
                   onEnded={() => { setIsPlaying(false); setShowControls(true); }}
@@ -768,6 +778,7 @@ export const PodcastDetailPage: React.FC = () => {
                   src={podcast.mediaUrl}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
+                  onSeeked={handleSeeked}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
                   onEnded={() => setIsPlaying(false)}
