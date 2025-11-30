@@ -37,8 +37,8 @@ export const Footer: React.FC = () => {
   const socialLinks = [
     { icon: Twitter, href: 'https://twitter.com/tendertalks_', label: 'Twitter / X' },
     { icon: Instagram, href: 'https://instagram.com/tendertalks.live', label: 'Instagram' },
-    { icon: Youtube, href: 'https://youtube.com/@tendertalks.live', label: 'YouTube' },
-    { icon: Linkedin, href: 'https://linkedin.com/company/tendertalks', label: 'LinkedIn' },
+    { icon: Youtube, href: 'https://youtube.com/@tendertalkslive', label: 'YouTube' },
+    { icon: Linkedin, href: 'https://www.linkedin.com/company/tendertalks', label: 'LinkedIn' },
   ];
 
   return (

@@ -418,7 +418,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Security**: security@tendertalks.live
 - **Twitter**: [@tendertalks_](https://twitter.com/tendertalks_)
 - **Instagram**: [@tendertalks.live](https://instagram.com/tendertalks.live)
-- **YouTube**: [@tendertalks.live](https://youtube.com/@tendertalks.live)
+- **YouTube**: [@tendertalkslive](https://youtube.com/@tendertalkslive)
+- **LinkedIn**: [TenderTalks](https://www.linkedin.com/company/tendertalks)
 
 ## 🙏 Acknowledgments
 

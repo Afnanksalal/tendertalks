@@ -284,20 +284,24 @@ export const PodcastDetailPage: React.FC = () => {
     }
     setShowControls(true);
     
-    if (isPlaying && showPlayer && podcast?.mediaType === 'video') {
+    // Auto-hide after 3.5 seconds when playing video
+    if (isPlaying && showPlayer && currentPodcast?.mediaType === 'video') {
       controlsTimeoutRef.current = setTimeout(() => {
         if (!showSpeedMenu && !showVolumeSlider) {
           setShowControls(false);
         }
       }, 3500);
     }
-  }, [isPlaying, showPlayer, showSpeedMenu, showVolumeSlider]);
+  }, [isPlaying, showPlayer, showSpeedMenu, showVolumeSlider, currentPodcast?.mediaType]);
 
   useEffect(() => {
     resetControlsTimeout();
     return () => {
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
+      }
+      if (singleTapTimeoutRef.current) {
+        clearTimeout(singleTapTimeoutRef.current);
       }
     };
   }, [isPlaying, resetControlsTimeout]);
@@ -326,25 +330,65 @@ export const PodcastDetailPage: React.FC = () => {
 
   // Video tap handler - separate mouse and touch to prevent double firing
   const lastTouchTimeRef = useRef(0);
+  const singleTapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleVideoClick = useCallback((e: React.MouseEvent) => {
     // Ignore click if it was triggered by a recent touch (prevents double firing)
     if (Date.now() - lastTouchTimeRef.current < 500) return;
     if (!showPlayer) return;
     
-    // Desktop: click toggles play/pause
-    if (mediaRef.current) {
-      if (mediaRef.current.paused) {
-        mediaRef.current.play();
-      } else {
-        mediaRef.current.pause();
+    // Check if click is on an interactive element (button, controls, etc.)
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('.player-controls')) return;
+    
+    const container = playerContainerRef.current;
+    if (!container) return;
+    
+    const rect = container.getBoundingClientRect();
+    const relativeX = e.clientX - rect.left;
+    const now = Date.now();
+    
+    // Check for double click (within 300ms and similar position)
+    if (now - lastTapRef.current.time < 300 && Math.abs(relativeX - lastTapRef.current.x) < 80) {
+      // Cancel pending single tap action
+      if (singleTapTimeoutRef.current) {
+        clearTimeout(singleTapTimeoutRef.current);
+        singleTapTimeoutRef.current = null;
       }
+      // Double click - seek
+      handleDoubleTap(relativeX, rect.width);
+      lastTapRef.current = { time: 0, x: 0 }; // Reset to prevent triple click
+    } else {
+      // Potential single click - wait to see if it's a double click
+      lastTapRef.current = { time: now, x: relativeX };
+      
+      // Clear any existing timeout
+      if (singleTapTimeoutRef.current) {
+        clearTimeout(singleTapTimeoutRef.current);
+      }
+      
+      // Delay single click action to allow for double click detection
+      singleTapTimeoutRef.current = setTimeout(() => {
+        // Single click - toggle play/pause on desktop
+        if (mediaRef.current) {
+          if (mediaRef.current.paused) {
+            mediaRef.current.play();
+          } else {
+            mediaRef.current.pause();
+          }
+        }
+        singleTapTimeoutRef.current = null;
+      }, 300);
     }
-  }, [showPlayer]);
+  }, [showPlayer, handleDoubleTap]);
 
   const handleVideoTouch = useCallback((e: React.TouchEvent) => {
     if (!showPlayer) return;
     lastTouchTimeRef.current = Date.now();
+    
+    // Check if touch is on an interactive element (button, controls, etc.)
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('.player-controls')) return;
     
     const now = Date.now();
     const touch = e.changedTouches[0];
@@ -358,19 +402,37 @@ export const PodcastDetailPage: React.FC = () => {
     
     // Check for double tap (within 300ms and similar position)
     if (now - lastTapRef.current.time < 300 && Math.abs(relativeX - lastTapRef.current.x) < 80) {
+      // Cancel pending single tap action
+      if (singleTapTimeoutRef.current) {
+        clearTimeout(singleTapTimeoutRef.current);
+        singleTapTimeoutRef.current = null;
+      }
       // Double tap - seek
-      e.preventDefault();
       handleDoubleTap(relativeX, rect.width);
       lastTapRef.current = { time: 0, x: 0 }; // Reset to prevent triple tap
     } else {
-      // Single tap - toggle controls visibility
+      // Potential single tap - wait to see if it's a double tap
       lastTapRef.current = { time: now, x: relativeX };
       
-      if (showControls) {
-        setShowControls(false);
-      } else {
-        resetControlsTimeout();
+      // Clear any existing timeout
+      if (singleTapTimeoutRef.current) {
+        clearTimeout(singleTapTimeoutRef.current);
       }
+      
+      // Delay single tap action to allow for double tap detection
+      singleTapTimeoutRef.current = setTimeout(() => {
+        // Single tap - toggle controls visibility
+        if (showControls) {
+          setShowControls(false);
+          // Clear any pending auto-hide timeout
+          if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
+          }
+        } else {
+          resetControlsTimeout();
+        }
+        singleTapTimeoutRef.current = null;
+      }, 300);
     }
   }, [showPlayer, handleDoubleTap, showControls, resetControlsTimeout]);
 
@@ -466,7 +528,6 @@ export const PodcastDetailPage: React.FC = () => {
 
   const handleSeekStart = (e: React.TouchEvent | React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
     setIsSeeking(true);
     
     const time = calculateSeekTime(e);
@@ -722,15 +783,10 @@ export const PodcastDetailPage: React.FC = () => {
               {/* Tap area for video controls toggle / double tap seek */}
               {showPlayer && podcast.mediaType === 'video' && hasAccess && (
                 <div 
-                  className="absolute inset-0 z-25" 
-                  style={{ zIndex: 25 }}
+                  className="absolute inset-0"
+                  style={{ zIndex: 15 }}
                   onClick={handleVideoClick}
-                  onTouchEnd={(e) => {
-                    // Don't handle if touching controls area
-                    const target = e.target as HTMLElement;
-                    if (target.closest('.player-controls') || target.closest('button')) return;
-                    handleVideoTouch(e);
-                  }}
+                  onTouchEnd={handleVideoTouch}
                 />
               )}
 
