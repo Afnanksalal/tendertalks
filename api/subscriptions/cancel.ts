@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -14,7 +15,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -26,8 +27,11 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
+    let userId: string;
+    try {
+      const authUser = await verifyAuth(req);
+      userId = authUser.id;
+    } catch {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
     }
 
@@ -35,28 +39,33 @@ export default async function handler(req: Request) {
     const { immediate = false, reason = '' } = body;
 
     // Get current subscription with plan
-    const subResult = await db.select({
-      subscription: schema.subscriptions,
-      plan: schema.pricingPlans,
-    }).from(schema.subscriptions)
+    const subResult = await db
+      .select({
+        subscription: schema.subscriptions,
+        plan: schema.pricingPlans,
+      })
+      .from(schema.subscriptions)
       .innerJoin(schema.pricingPlans, eq(schema.subscriptions.planId, schema.pricingPlans.id))
-      .where(and(
-        eq(schema.subscriptions.userId, userId),
-        eq(schema.subscriptions.status, 'active')
-      ))
+      .where(
+        and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active'))
+      )
       .limit(1);
 
     // Also check for pending_downgrade status
     if (subResult.length === 0) {
-      const pendingResult = await db.select({
-        subscription: schema.subscriptions,
-        plan: schema.pricingPlans,
-      }).from(schema.subscriptions)
+      const pendingResult = await db
+        .select({
+          subscription: schema.subscriptions,
+          plan: schema.pricingPlans,
+        })
+        .from(schema.subscriptions)
         .innerJoin(schema.pricingPlans, eq(schema.subscriptions.planId, schema.pricingPlans.id))
-        .where(and(
-          eq(schema.subscriptions.userId, userId),
-          eq(schema.subscriptions.status, 'pending_downgrade')
-        ))
+        .where(
+          and(
+            eq(schema.subscriptions.userId, userId),
+            eq(schema.subscriptions.status, 'pending_downgrade')
+          )
+        )
         .limit(1);
 
       if (pendingResult.length > 0) {
@@ -65,20 +74,26 @@ export default async function handler(req: Request) {
     }
 
     if (subResult.length === 0) {
-      return new Response(JSON.stringify({ error: 'No active subscription found' }), { status: 404, headers });
+      return new Response(JSON.stringify({ error: 'No active subscription found' }), {
+        status: 404,
+        headers,
+      });
     }
 
     const { subscription, plan } = subResult[0];
     const now = new Date();
 
     // Check if within refund window
-    const subscriptionAge = Math.ceil((now.getTime() - new Date(subscription.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+    const subscriptionAge = Math.ceil(
+      (now.getTime() - new Date(subscription.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+    );
     const isWithinRefundWindow = subscriptionAge <= REFUND_WINDOW_DAYS;
     const canRequestRefund = isWithinRefundWindow && parseFloat(plan.price) > 0;
 
     if (immediate) {
       // Immediate cancellation (no refund, just stop access)
-      await db.update(schema.subscriptions)
+      await db
+        .update(schema.subscriptions)
         .set({
           status: 'cancelled',
           cancelledAt: now,
@@ -109,17 +124,20 @@ export default async function handler(req: Request) {
         console.warn('Payment history insert failed:', e);
       }
 
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'Subscription cancelled immediately. Access has been revoked.',
-        canRequestRefund,
-        refundWindowDays: REFUND_WINDOW_DAYS,
-        daysRemaining: isWithinRefundWindow ? REFUND_WINDOW_DAYS - subscriptionAge : 0,
-      }), { status: 200, headers });
-
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Subscription cancelled immediately. Access has been revoked.',
+          canRequestRefund,
+          refundWindowDays: REFUND_WINDOW_DAYS,
+          daysRemaining: isWithinRefundWindow ? REFUND_WINDOW_DAYS - subscriptionAge : 0,
+        }),
+        { status: 200, headers }
+      );
     } else {
       // Cancel at period end (default behavior)
-      await db.update(schema.subscriptions)
+      await db
+        .update(schema.subscriptions)
         .set({
           cancelAtPeriodEnd: true,
           pendingPlanId: null,
@@ -149,16 +167,18 @@ export default async function handler(req: Request) {
         console.warn('Payment history insert failed:', e);
       }
 
-      return new Response(JSON.stringify({
-        success: true,
-        message: `Subscription will be cancelled on ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}. You'll continue to have access until then.`,
-        effectiveDate: subscription.currentPeriodEnd,
-        canRequestRefund,
-        refundWindowDays: REFUND_WINDOW_DAYS,
-        daysRemaining: isWithinRefundWindow ? REFUND_WINDOW_DAYS - subscriptionAge : 0,
-      }), { status: 200, headers });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Subscription will be cancelled on ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}. You'll continue to have access until then.`,
+          effectiveDate: subscription.currentPeriodEnd,
+          canRequestRefund,
+          refundWindowDays: REFUND_WINDOW_DAYS,
+          daysRemaining: isWithinRefundWindow ? REFUND_WINDOW_DAYS - subscriptionAge : 0,
+        }),
+        { status: 200, headers }
+      );
     }
-
   } catch (error) {
     console.error('Error cancelling subscription:', error);
     return new Response(

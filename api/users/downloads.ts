@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -11,7 +12,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -19,9 +20,12 @@ export default async function handler(req: Request) {
   }
 
   const url = new URL(req.url);
-  const userId = req.headers.get('x-user-id');
 
-  if (!userId) {
+  let userId: string;
+  try {
+    const authUser = await verifyAuth(req);
+    userId = authUser.id;
+  } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers,
@@ -63,7 +67,7 @@ export default async function handler(req: Request) {
     try {
       const pathParts = url.pathname.split('/');
       const downloadId = pathParts[pathParts.length - 1];
-      
+
       if (!downloadId || downloadId === 'downloads') {
         return new Response(JSON.stringify({ error: 'Download ID required' }), {
           status: 400,

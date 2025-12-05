@@ -19,7 +19,7 @@ interface RazorpayResponse {
 export const PlaylistDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, getAuthHeaders } = useAuthStore();
   const { hasPurchased, fetchPurchases } = useUserStore();
 
   const [playlist, setPlaylist] = useState<PlaylistWithDetails | null>(null);
@@ -58,10 +58,9 @@ export const PlaylistDetailPage: React.FC = () => {
       setIsPurchasing(true);
 
       // 1. Create Order
-      const order = await createOrder({
+      const order = await createOrder(getAuthHeaders(), {
         type: 'playlist',
         playlistId: playlist.id,
-        userId: user.id,
         currency: 'INR',
       });
 
@@ -76,13 +75,12 @@ export const PlaylistDetailPage: React.FC = () => {
         handler: async (response: RazorpayResponse) => {
           try {
             // 3. Verify Payment
-            await verifyPayment({
+            await verifyPayment(getAuthHeaders(), {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               playlistId: playlist.id,
               type: 'playlist',
-              userId: user.id,
             });
 
             toast.success('Purchase successful!');

@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and, or, desc, sql } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -11,7 +12,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -25,9 +26,11 @@ export default async function handler(req: Request) {
     });
   }
 
-  const userId = req.headers.get('x-user-id');
-
-  if (!userId) {
+  let userId: string;
+  try {
+    const authUser = await verifyAuth(req);
+    userId = authUser.id;
+  } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers,
@@ -62,19 +65,14 @@ export default async function handler(req: Request) {
         podcastId: schema.purchases.podcastId,
       })
       .from(schema.purchases)
-      .where(
-        and(
-          eq(schema.purchases.userId, userId),
-          eq(schema.purchases.status, 'completed')
-        )
-      );
+      .where(and(eq(schema.purchases.userId, userId), eq(schema.purchases.status, 'completed')));
 
-    const purchasedIds = purchasedPodcasts.map(p => p.podcastId);
+    const purchasedIds = purchasedPodcasts.map((p) => p.podcastId);
 
     // Get downloadable content:
     // 1. If plan allows downloads: all purchased + all free downloadable podcasts
     // 2. If no plan: only podcasts marked as isDownloadable that user has access to
-    
+
     let downloadableContent;
 
     if (planAllowsDownloads) {
@@ -97,8 +95,11 @@ export default async function handler(req: Request) {
             sql`${schema.podcasts.mediaUrl} IS NOT NULL`,
             or(
               eq(schema.podcasts.isFree, true),
-              purchasedIds.length > 0 
-                ? sql`${schema.podcasts.id} IN (${sql.join(purchasedIds.map(id => sql`${id}`), sql`, `)})`
+              purchasedIds.length > 0
+                ? sql`${schema.podcasts.id} IN (${sql.join(
+                    purchasedIds.map((id) => sql`${id}`),
+                    sql`, `
+                  )})`
                 : sql`FALSE`
             )
           )
@@ -125,8 +126,11 @@ export default async function handler(req: Request) {
             sql`${schema.podcasts.mediaUrl} IS NOT NULL`,
             or(
               eq(schema.podcasts.isFree, true),
-              purchasedIds.length > 0 
-                ? sql`${schema.podcasts.id} IN (${sql.join(purchasedIds.map(id => sql`${id}`), sql`, `)})`
+              purchasedIds.length > 0
+                ? sql`${schema.podcasts.id} IN (${sql.join(
+                    purchasedIds.map((id) => sql`${id}`),
+                    sql`, `
+                  )})`
                 : sql`FALSE`
             )
           )

@@ -2,20 +2,22 @@
 import type { Purchase, Subscription, PricingPlan } from '../db/schema';
 
 // Create order for purchase or subscription
-export async function createOrder(data: {
-  amount?: number;
-  currency?: string;
-  podcastId?: string;
-  planId?: string;
-  playlistId?: string;
-  type: 'purchase' | 'subscription' | 'playlist';
-  userId: string;
-}): Promise<{ orderId: string; amount: number; currency: string; key: string }> {
+export async function createOrder(
+  authHeaders: Record<string, string>,
+  data: {
+    amount?: number;
+    currency?: string;
+    podcastId?: string;
+    planId?: string;
+    playlistId?: string;
+    type: 'purchase' | 'subscription' | 'playlist';
+  }
+): Promise<{ orderId: string; amount: number; currency: string; key: string }> {
   const response = await fetch('/api/payments/create-order', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': data.userId,
+      ...authHeaders,
     },
     body: JSON.stringify(data),
   });
@@ -29,21 +31,23 @@ export async function createOrder(data: {
 }
 
 // Verify payment
-export async function verifyPayment(data: {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-  type?: 'purchase' | 'subscription' | 'playlist';
-  podcastId?: string;
-  planId?: string;
-  playlistId?: string;
-  userId?: string;
-}): Promise<{ success: boolean }> {
+export async function verifyPayment(
+  authHeaders: Record<string, string>,
+  data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    type?: 'purchase' | 'subscription' | 'playlist';
+    podcastId?: string;
+    planId?: string;
+    playlistId?: string;
+  }
+): Promise<{ success: boolean }> {
   const response = await fetch('/api/payments/verify', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': data.userId,
+      ...authHeaders,
     },
     body: JSON.stringify(data),
   });
@@ -57,9 +61,9 @@ export async function verifyPayment(data: {
 }
 
 // Get user purchases
-export async function getUserPurchases(userId: string): Promise<Purchase[]> {
+export async function getUserPurchases(authHeaders: Record<string, string>): Promise<Purchase[]> {
   const response = await fetch('/api/users/purchases', {
-    headers: { 'X-User-Id': userId },
+    headers: { ...authHeaders },
   });
   if (!response.ok) return [];
   return response.json();
@@ -67,10 +71,10 @@ export async function getUserPurchases(userId: string): Promise<Purchase[]> {
 
 // Get user subscription
 export async function getUserSubscription(
-  userId: string
+  authHeaders: Record<string, string>
 ): Promise<(Subscription & { plan?: PricingPlan }) | null> {
   const response = await fetch('/api/users/subscription', {
-    headers: { 'X-User-Id': userId },
+    headers: { ...authHeaders },
   });
   if (!response.ok) return null;
   return response.json();
@@ -84,12 +88,14 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
 }
 
 // Cancel subscription
-export async function cancelSubscription(userId: string): Promise<{ success: boolean }> {
+export async function cancelSubscription(
+  authHeaders: Record<string, string>
+): Promise<{ success: boolean }> {
   const response = await fetch('/api/users/subscription/cancel', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId,
+      ...authHeaders,
     },
   });
 

@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -16,16 +17,26 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-  if (!userId || !(await verifyAdmin(userId))) {
-    return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers });
+  let userId: string;
+  try {
+    const authUser = await verifyAuth(req);
+    userId = authUser.id;
+  } catch {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+  }
+
+  if (!(await verifyAdmin(userId))) {
+    return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      status: 403,
+      headers,
+    });
   }
 
   const url = new URL(req.url);
@@ -37,7 +48,11 @@ export default async function handler(req: Request) {
 
   try {
     if (req.method === 'GET') {
-      const [plan] = await db.select().from(schema.pricingPlans).where(eq(schema.pricingPlans.id, id)).limit(1);
+      const [plan] = await db
+        .select()
+        .from(schema.pricingPlans)
+        .where(eq(schema.pricingPlans.id, id))
+        .limit(1);
       if (!plan) {
         return new Response(JSON.stringify({ error: 'Plan not found' }), { status: 404, headers });
       }
@@ -46,12 +61,26 @@ export default async function handler(req: Request) {
 
     if (req.method === 'PUT') {
       const body = await req.json();
-      const { name, description, price, currency, interval, features, allowDownloads, allowOffline, sortOrder, isActive } = body;
+      const {
+        name,
+        description,
+        price,
+        currency,
+        interval,
+        features,
+        allowDownloads,
+        allowOffline,
+        sortOrder,
+        isActive,
+      } = body;
 
       const updateData: Record<string, unknown> = {};
       if (name !== undefined) {
         updateData.name = name;
-        updateData.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        updateData.slug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
       }
       if (description !== undefined) updateData.description = description;
       if (price !== undefined) updateData.price = price.toString();
@@ -63,7 +92,8 @@ export default async function handler(req: Request) {
       if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
       if (isActive !== undefined) updateData.isActive = isActive;
 
-      const [plan] = await db.update(schema.pricingPlans)
+      const [plan] = await db
+        .update(schema.pricingPlans)
         .set(updateData)
         .where(eq(schema.pricingPlans.id, id))
         .returning();
@@ -77,19 +107,24 @@ export default async function handler(req: Request) {
 
     if (req.method === 'DELETE') {
       // Check if plan has active subscriptions
-      const [activeSub] = await db.select()
+      const [activeSub] = await db
+        .select()
         .from(schema.subscriptions)
         .where(eq(schema.subscriptions.planId, id))
         .limit(1);
 
       if (activeSub) {
         // Soft delete - just mark as inactive
-        const [plan] = await db.update(schema.pricingPlans)
+        const [plan] = await db
+          .update(schema.pricingPlans)
           .set({ isActive: false })
           .where(eq(schema.pricingPlans.id, id))
           .returning();
 
-        return new Response(JSON.stringify({ success: true, softDeleted: true, plan }), { status: 200, headers });
+        return new Response(JSON.stringify({ success: true, softDeleted: true, plan }), {
+          status: 200,
+          headers,
+        });
       }
 
       // Hard delete if no subscriptions
@@ -100,7 +135,10 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
   } catch (error) {
     console.error('Admin plan error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers,
+    });
   }
 }
 

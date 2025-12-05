@@ -74,7 +74,7 @@ export function loadRazorpayScript(): Promise<boolean> {
 // Initialize Razorpay payment
 export async function initiatePayment(options: RazorpayOptions): Promise<void> {
   const loaded = await loadRazorpayScript();
-  
+
   if (!loaded) {
     throw new Error('Failed to load Razorpay SDK. Please check your internet connection.');
   }
@@ -102,19 +102,21 @@ export async function initiatePayment(options: RazorpayOptions): Promise<void> {
 }
 
 // Create order via API
-export async function createOrder(data: {
-  amount: number;
-  currency?: string;
-  podcastId?: string;
-  planId?: string;
-  type: 'purchase' | 'subscription';
-  userId: string;
-}): Promise<{ orderId: string; amount: number; currency: string; key: string }> {
+export async function createOrder(
+  authHeaders: Record<string, string>,
+  data: {
+    amount: number;
+    currency?: string;
+    podcastId?: string;
+    planId?: string;
+    type: 'purchase' | 'subscription';
+  }
+): Promise<{ orderId: string; amount: number; currency: string; key: string }> {
   const response = await fetch('/api/payments/create-order', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': data.userId,
+      ...authHeaders,
     },
     body: JSON.stringify(data),
   });
@@ -128,17 +130,19 @@ export async function createOrder(data: {
 }
 
 // Verify payment via API
-export async function verifyPayment(data: RazorpayResponse & {
-  type: 'purchase' | 'subscription';
-  podcastId?: string;
-  planId?: string;
-  userId: string;
-}): Promise<{ success: boolean }> {
+export async function verifyPayment(
+  authHeaders: Record<string, string>,
+  data: RazorpayResponse & {
+    type: 'purchase' | 'subscription';
+    podcastId?: string;
+    planId?: string;
+  }
+): Promise<{ success: boolean }> {
   const response = await fetch('/api/payments/verify', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': data.userId,
+      ...authHeaders,
     },
     body: JSON.stringify(data),
   });

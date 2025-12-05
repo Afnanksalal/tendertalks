@@ -20,7 +20,7 @@ interface DownloadablePodcast {
 }
 
 export const DownloadsPage: React.FC = () => {
-  const { user, isLoading: authLoading } = useAuthStore();
+  const { user, isLoading: authLoading, getAuthHeaders } = useAuthStore();
   const { subscription, hasActiveSubscription, fetchPurchases, fetchSubscription } = useUserStore();
   const [downloadableContent, setDownloadableContent] = useState<DownloadablePodcast[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +40,7 @@ export const DownloadsPage: React.FC = () => {
     try {
       // Fetch all podcasts user has access to that are downloadable
       const response = await fetch('/api/users/downloadable', {
-        headers: { 'X-User-Id': user.id },
+        headers: { ...getAuthHeaders() },
       });
       if (response.ok) {
         const data = await response.json();
@@ -55,15 +55,15 @@ export const DownloadsPage: React.FC = () => {
 
   const handleDownload = async (podcast: DownloadablePodcast) => {
     if (!user) return;
-    
+
     setDownloadingId(podcast.id);
 
     try {
       const response = await fetch(`/api/podcasts/${podcast.slug}/download`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': user.id,
+          ...getAuthHeaders(),
         },
       });
 
@@ -73,7 +73,7 @@ export const DownloadsPage: React.FC = () => {
       }
 
       const { url } = await response.json();
-      
+
       // Trigger download
       const link = document.createElement('a');
       link.href = url;
@@ -84,7 +84,7 @@ export const DownloadsPage: React.FC = () => {
       document.body.removeChild(link);
 
       // Mark as downloaded in this session
-      setDownloadedIds(prev => new Set(prev).add(podcast.id));
+      setDownloadedIds((prev) => new Set(prev).add(podcast.id));
       toast.success('Download started!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to download');
@@ -119,10 +119,7 @@ export const DownloadsPage: React.FC = () => {
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4">
       <SEO title="Downloads" noIndex />
       <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white mb-1">
@@ -139,23 +136,32 @@ export const DownloadsPage: React.FC = () => {
           </div>
 
           {/* Plan Info */}
-          <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 ${
-            planAllowsDownloads 
-              ? 'bg-neon-green/10 border border-neon-green/30' 
-              : 'bg-slate-900/50 border border-white/10'
-          }`}>
-            <Download className={`w-5 h-5 flex-shrink-0 mt-0.5 ${planAllowsDownloads ? 'text-neon-green' : 'text-slate-400'}`} />
+          <div
+            className={`mb-6 p-4 rounded-xl flex items-start gap-3 ${
+              planAllowsDownloads
+                ? 'bg-neon-green/10 border border-neon-green/30'
+                : 'bg-slate-900/50 border border-white/10'
+            }`}
+          >
+            <Download
+              className={`w-5 h-5 flex-shrink-0 mt-0.5 ${planAllowsDownloads ? 'text-neon-green' : 'text-slate-400'}`}
+            />
             <div>
-              <p className={`font-medium ${planAllowsDownloads ? 'text-neon-green' : 'text-white'}`}>
+              <p
+                className={`font-medium ${planAllowsDownloads ? 'text-neon-green' : 'text-white'}`}
+              >
                 {planAllowsDownloads ? 'Downloads Enabled' : 'Free Plan'}
               </p>
               <p className="text-sm text-slate-400 mt-1">
-                {planAllowsDownloads 
+                {planAllowsDownloads
                   ? 'You can download all premium content for offline access.'
                   : 'You can download content marked as downloadable. Upgrade for unlimited downloads.'}
               </p>
               {!planAllowsDownloads && (
-                <Link to="/pricing" className="text-sm text-neon-cyan hover:underline mt-2 inline-block">
+                <Link
+                  to="/pricing"
+                  className="text-sm text-neon-cyan hover:underline mt-2 inline-block"
+                >
                   Upgrade for unlimited downloads →
                 </Link>
               )}
@@ -172,9 +178,9 @@ export const DownloadsPage: React.FC = () => {
               <Download className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">No downloadable content</h3>
               <p className="text-slate-400 mb-6 max-w-md mx-auto">
-                {planAllowsDownloads 
+                {planAllowsDownloads
                   ? "You haven't purchased any content yet. Browse our collection to find something you like."
-                  : "Browse our collection to find downloadable content, or upgrade your plan for unlimited downloads."}
+                  : 'Browse our collection to find downloadable content, or upgrade your plan for unlimited downloads.'}
               </p>
               <Link to="/browse">
                 <Button variant="outline">Browse Content</Button>
@@ -192,9 +198,11 @@ export const DownloadsPage: React.FC = () => {
                   <div className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
                     {/* Thumbnail */}
                     <Link to={`/podcast/${podcast.slug}`} className="flex-shrink-0">
-                      <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden ${
-                        podcast.mediaType === 'video' ? 'bg-neon-purple/10' : 'bg-neon-cyan/10'
-                      }`}>
+                      <div
+                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden ${
+                          podcast.mediaType === 'video' ? 'bg-neon-purple/10' : 'bg-neon-cyan/10'
+                        }`}
+                      >
                         {podcast.thumbnailUrl ? (
                           <img
                             src={podcast.thumbnailUrl}
@@ -225,11 +233,13 @@ export const DownloadsPage: React.FC = () => {
                           <Clock size={12} />
                           {formatDuration(podcast.duration)}
                         </span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          podcast.mediaType === 'video' 
-                            ? 'bg-neon-purple/20 text-neon-purple' 
-                            : 'bg-neon-cyan/20 text-neon-cyan'
-                        }`}>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            podcast.mediaType === 'video'
+                              ? 'bg-neon-purple/20 text-neon-purple'
+                              : 'bg-neon-cyan/20 text-neon-cyan'
+                          }`}
+                        >
                           {podcast.mediaType.toUpperCase()}
                         </span>
                         {podcast.isFree && (
@@ -273,8 +283,8 @@ export const DownloadsPage: React.FC = () => {
           {/* Help Text */}
           <div className="mt-8 p-4 bg-slate-900/30 border border-white/5 rounded-xl">
             <p className="text-slate-500 text-sm">
-              <strong className="text-slate-400">Note:</strong> Downloaded files are saved to your device's default download location. 
-              You can play them using any media player app.
+              <strong className="text-slate-400">Note:</strong> Downloaded files are saved to your
+              device's default download location. You can play them using any media player app.
             </p>
           </div>
         </motion.div>

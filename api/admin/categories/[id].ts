@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -16,23 +17,36 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-  if (!userId || !(await verifyAdmin(userId))) {
-    return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers });
+  let userId: string;
+  try {
+    const authUser = await verifyAuth(req);
+    userId = authUser.id;
+  } catch {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+  }
+
+  if (!(await verifyAdmin(userId))) {
+    return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      status: 403,
+      headers,
+    });
   }
 
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
 
   if (!id) {
-    return new Response(JSON.stringify({ error: 'Category ID required' }), { status: 400, headers });
+    return new Response(JSON.stringify({ error: 'Category ID required' }), {
+      status: 400,
+      headers,
+    });
   }
 
   try {
@@ -43,17 +57,24 @@ export default async function handler(req: Request) {
       const updateData: Record<string, unknown> = {};
       if (name !== undefined) {
         updateData.name = name;
-        updateData.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        updateData.slug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
       }
       if (description !== undefined) updateData.description = description;
 
-      const [category] = await db.update(schema.categories)
+      const [category] = await db
+        .update(schema.categories)
         .set(updateData)
         .where(eq(schema.categories.id, id))
         .returning();
 
       if (!category) {
-        return new Response(JSON.stringify({ error: 'Category not found' }), { status: 404, headers });
+        return new Response(JSON.stringify({ error: 'Category not found' }), {
+          status: 404,
+          headers,
+        });
       }
 
       return new Response(JSON.stringify(category), { status: 200, headers });
@@ -61,13 +82,17 @@ export default async function handler(req: Request) {
 
     if (req.method === 'DELETE') {
       // Check if category has podcasts
-      const [podcast] = await db.select()
+      const [podcast] = await db
+        .select()
         .from(schema.podcasts)
         .where(eq(schema.podcasts.categoryId, id))
         .limit(1);
 
       if (podcast) {
-        return new Response(JSON.stringify({ error: 'Cannot delete category with podcasts' }), { status: 400, headers });
+        return new Response(JSON.stringify({ error: 'Cannot delete category with podcasts' }), {
+          status: 400,
+          headers,
+        });
       }
 
       await db.delete(schema.categories).where(eq(schema.categories.id, id));
@@ -77,7 +102,10 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
   } catch (error) {
     console.error('Admin category error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers,
+    });
   }
 }
 

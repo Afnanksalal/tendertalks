@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and, or } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -11,7 +12,7 @@ export default async function handler(req: Request) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   if (req.method === 'OPTIONS') {
@@ -23,36 +24,51 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
+    let userId: string;
+    try {
+      const authUser = await verifyAuth(req);
+      userId = authUser.id;
+    } catch {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
     }
 
     // Get subscription that's scheduled for cancellation
-    const [subscription] = await db.select()
+    const [subscription] = await db
+      .select()
       .from(schema.subscriptions)
-      .where(and(
-        eq(schema.subscriptions.userId, userId),
-        eq(schema.subscriptions.cancelAtPeriodEnd, true),
-        or(
-          eq(schema.subscriptions.status, 'active'),
-          eq(schema.subscriptions.status, 'pending_downgrade')
+      .where(
+        and(
+          eq(schema.subscriptions.userId, userId),
+          eq(schema.subscriptions.cancelAtPeriodEnd, true),
+          or(
+            eq(schema.subscriptions.status, 'active'),
+            eq(schema.subscriptions.status, 'pending_downgrade')
+          )
         )
-      ))
+      )
       .limit(1);
 
     if (!subscription) {
-      return new Response(JSON.stringify({ error: 'No subscription pending cancellation found' }), { status: 404, headers });
+      return new Response(JSON.stringify({ error: 'No subscription pending cancellation found' }), {
+        status: 404,
+        headers,
+      });
     }
 
     // Check if still within period
     const now = new Date();
     if (new Date(subscription.currentPeriodEnd) < now) {
-      return new Response(JSON.stringify({ error: 'Subscription period has ended. Please create a new subscription.' }), { status: 400, headers });
+      return new Response(
+        JSON.stringify({
+          error: 'Subscription period has ended. Please create a new subscription.',
+        }),
+        { status: 400, headers }
+      );
     }
 
     // Reactivate
-    await db.update(schema.subscriptions)
+    await db
+      .update(schema.subscriptions)
       .set({
         cancelAtPeriodEnd: false,
         status: 'active',
@@ -79,11 +95,13 @@ export default async function handler(req: Request) {
       console.warn('Payment history insert failed:', e);
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Subscription reactivated! Your plan will continue as normal.',
-    }), { status: 200, headers });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Subscription reactivated! Your plan will continue as normal.',
+      }),
+      { status: 200, headers }
+    );
   } catch (error) {
     console.error('Error reactivating subscription:', error);
     return new Response(

@@ -701,11 +701,10 @@ export const PodcastDetailPage: React.FC = () => {
     }
     setIsPurchasing(true);
     try {
-      const { orderId, amount, key } = await createOrder({
+      const { orderId, amount, key } = await createOrder(getAuthHeaders(), {
         amount: price,
         podcastId: podcast.id,
         type: 'purchase',
-        userId: user.id,
       });
       await initiatePayment({
         key,
