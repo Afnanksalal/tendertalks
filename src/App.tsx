@@ -40,6 +40,8 @@ import { RefundPolicyPage } from './pages/legal/RefundPolicy';
 import { AdminLayout, AdminOverview } from './pages/admin/AdminDashboard';
 import { PodcastManager } from './pages/admin/PodcastManager';
 import { PodcastEditor } from './pages/admin/PodcastEditor';
+import { PlaylistManager } from './pages/admin/PlaylistManager';
+import { PlaylistEditor } from './pages/admin/PlaylistEditor';
 import { BlogManager } from './pages/admin/BlogManager';
 import { UsersManager } from './pages/admin/UsersManager';
 import { PaymentsManager } from './pages/admin/PaymentsManager';
@@ -187,6 +189,9 @@ const AppContent: React.FC = () => {
           <Route path="podcasts" element={<PodcastManager />} />
           <Route path="podcasts/new" element={<PodcastEditor />} />
           <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
+          <Route path="playlists" element={<PlaylistManager />} />
+          <Route path="playlists/new" element={<PlaylistEditor />} />
+          <Route path="playlists/:id/edit" element={<PlaylistEditor />} />
           <Route path="blogs" element={<BlogManager />} />
           <Route
             path="blogs/new"

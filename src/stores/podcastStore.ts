@@ -20,25 +20,20 @@ interface PodcastState {
   isLoading: boolean;
   filters: PodcastFilters;
   lastFetched: { podcasts: number; categories: number; tags: number };
-  
+
   fetchPodcasts: (filters?: PodcastFilters) => Promise<void>;
   fetchPodcastBySlug: (slug: string) => Promise<Podcast | null>;
   fetchCategories: () => Promise<void>;
   fetchTags: () => Promise<void>;
   setFilters: (filters: PodcastFilters) => void;
   clearFilters: () => void;
-  createPodcast: (data: any) => Promise<Podcast>;
-  updatePodcast: (id: string, data: any) => Promise<Podcast>;
+  createPodcast: (data: Partial<Podcast>) => Promise<Podcast>;
+  updatePodcast: (id: string, data: Partial<Podcast>) => Promise<Podcast>;
   deletePodcast: (id: string) => Promise<void>;
   publishPodcast: (id: string) => Promise<void>;
 }
 
 const CACHE_DURATION = 60000;
-
-function getAuthHeaders(): Record<string, string> {
-  const user = useAuthStore.getState().user;
-  return user ? { 'X-User-Id': user.id } : {};
-}
 
 export const usePodcastStore = create<PodcastState>((set, get) => ({
   podcasts: [],
@@ -59,12 +54,18 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
     try {
       const params = new URLSearchParams();
       const activeFilters = filters || get().filters;
-      Object.entries(activeFilters).forEach(([k, v]) => v !== undefined && params.set(k, String(v)));
+      Object.entries(activeFilters).forEach(
+        ([k, v]) => v !== undefined && params.set(k, String(v))
+      );
 
       const response = await fetch(`/api/podcasts?${params}`);
       if (!response.ok) throw new Error();
-      
-      set({ podcasts: await response.json(), isLoading: false, lastFetched: { ...get().lastFetched, podcasts: now } });
+
+      set({
+        podcasts: await response.json(),
+        isLoading: false,
+        lastFetched: { ...get().lastFetched, podcasts: now },
+      });
     } catch {
       set({ podcasts: [], isLoading: false });
     }
@@ -73,7 +74,9 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
   fetchPodcastBySlug: async (slug) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`/api/podcasts/${slug}`, { headers: getAuthHeaders() });
+      const response = await fetch(`/api/podcasts/${slug}`, {
+        headers: useAuthStore.getState().getAuthHeaders(),
+      });
       if (!response.ok) throw new Error();
       const podcast = await response.json();
       set({ currentPodcast: podcast, isLoading: false });
@@ -90,7 +93,10 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
     try {
       const response = await fetch('/api/categories');
       if (!response.ok) throw new Error();
-      set({ categories: await response.json(), lastFetched: { ...get().lastFetched, categories: now } });
+      set({
+        categories: await response.json(),
+        lastFetched: { ...get().lastFetched, categories: now },
+      });
     } catch {
       set({ categories: [] });
     }
@@ -109,7 +115,10 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
   },
 
   setFilters: (filters) => {
-    set({ filters: { ...get().filters, ...filters }, lastFetched: { ...get().lastFetched, podcasts: 0 } });
+    set({
+      filters: { ...get().filters, ...filters },
+      lastFetched: { ...get().lastFetched, podcasts: 0 },
+    });
     get().fetchPodcasts();
   },
 
@@ -118,10 +127,10 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
     get().fetchPodcasts();
   },
 
-  createPodcast: async (data) => {
+  createPodcast: async (data: Partial<Podcast>) => {
     const response = await fetch('/api/admin/podcasts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json', ...useAuthStore.getState().getAuthHeaders() },
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -133,10 +142,10 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
     return podcast;
   },
 
-  updatePodcast: async (id, data) => {
+  updatePodcast: async (id: string, data: Partial<Podcast>) => {
     const response = await fetch(`/api/admin/podcasts/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json', ...useAuthStore.getState().getAuthHeaders() },
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -152,7 +161,10 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
   },
 
   deletePodcast: async (id) => {
-    const response = await fetch(`/api/admin/podcasts/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+    const response = await fetch(`/api/admin/podcasts/${id}`, {
+      method: 'DELETE',
+      headers: useAuthStore.getState().getAuthHeaders(),
+    });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.error || 'Failed to delete podcast');
@@ -164,7 +176,10 @@ export const usePodcastStore = create<PodcastState>((set, get) => ({
   },
 
   publishPodcast: async (id) => {
-    const response = await fetch(`/api/admin/podcasts/${id}/publish`, { method: 'POST', headers: getAuthHeaders() });
+    const response = await fetch(`/api/admin/podcasts/${id}/publish`, {
+      method: 'POST',
+      headers: useAuthStore.getState().getAuthHeaders(),
+    });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.error || 'Failed to publish podcast');

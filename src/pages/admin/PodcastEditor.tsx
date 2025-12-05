@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Music, Video, Image, X, ToggleLeft, ToggleRight } from 'lucide-react';
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  Music,
+  Video,
+  Image,
+  X,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { usePodcastStore } from '../../stores/podcastStore';
 import { useAuthStore } from '../../stores/authStore';
 import { uploadFile, STORAGE_BUCKETS } from '../../lib/supabase';
+import type { Podcast } from '../../db/schema';
 import toast from 'react-hot-toast';
 
 // File type configurations
@@ -14,8 +25,24 @@ const AUDIO_EXTENSIONS = '.mp3,.wav,.ogg,.m4a,.aac,.flac,.wma';
 const VIDEO_EXTENSIONS = '.mp4,.webm,.mov,.avi,.mkv,.m4v';
 const IMAGE_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif';
 
-const AUDIO_MIME_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/aac', 'audio/flac', 'audio/x-ms-wma'];
-const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/x-m4v'];
+const AUDIO_MIME_TYPES = [
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/wav',
+  'audio/ogg',
+  'audio/x-m4a',
+  'audio/aac',
+  'audio/flac',
+  'audio/x-ms-wma',
+];
+const VIDEO_MIME_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/x-matroska',
+  'video/x-m4v',
+];
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 interface PodcastFormData {
@@ -35,7 +62,8 @@ export const PodcastEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAdmin } = useAuthStore();
-  const { categories, fetchCategories, createPodcast, updatePodcast, currentPodcast } = usePodcastStore();
+  const { categories, fetchCategories, createPodcast, updatePodcast, currentPodcast } =
+    usePodcastStore();
 
   const isEditing = !!id;
 
@@ -86,7 +114,7 @@ export const PodcastEditor: React.FC = () => {
     }
   }, [isEditing, currentPodcast]);
 
-  const handleChange = (field: keyof PodcastFormData, value: any) => {
+  const handleChange = (field: keyof PodcastFormData, value: string | number | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
@@ -159,10 +187,11 @@ export const PodcastEditor: React.FC = () => {
   // Extract duration from audio/video file
   const extractDuration = (file: File) => {
     const url = URL.createObjectURL(file);
-    const media = formData.mediaType === 'video' 
-      ? document.createElement('video') 
-      : document.createElement('audio');
-    
+    const media =
+      formData.mediaType === 'video'
+        ? document.createElement('video')
+        : document.createElement('audio');
+
     media.preload = 'metadata';
     media.onloadedmetadata = () => {
       URL.revokeObjectURL(url);
@@ -242,8 +271,10 @@ export const PodcastEditor: React.FC = () => {
         setUploadProgress('Uploading thumbnail...');
         const ext = thumbnailFile.name.split('.').pop()?.toLowerCase() || 'jpg';
         const path = `${user.id}/${Date.now()}.${ext}`;
-        const { url, error } = await uploadFile(STORAGE_BUCKETS.THUMBNAILS, path, thumbnailFile, { upsert: true });
-        
+        const { url, error } = await uploadFile(STORAGE_BUCKETS.THUMBNAILS, path, thumbnailFile, {
+          upsert: true,
+        });
+
         if (error) {
           throw new Error('Failed to upload thumbnail');
         }
@@ -253,10 +284,14 @@ export const PodcastEditor: React.FC = () => {
       // Upload media file
       if (mediaFile) {
         setUploadProgress(`Uploading ${formData.mediaType} file...`);
-        const ext = mediaFile.name.split('.').pop()?.toLowerCase() || (formData.mediaType === 'video' ? 'mp4' : 'mp3');
+        const ext =
+          mediaFile.name.split('.').pop()?.toLowerCase() ||
+          (formData.mediaType === 'video' ? 'mp4' : 'mp3');
         const path = `${user.id}/${Date.now()}.${ext}`;
-        const { url, error } = await uploadFile(STORAGE_BUCKETS.PODCASTS, path, mediaFile, { upsert: true });
-        
+        const { url, error } = await uploadFile(STORAGE_BUCKETS.PODCASTS, path, mediaFile, {
+          upsert: true,
+        });
+
         if (error) {
           throw new Error(`Failed to upload ${formData.mediaType} file`);
         }
@@ -265,13 +300,13 @@ export const PodcastEditor: React.FC = () => {
 
       setUploadProgress('Saving podcast...');
 
-      const podcastData = {
+      const podcastData: Partial<Podcast> = {
         title: formData.title,
         description: formData.description,
         mediaType: formData.mediaType,
         isFree: formData.isFree,
         price: formData.isFree ? '0' : formData.price,
-        categoryId: formData.categoryId || undefined,
+        categoryId: formData.categoryId || null,
         isDownloadable: formData.isDownloadable,
         thumbnailUrl, // Save thumbnail for both audio and video
         mediaUrl,
@@ -288,8 +323,8 @@ export const PodcastEditor: React.FC = () => {
       }
 
       navigate('/admin/podcasts');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to save podcast');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save podcast');
     } finally {
       setIsSubmitting(false);
       setUploadProgress('');
@@ -324,7 +359,7 @@ export const PodcastEditor: React.FC = () => {
             {/* Basic Info */}
             <div className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6">
               <h3 className="text-lg font-bold text-white mb-4">Basic Information</h3>
-              
+
               <div className="space-y-4">
                 <Input
                   label="Title"
@@ -413,7 +448,9 @@ export const PodcastEditor: React.FC = () => {
                     </div>
                     <div className="text-right">
                       {formData.duration > 0 ? (
-                        <span className="text-neon-cyan font-mono text-lg">{formatDurationDisplay(formData.duration)}</span>
+                        <span className="text-neon-cyan font-mono text-lg">
+                          {formatDurationDisplay(formData.duration)}
+                        </span>
                       ) : (
                         <span className="text-slate-500 text-sm">Upload file to detect</span>
                       )}
@@ -431,20 +468,23 @@ export const PodcastEditor: React.FC = () => {
               <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">
                 {isVideo ? 'Video Files' : 'Audio File'}
               </h3>
-              
+
               <div className="space-y-4">
                 {/* Thumbnail - For both Audio and Video */}
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                    Thumbnail Image {isVideo && <span className="text-slate-500">(recommended)</span>}
-                    {!isVideo && <span className="text-slate-500">(optional - shows in player)</span>}
+                    Thumbnail Image{' '}
+                    {isVideo && <span className="text-slate-500">(recommended)</span>}
+                    {!isVideo && (
+                      <span className="text-slate-500">(optional - shows in player)</span>
+                    )}
                   </label>
                   <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                     {thumbnailPreview && (
                       <div className="relative w-full sm:w-auto">
-                        <img 
-                          src={thumbnailPreview} 
-                          alt="Thumbnail preview" 
+                        <img
+                          src={thumbnailPreview}
+                          alt="Thumbnail preview"
                           className="w-full sm:w-40 h-32 sm:h-24 object-cover rounded-lg"
                         />
                         <button
@@ -456,13 +496,19 @@ export const PodcastEditor: React.FC = () => {
                         </button>
                       </div>
                     )}
-                    <label className={`w-full sm:flex-1 flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
-                      errors.thumbnail ? 'border-red-500' : 'border-white/10'
-                    }`}>
+                    <label
+                      className={`w-full sm:flex-1 flex flex-col items-center justify-center p-4 sm:p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                        errors.thumbnail ? 'border-red-500' : 'border-white/10'
+                      }`}
+                    >
                       <Image size={20} className="text-slate-400 mb-2 sm:hidden" />
                       <Image size={24} className="text-slate-400 mb-2 hidden sm:block" />
-                      <span className="text-xs sm:text-sm text-slate-400 text-center">Click to upload thumbnail</span>
-                      <span className="text-[10px] sm:text-xs text-slate-500 mt-1">JPG, PNG, WebP (max 5MB)</span>
+                      <span className="text-xs sm:text-sm text-slate-400 text-center">
+                        Click to upload thumbnail
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-slate-500 mt-1">
+                        JPG, PNG, WebP (max 5MB)
+                      </span>
                       <input
                         type="file"
                         accept={IMAGE_EXTENSIONS}
@@ -481,13 +527,19 @@ export const PodcastEditor: React.FC = () => {
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">
                     {isVideo ? 'Video' : 'Audio'} File <span className="text-red-400">*</span>
                   </label>
-                  
+
                   {mediaFile ? (
                     <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-slate-800/50 rounded-xl border border-white/10">
-                      {isVideo ? <Video size={18} className="text-neon-purple flex-shrink-0" /> : <Music size={18} className="text-neon-cyan flex-shrink-0" />}
+                      {isVideo ? (
+                        <Video size={18} className="text-neon-purple flex-shrink-0" />
+                      ) : (
+                        <Music size={18} className="text-neon-cyan flex-shrink-0" />
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs sm:text-sm text-white truncate">{mediaFile.name}</p>
-                        <p className="text-[10px] sm:text-xs text-slate-400">{(mediaFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        <p className="text-[10px] sm:text-xs text-slate-400">
+                          {(mediaFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -498,9 +550,11 @@ export const PodcastEditor: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    <label className={`flex flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
-                      errors.media ? 'border-red-500' : 'border-white/10'
-                    }`}>
+                    <label
+                      className={`flex flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed rounded-xl cursor-pointer hover:border-neon-cyan/50 transition-colors ${
+                        errors.media ? 'border-red-500' : 'border-white/10'
+                      }`}
+                    >
                       {isVideo ? (
                         <Video size={28} className="text-slate-400 mb-2" />
                       ) : (
@@ -510,8 +564,8 @@ export const PodcastEditor: React.FC = () => {
                         Click to upload {isVideo ? 'video' : 'audio'} file
                       </span>
                       <span className="text-[10px] sm:text-xs text-slate-500 mt-1 text-center">
-                        {isVideo 
-                          ? 'MP4, WebM, MOV, AVI, MKV (max 500MB)' 
+                        {isVideo
+                          ? 'MP4, WebM, MOV, AVI, MKV (max 500MB)'
                           : 'MP3, WAV, OGG, M4A, AAC, FLAC (max 100MB)'}
                       </span>
                       <input
@@ -522,13 +576,13 @@ export const PodcastEditor: React.FC = () => {
                       />
                     </label>
                   )}
-                  {errors.media && (
-                    <p className="mt-1.5 text-sm text-red-400">{errors.media}</p>
-                  )}
-                  
+                  {errors.media && <p className="mt-1.5 text-sm text-red-400">{errors.media}</p>}
+
                   <p className="mt-2 text-xs text-slate-500">Or enter URL directly:</p>
                   <Input
-                    placeholder={isVideo ? 'https://example.com/video.mp4' : 'https://example.com/audio.mp3'}
+                    placeholder={
+                      isVideo ? 'https://example.com/video.mp4' : 'https://example.com/audio.mp3'
+                    }
                     value={formData.mediaUrl}
                     onChange={(e) => handleChange('mediaUrl', e.target.value)}
                     className="mt-2"
@@ -543,11 +597,13 @@ export const PodcastEditor: React.FC = () => {
             {/* Pricing */}
             <div className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Pricing</h3>
-              
+
               <div className="space-y-4">
                 {/* Free/Paid Toggle */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Content Type</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Content Type
+                  </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -588,8 +644,12 @@ export const PodcastEditor: React.FC = () => {
                 {/* Downloads Toggle */}
                 <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-800/50 rounded-lg border border-white/5">
                   <div className="flex-1 min-w-0 pr-3">
-                    <span className="text-xs sm:text-sm font-medium text-slate-300 block">Downloads</span>
-                    <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">Allow users to download</p>
+                    <span className="text-xs sm:text-sm font-medium text-slate-300 block">
+                      Downloads
+                    </span>
+                    <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">
+                      Allow users to download
+                    </p>
                   </div>
                   <button
                     type="button"

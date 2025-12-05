@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { verifyAuth } from '../../api/utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -25,14 +26,14 @@ export default async function handler(req: Request) {
     });
   }
 
-  const userId = req.headers.get('x-user-id');
-
-  if (!userId) {
+  const auth = await verifyAuth(req);
+  if (!auth) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers,
     });
   }
+  const userId = auth.id;
 
   try {
     const result = await db

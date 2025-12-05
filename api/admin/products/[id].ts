@@ -2,14 +2,10 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
-
-async function verifyAdmin(userId: string) {
-  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
-  return user?.role === 'admin';
-}
 
 export default async function handler(req: Request) {
   const headers = {
@@ -23,9 +19,16 @@ export default async function handler(req: Request) {
     return new Response(null, { status: 204, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-  if (!userId || !(await verifyAdmin(userId))) {
-    return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers });
+  try {
+    const user = await verifyAuth(req);
+    if (user.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+        status: 403,
+        headers,
+      });
+    }
+  } catch {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   const url = new URL(req.url);
@@ -37,21 +40,32 @@ export default async function handler(req: Request) {
 
   try {
     if (req.method === 'GET') {
-      const [item] = await db.select().from(schema.merchItems).where(eq(schema.merchItems.id, id)).limit(1);
+      const [item] = await db
+        .select()
+        .from(schema.merchItems)
+        .where(eq(schema.merchItems.id, id))
+        .limit(1);
       if (!item) {
-        return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers });
+        return new Response(JSON.stringify({ error: 'Product not found' }), {
+          status: 404,
+          headers,
+        });
       }
       return new Response(JSON.stringify(item), { status: 200, headers });
     }
 
     if (req.method === 'PUT') {
       const body = await req.json();
-      const { name, description, price, category, imageUrl, stockQuantity, inStock, isActive } = body;
+      const { name, description, price, category, imageUrl, stockQuantity, inStock, isActive } =
+        body;
 
       const updateData: Record<string, unknown> = { updatedAt: new Date() };
       if (name !== undefined) {
         updateData.name = name;
-        updateData.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        updateData.slug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
       }
       if (description !== undefined) updateData.description = description;
       if (price !== undefined) updateData.price = price.toString();
@@ -61,13 +75,17 @@ export default async function handler(req: Request) {
       if (inStock !== undefined) updateData.inStock = inStock;
       if (isActive !== undefined) updateData.isActive = isActive;
 
-      const [item] = await db.update(schema.merchItems)
+      const [item] = await db
+        .update(schema.merchItems)
         .set(updateData)
         .where(eq(schema.merchItems.id, id))
         .returning();
 
       if (!item) {
-        return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers });
+        return new Response(JSON.stringify({ error: 'Product not found' }), {
+          status: 404,
+          headers,
+        });
       }
 
       return new Response(JSON.stringify(item), { status: 200, headers });
@@ -75,13 +93,17 @@ export default async function handler(req: Request) {
 
     if (req.method === 'DELETE') {
       // Soft delete - just mark as inactive
-      const [item] = await db.update(schema.merchItems)
+      const [item] = await db
+        .update(schema.merchItems)
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(schema.merchItems.id, id))
         .returning();
 
       if (!item) {
-        return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404, headers });
+        return new Response(JSON.stringify({ error: 'Product not found' }), {
+          status: 404,
+          headers,
+        });
       }
 
       return new Response(JSON.stringify({ success: true }), { status: 200, headers });
@@ -90,7 +112,10 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
   } catch (error) {
     console.error('Admin product error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers,
+    });
   }
 }
 

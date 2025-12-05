@@ -192,7 +192,7 @@ export const useAuthStore = create<AuthState>()(
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            'X-User-Id': user.id,
+            ...get().getAuthHeaders(),
           },
           body: JSON.stringify(data),
         });
@@ -207,8 +207,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       getAuthHeaders: () => {
-        const { user } = get();
-        return user ? { 'X-User-Id': user.id } : {};
+        const { session } = get();
+        return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
       },
     }),
     {

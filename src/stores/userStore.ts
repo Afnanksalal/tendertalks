@@ -94,7 +94,9 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
     if (get().purchases.length > 0 && now - get().lastFetched.purchases < CACHE_DURATION) return;
     set({ isLoading: true });
     try {
-      const res = await fetch('/api/users/purchases', { headers: { 'X-User-Id': user.id } });
+      const res = await fetch('/api/users/purchases', {
+        headers: { ...useAuthStore.getState().getAuthHeaders() },
+      });
       const data = res.ok ? await res.json() : [];
       set({
         purchases: Array.isArray(data) ? data : [],
@@ -115,7 +117,9 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
     const now = Date.now();
     if (get().subscription && now - get().lastFetched.subscription < CACHE_DURATION) return;
     try {
-      const res = await fetch('/api/users/subscription', { headers: { 'X-User-Id': user.id } });
+      const res = await fetch('/api/users/subscription', {
+        headers: { ...useAuthStore.getState().getAuthHeaders() },
+      });
       set({
         subscription: res.ok ? await res.json() : null,
         lastFetched: { ...get().lastFetched, subscription: now },

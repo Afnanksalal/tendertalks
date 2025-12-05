@@ -22,23 +22,21 @@ interface BlogState {
   isLoading: boolean;
   filters: BlogFilters;
   lastFetched: number;
-  
+
   fetchBlogs: (filters?: BlogFilters) => Promise<void>;
   fetchBlogBySlug: (slug: string) => Promise<BlogWithMeta | null>;
   setFilters: (filters: BlogFilters) => void;
   clearFilters: () => void;
-  createBlog: (data: any) => Promise<Blog>;
-  updateBlog: (id: string, data: any) => Promise<Blog>;
+  createBlog: (data: Partial<Blog> & { tagIds?: string[]; content?: string }) => Promise<Blog>;
+  updateBlog: (
+    id: string,
+    data: Partial<Blog> & { tagIds?: string[]; content?: string }
+  ) => Promise<Blog>;
   deleteBlog: (id: string) => Promise<void>;
   publishBlog: (id: string) => Promise<void>;
 }
 
 const CACHE_DURATION = 60000;
-
-function getAuthHeaders(): Record<string, string> {
-  const user = useAuthStore.getState().user;
-  return user ? { 'X-User-Id': user.id } : {};
-}
 
 export const useBlogStore = create<BlogState>((set, get) => ({
   blogs: [],
@@ -51,7 +49,7 @@ export const useBlogStore = create<BlogState>((set, get) => ({
     const now = Date.now();
     const { blogs, lastFetched, isLoading } = get();
     if (isLoading) return;
-    
+
     // Skip cache if filters are provided (admin panel uses filters)
     const hasFilters = filters && Object.keys(filters).length > 0;
     if (!hasFilters && blogs.length > 0 && now - lastFetched < CACHE_DURATION) return;
@@ -68,18 +66,18 @@ export const useBlogStore = create<BlogState>((set, get) => ({
 
       // Use admin endpoint if status filter is present (admin panel)
       const isAdminFetch = activeFilters.status !== undefined;
-      const endpoint = isAdminFetch 
+      const endpoint = isAdminFetch
         ? `/api/admin/blogs${params.toString() ? `?${params}` : ''}`
         : `/api/blogs${params.toString() ? `?${params}` : ''}`;
-      
+
       const response = await fetch(endpoint, {
-        headers: isAdminFetch ? getAuthHeaders() : {},
+        headers: isAdminFetch ? useAuthStore.getState().getAuthHeaders() : {},
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.error || 'Failed to fetch blogs');
       }
-      
+
       set({ blogs: await response.json(), isLoading: false, lastFetched: now });
     } catch {
       set({ blogs: [], isLoading: false });
@@ -89,7 +87,9 @@ export const useBlogStore = create<BlogState>((set, get) => ({
   fetchBlogBySlug: async (slug) => {
     set({ isLoading: true });
     try {
-      const response = await fetch(`/api/blogs/${slug}`, { headers: getAuthHeaders() });
+      const response = await fetch(`/api/blogs/${slug}`, {
+        headers: useAuthStore.getState().getAuthHeaders(),
+      });
       if (!response.ok) throw new Error();
       const blog = await response.json();
       set({ currentBlog: blog, isLoading: false });
@@ -110,10 +110,10 @@ export const useBlogStore = create<BlogState>((set, get) => ({
     get().fetchBlogs();
   },
 
-  createBlog: async (data) => {
+  createBlog: async (data: Partial<Blog> & { tagIds?: string[]; content?: string }) => {
     const response = await fetch('/api/admin/blogs', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json', ...useAuthStore.getState().getAuthHeaders() },
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -125,10 +125,10 @@ export const useBlogStore = create<BlogState>((set, get) => ({
     return blog;
   },
 
-  updateBlog: async (id, data) => {
+  updateBlog: async (id: string, data: Partial<Blog> & { tagIds?: string[]; content?: string }) => {
     const response = await fetch(`/api/admin/blogs/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json', ...useAuthStore.getState().getAuthHeaders() },
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -144,7 +144,10 @@ export const useBlogStore = create<BlogState>((set, get) => ({
   },
 
   deleteBlog: async (id) => {
-    const response = await fetch(`/api/admin/blogs/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+    const response = await fetch(`/api/admin/blogs/${id}`, {
+      method: 'DELETE',
+      headers: useAuthStore.getState().getAuthHeaders(),
+    });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.error || 'Failed to delete blog');
@@ -156,7 +159,10 @@ export const useBlogStore = create<BlogState>((set, get) => ({
   },
 
   publishBlog: async (id) => {
-    const response = await fetch(`/api/admin/blogs/${id}/publish`, { method: 'POST', headers: getAuthHeaders() });
+    const response = await fetch(`/api/admin/blogs/${id}/publish`, {
+      method: 'POST',
+      headers: useAuthStore.getState().getAuthHeaders(),
+    });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.error || 'Failed to publish blog');

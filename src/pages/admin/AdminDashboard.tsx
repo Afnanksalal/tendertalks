@@ -2,16 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Mic2, Users, CreditCard, Settings,
-  Plus, Loader2, TrendingUp, Calendar, RotateCcw,
-  Package, Tag, Receipt, AlertCircle, ArrowUpRight, ArrowDownRight,
-  Menu, X, ChevronDown, FileText
+  LayoutDashboard,
+  Mic2,
+  Users,
+  CreditCard,
+  Settings,
+  Plus,
+  Loader2,
+  TrendingUp,
+  RotateCcw,
+  Package,
+  Tag,
+  Receipt,
+  AlertCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+  Menu,
+  X,
+  FileText,
+  ListMusic,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
 const sidebarLinks = [
   { name: 'Overview', path: '/admin', icon: LayoutDashboard },
   { name: 'Podcasts', path: '/admin/podcasts', icon: Mic2 },
+  { name: 'Playlists', path: '/admin/playlists', icon: ListMusic },
   { name: 'Blogs', path: '/admin/blogs', icon: FileText },
   { name: 'Users', path: '/admin/users', icon: Users },
   { name: 'Payments', path: '/admin/payments', icon: CreditCard },
@@ -34,7 +50,7 @@ export const AdminLayout: React.FC = () => {
   }, [location.pathname]);
 
   // Get current page name for mobile header
-  const currentPage = sidebarLinks.find(link => link.path === location.pathname)?.name || 'Admin';
+  const currentPage = sidebarLinks.find((link) => link.path === location.pathname)?.name || 'Admin';
 
   if (isLoading) {
     return (
@@ -53,12 +69,16 @@ export const AdminLayout: React.FC = () => {
       {/* Desktop Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900/50 border-r border-white/5 pt-24 hidden lg:block overflow-y-auto">
         <div className="p-4 space-y-2">
-          <Link to="/admin/podcasts/new"
-            className="flex items-center justify-center gap-2 w-full py-3 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors">
+          <Link
+            to="/admin/podcasts/new"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-neon-cyan text-slate-900 font-bold rounded-xl hover:bg-neon-cyan/90 transition-colors"
+          >
             <Plus size={18} /> New Podcast
           </Link>
-          <Link to="/admin/blogs/new"
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-white/5 text-slate-300 font-medium rounded-xl border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
+          <Link
+            to="/admin/blogs/new"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-white/5 text-slate-300 font-medium rounded-xl border border-white/10 hover:bg-white/10 hover:text-white transition-colors"
+          >
             <Plus size={16} /> New Blog
           </Link>
         </div>
@@ -67,8 +87,11 @@ export const AdminLayout: React.FC = () => {
             const isActive = location.pathname === link.path;
             const Icon = link.icon;
             return (
-              <Link key={link.path} to={link.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+              >
                 <Icon size={18} />
                 {link.name}
               </Link>
@@ -137,8 +160,8 @@ export const AdminLayout: React.FC = () => {
                       to={link.path}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-colors ${
-                        isActive 
-                          ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30' 
+                        isActive
+                          ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30'
                           : 'text-slate-400 hover:bg-white/5 hover:text-white'
                       }`}
                     >
@@ -212,23 +235,76 @@ interface Stats {
   churnRate: number;
 }
 
+interface RecentPurchase {
+  id: string;
+  amount: string;
+  createdAt: string;
+  user: {
+    name: string | null;
+    email: string;
+  } | null;
+  podcast: {
+    title: string;
+  } | null;
+}
+
+interface RecentUser {
+  id: string;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+  role: string;
+  createdAt: string;
+}
+
 interface ChartData {
-  revenueByDay: { date: string; day: string; revenue: number; purchases: number; subscriptions: number; merch: number }[];
+  revenueByDay: {
+    date: string;
+    day: string;
+    revenue: number;
+    purchases: number;
+    subscriptions: number;
+    merch: number;
+  }[];
   usersByDay: { date: string; day: string; count: number }[];
   planDistribution: { planId: string; planName: string; planPrice: string; count: number }[];
   revenueByCategory: { categoryId: string; categoryName: string; revenue: string; count: number }[];
-  topPodcasts: { id: string; title: string; slug: string; thumbnailUrl: string | null; viewCount: number; isFree: boolean; price: string; purchaseCount: number; revenue: string }[];
+  topPodcasts: {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnailUrl: string | null;
+    viewCount: number;
+    isFree: boolean;
+    price: string;
+    purchaseCount: number;
+    revenue: string;
+  }[];
   topByViews: { id: string; title: string; thumbnailUrl: string | null; viewCount: number }[];
-  mostPlayed: { podcastId: string; title: string; thumbnailUrl: string | null; playCount: number; completionRate: number }[];
-  topMerch: { id: string; name: string; imageUrl: string | null; price: string; stockQuantity: number; soldCount: number; revenue: string }[];
+  mostPlayed: {
+    podcastId: string;
+    title: string;
+    thumbnailUrl: string | null;
+    playCount: number;
+    completionRate: number;
+  }[];
+  topMerch: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    price: string;
+    stockQuantity: number;
+    soldCount: number;
+    revenue: string;
+  }[];
 }
 
 export const AdminOverview: React.FC = () => {
   const { user } = useAuthStore();
   const [stats, setStats] = useState<Stats | null>(null);
   const [charts, setCharts] = useState<ChartData | null>(null);
-  const [recentPurchases, setRecentPurchases] = useState<any[]>([]);
-  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+  const [recentPurchases, setRecentPurchases] = useState<RecentPurchase[]>([]);
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -237,7 +313,9 @@ export const AdminOverview: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/stats', { headers: { 'X-User-Id': user!.id } });
+      const response = await fetch('/api/admin/stats', {
+        headers: { ...useAuthStore.getState().getAuthHeaders() },
+      });
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
@@ -265,10 +343,14 @@ export const AdminOverview: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-neon-cyan animate-spin" /></div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+      </div>
+    );
   }
 
-  const maxRevenue = Math.max(...(charts?.revenueByDay.map(d => d.revenue) || [1]), 1);
+  const maxRevenue = Math.max(...(charts?.revenueByDay.map((d) => d.revenue) || [1]), 1);
 
   return (
     <div>
@@ -277,24 +359,69 @@ export const AdminOverview: React.FC = () => {
       {/* Primary Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
         {[
-          { label: 'Total Revenue', value: `₹${((stats?.totalRevenue || 0) / 1000).toFixed(1)}K`, icon: CreditCard, color: 'text-neon-green', bg: 'bg-neon-green/10' },
-          { label: 'Monthly Revenue', value: `₹${((stats?.monthlyRevenue || 0) / 1000).toFixed(1)}K`, icon: TrendingUp, color: 'text-neon-cyan', bg: 'bg-neon-cyan/10', growth: stats?.revenueGrowth },
-          { label: 'Active Subs', value: stats?.activeSubscriptions || 0, icon: Users, color: 'text-neon-purple', bg: 'bg-neon-purple/10' },
-          { label: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'text-amber-400', bg: 'bg-amber-400/10', growth: stats?.userGrowth },
-          { label: 'Podcasts', value: `${stats?.publishedPodcasts || 0}/${stats?.totalPodcasts || 0}`, icon: Mic2, color: 'text-pink-400', bg: 'bg-pink-400/10' },
+          {
+            label: 'Total Revenue',
+            value: `₹${((stats?.totalRevenue || 0) / 1000).toFixed(1)}K`,
+            icon: CreditCard,
+            color: 'text-neon-green',
+            bg: 'bg-neon-green/10',
+          },
+          {
+            label: 'Monthly Revenue',
+            value: `₹${((stats?.monthlyRevenue || 0) / 1000).toFixed(1)}K`,
+            icon: TrendingUp,
+            color: 'text-neon-cyan',
+            bg: 'bg-neon-cyan/10',
+            growth: stats?.revenueGrowth,
+          },
+          {
+            label: 'Active Subs',
+            value: stats?.activeSubscriptions || 0,
+            icon: Users,
+            color: 'text-neon-purple',
+            bg: 'bg-neon-purple/10',
+          },
+          {
+            label: 'Total Users',
+            value: stats?.totalUsers || 0,
+            icon: Users,
+            color: 'text-amber-400',
+            bg: 'bg-amber-400/10',
+            growth: stats?.userGrowth,
+          },
+          {
+            label: 'Podcasts',
+            value: `${stats?.publishedPodcasts || 0}/${stats?.totalPodcasts || 0}`,
+            icon: Mic2,
+            color: 'text-pink-400',
+            bg: 'bg-pink-400/10',
+          },
         ].map((stat, idx) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-            className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4">
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4"
+          >
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <span className="text-slate-400 text-[10px] sm:text-xs truncate pr-1">{stat.label}</span>
-              <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}>
+              <span className="text-slate-400 text-[10px] sm:text-xs truncate pr-1">
+                {stat.label}
+              </span>
+              <div
+                className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}
+              >
                 <stat.icon size={12} className={`${stat.color} sm:hidden`} />
                 <stat.icon size={14} className={`${stat.color} hidden sm:block`} />
               </div>
             </div>
-            <p className={`text-base sm:text-xl font-display font-bold ${stat.color}`}>{stat.value}</p>
+            <p className={`text-base sm:text-xl font-display font-bold ${stat.color}`}>
+              {stat.value}
+            </p>
             {stat.growth !== undefined && (
-              <p className={`text-[10px] sm:text-xs mt-0.5 flex items-center gap-0.5 ${stat.growth >= 0 ? 'text-neon-green' : 'text-red-400'}`}>
+              <p
+                className={`text-[10px] sm:text-xs mt-0.5 flex items-center gap-0.5 ${stat.growth >= 0 ? 'text-neon-green' : 'text-red-400'}`}
+              >
                 {stat.growth >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                 {Math.abs(stat.growth).toFixed(1)}% vs last month
               </p>
@@ -306,24 +433,50 @@ export const AdminOverview: React.FC = () => {
       {/* Secondary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
         {[
-          { label: 'New Users (30d)', value: stats?.newUsersThisMonth || 0, trend: stats?.userGrowth >= 0 ? 'up' : 'down' },
+          {
+            label: 'New Users (30d)',
+            value: stats?.newUsersThisMonth || 0,
+            trend: stats?.userGrowth >= 0 ? 'up' : 'down',
+          },
           { label: 'New Subs (30d)', value: stats?.newSubsThisMonth || 0, trend: 'up' },
-          { label: 'Total Views', value: stats?.totalViews?.toLocaleString() || 0, trend: 'neutral' },
+          {
+            label: 'Total Views',
+            value: stats?.totalViews?.toLocaleString() || 0,
+            trend: 'neutral',
+          },
           { label: 'Total Plays', value: stats?.totalPlays || 0, trend: 'neutral' },
           { label: 'Downloads', value: stats?.totalDownloads || 0, trend: 'neutral' },
-          { label: 'Pending Refunds', value: stats?.pendingRefunds || 0, trend: 'alert', link: '/admin/refunds' },
+          {
+            label: 'Pending Refunds',
+            value: stats?.pendingRefunds || 0,
+            trend: 'alert',
+            link: '/admin/refunds',
+          },
         ].map((stat, idx) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + idx * 0.05 }}
-            className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4">
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + idx * 0.05 }}
+            className="bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4"
+          >
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5 sm:mb-1 truncate">{stat.label}</p>
+                <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5 sm:mb-1 truncate">
+                  {stat.label}
+                </p>
                 <p className="text-base sm:text-lg font-bold text-white">{stat.value}</p>
               </div>
-              {stat.trend === 'up' && <ArrowUpRight className="text-neon-green flex-shrink-0" size={16} />}
-              {stat.trend === 'down' && <ArrowDownRight className="text-red-400 flex-shrink-0" size={16} />}
+              {stat.trend === 'up' && (
+                <ArrowUpRight className="text-neon-green flex-shrink-0" size={16} />
+              )}
+              {stat.trend === 'down' && (
+                <ArrowDownRight className="text-red-400 flex-shrink-0" size={16} />
+              )}
               {stat.trend === 'alert' && Number(stat.value) > 0 && (
-                <Link to={stat.link!}><AlertCircle className="text-amber-400 flex-shrink-0" size={16} /></Link>
+                <Link to={stat.link!}>
+                  <AlertCircle className="text-amber-400 flex-shrink-0" size={16} />
+                </Link>
               )}
             </div>
           </motion.div>
@@ -332,41 +485,74 @@ export const AdminOverview: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          className="bg-gradient-to-br from-neon-green/10 to-transparent border border-neon-green/20 rounded-xl p-3 sm:p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-gradient-to-br from-neon-green/10 to-transparent border border-neon-green/20 rounded-xl p-3 sm:p-4"
+        >
           <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Avg Order Value</p>
-          <p className="text-lg sm:text-2xl font-bold text-neon-green">₹{stats?.avgOrderValue?.toFixed(0) || 0}</p>
+          <p className="text-lg sm:text-2xl font-bold text-neon-green">
+            ₹{stats?.avgOrderValue?.toFixed(0) || 0}
+          </p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
-          className="bg-gradient-to-br from-neon-cyan/10 to-transparent border border-neon-cyan/20 rounded-xl p-3 sm:p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="bg-gradient-to-br from-neon-cyan/10 to-transparent border border-neon-cyan/20 rounded-xl p-3 sm:p-4"
+        >
           <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Conversion Rate</p>
-          <p className="text-lg sm:text-2xl font-bold text-neon-cyan">{stats?.conversionRate?.toFixed(1) || 0}%</p>
+          <p className="text-lg sm:text-2xl font-bold text-neon-cyan">
+            {stats?.conversionRate?.toFixed(1) || 0}%
+          </p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-          className="bg-gradient-to-br from-neon-purple/10 to-transparent border border-neon-purple/20 rounded-xl p-3 sm:p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-gradient-to-br from-neon-purple/10 to-transparent border border-neon-purple/20 rounded-xl p-3 sm:p-4"
+        >
           <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Churn Rate</p>
-          <p className="text-lg sm:text-2xl font-bold text-neon-purple">{stats?.churnRate?.toFixed(1) || 0}%</p>
+          <p className="text-lg sm:text-2xl font-bold text-neon-purple">
+            {stats?.churnRate?.toFixed(1) || 0}%
+          </p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
-          className="bg-gradient-to-br from-amber-400/10 to-transparent border border-amber-400/20 rounded-xl p-3 sm:p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+          className="bg-gradient-to-br from-amber-400/10 to-transparent border border-amber-400/20 rounded-xl p-3 sm:p-4"
+        >
           <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Newsletter Subs</p>
-          <p className="text-lg sm:text-2xl font-bold text-amber-400">{stats?.newsletterSubscribers || 0}</p>
+          <p className="text-lg sm:text-2xl font-bold text-amber-400">
+            {stats?.newsletterSubscribers || 0}
+          </p>
         </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Revenue Chart */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          className="lg:col-span-2 bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
-          <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Revenue (Last 7 Days)</h3>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="lg:col-span-2 bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5"
+        >
+          <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">
+            Revenue (Last 7 Days)
+          </h3>
           <div className="flex items-end gap-1 sm:gap-2 h-32 sm:h-40">
-            {charts?.revenueByDay.map((day, idx) => (
+            {charts?.revenueByDay.map((day) => (
               <div key={day.date} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
-                <div className="w-full bg-slate-800 rounded-t relative" style={{ height: `${Math.max((day.revenue / maxRevenue) * 100, 5)}%` }}>
+                <div
+                  className="w-full bg-slate-800 rounded-t relative"
+                  style={{ height: `${Math.max((day.revenue / maxRevenue) * 100, 5)}%` }}
+                >
                   <div className="absolute inset-0 bg-gradient-to-t from-neon-cyan/50 to-neon-cyan/20 rounded-t" />
                   {day.revenue > 0 && (
                     <span className="absolute -top-5 sm:-top-6 left-1/2 -translate-x-1/2 text-[9px] sm:text-xs text-neon-cyan font-mono whitespace-nowrap">
-                      ₹{day.revenue >= 1000 ? `${(day.revenue/1000).toFixed(0)}K` : day.revenue}
+                      ₹{day.revenue >= 1000 ? `${(day.revenue / 1000).toFixed(0)}K` : day.revenue}
                     </span>
                   )}
                 </div>
@@ -377,12 +563,18 @@ export const AdminOverview: React.FC = () => {
         </motion.div>
 
         {/* Plan Distribution */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
-          <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Subscription Plans</h3>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5"
+        >
+          <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">
+            Subscription Plans
+          </h3>
           {charts?.planDistribution && charts.planDistribution.length > 0 ? (
             <div className="space-y-2.5 sm:space-y-3">
-              {charts.planDistribution.map((plan, idx) => {
+              {charts.planDistribution.map((plan, index) => {
                 const total = charts.planDistribution.reduce((a, b) => a + b.count, 0);
                 const percent = total > 0 ? (plan.count / total) * 100 : 0;
                 const colors = ['bg-neon-cyan', 'bg-neon-purple', 'bg-neon-green', 'bg-amber-400'];
@@ -390,17 +582,24 @@ export const AdminOverview: React.FC = () => {
                   <div key={plan.planId}>
                     <div className="flex justify-between text-xs sm:text-sm mb-1">
                       <span className="text-slate-300 truncate pr-2">{plan.planName}</span>
-                      <span className="text-slate-400 flex-shrink-0">{plan.count} ({percent.toFixed(0)}%)</span>
+                      <span className="text-slate-400 flex-shrink-0">
+                        {plan.count} ({percent.toFixed(0)}%)
+                      </span>
                     </div>
                     <div className="h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div className={`h-full ${colors[idx % colors.length]} rounded-full`} style={{ width: `${percent}%` }} />
+                      <div
+                        className={`h-full ${colors[index % colors.length]} rounded-full`}
+                        style={{ width: `${percent}%` }}
+                      />
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-slate-500 text-sm text-center py-6 sm:py-8">No active subscriptions</p>
+            <p className="text-slate-500 text-sm text-center py-6 sm:py-8">
+              No active subscriptions
+            </p>
           )}
         </motion.div>
       </div>
@@ -408,31 +607,53 @@ export const AdminOverview: React.FC = () => {
       {/* Top Podcasts & Most Viewed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Top Podcasts by Revenue */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5"
+        >
           <div className="flex justify-between items-center mb-3 sm:mb-4">
             <h3 className="text-base sm:text-lg font-bold text-white">Top by Revenue</h3>
-            <Link to="/admin/podcasts" className="text-neon-cyan text-xs hover:underline">View all</Link>
+            <Link to="/admin/podcasts" className="text-neon-cyan text-xs hover:underline">
+              View all
+            </Link>
           </div>
           {charts?.topPodcasts && charts.topPodcasts.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
               {charts.topPodcasts.slice(0, 5).map((podcast, idx) => (
-                <Link key={podcast.id} to={`/podcast/${podcast.slug}`} className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
-                  <span className="text-slate-500 text-xs sm:text-sm w-4 sm:w-5 flex-shrink-0">{idx + 1}</span>
+                <Link
+                  key={podcast.id}
+                  to={`/podcast/${podcast.slug}`}
+                  className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg hover:bg-slate-800/50 transition-colors"
+                >
+                  <span className="text-slate-500 text-xs sm:text-sm w-4 sm:w-5 flex-shrink-0">
+                    {idx + 1}
+                  </span>
                   {podcast.thumbnailUrl ? (
-                    <img src={podcast.thumbnailUrl} alt="" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover flex-shrink-0" />
+                    <img
+                      src={podcast.thumbnailUrl}
+                      alt=""
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover flex-shrink-0"
+                    />
                   ) : (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0"><Mic2 size={14} className="text-slate-600" /></div>
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <Mic2 size={14} className="text-slate-600" />
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-xs sm:text-sm font-medium truncate">{podcast.title}</p>
+                    <p className="text-white text-xs sm:text-sm font-medium truncate">
+                      {podcast.title}
+                    </p>
                     <div className="flex items-center gap-2 text-[10px] sm:text-xs text-slate-500">
                       <span>{podcast.purchaseCount} sales</span>
                       <span>•</span>
                       <span>{podcast.viewCount?.toLocaleString() || 0} views</span>
                     </div>
                   </div>
-                  <span className="text-neon-green text-xs sm:text-sm font-mono flex-shrink-0">₹{parseFloat(podcast.revenue || '0').toLocaleString()}</span>
+                  <span className="text-neon-green text-xs sm:text-sm font-mono flex-shrink-0">
+                    ₹{parseFloat(podcast.revenue || '0').toLocaleString()}
+                  </span>
                 </Link>
               ))}
               {charts.topPodcasts.length === 0 && (
@@ -445,25 +666,46 @@ export const AdminOverview: React.FC = () => {
         </motion.div>
 
         {/* Most Played */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
-          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5"
+        >
           <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">Most Played</h3>
           {charts?.mostPlayed && charts.mostPlayed.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
               {charts.mostPlayed.map((podcast, idx) => (
-                <div key={podcast.podcastId} className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
-                  <span className="text-slate-500 text-xs sm:text-sm w-4 sm:w-5 flex-shrink-0">{idx + 1}</span>
+                <div
+                  key={podcast.podcastId}
+                  className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg hover:bg-slate-800/50 transition-colors"
+                >
+                  <span className="text-slate-500 text-xs sm:text-sm w-4 sm:w-5 flex-shrink-0">
+                    {idx + 1}
+                  </span>
                   {podcast.thumbnailUrl ? (
-                    <img src={podcast.thumbnailUrl} alt="" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover flex-shrink-0" />
+                    <img
+                      src={podcast.thumbnailUrl}
+                      alt=""
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover flex-shrink-0"
+                    />
                   ) : (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0"><Mic2 size={14} className="text-slate-600" /></div>
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <Mic2 size={14} className="text-slate-600" />
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-xs sm:text-sm font-medium truncate">{podcast.title}</p>
-                    <p className="text-slate-500 text-[10px] sm:text-xs">{podcast.playCount} plays</p>
+                    <p className="text-white text-xs sm:text-sm font-medium truncate">
+                      {podcast.title}
+                    </p>
+                    <p className="text-slate-500 text-[10px] sm:text-xs">
+                      {podcast.playCount} plays
+                    </p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-neon-cyan text-xs sm:text-sm font-mono">{podcast.completionRate}%</p>
+                    <p className="text-neon-cyan text-xs sm:text-sm font-mono">
+                      {podcast.completionRate}%
+                    </p>
                     <p className="text-slate-600 text-[10px]">completion</p>
                   </div>
                 </div>
@@ -478,23 +720,43 @@ export const AdminOverview: React.FC = () => {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Purchases */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
-          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5"
+        >
           <div className="flex justify-between items-center mb-3 sm:mb-4">
             <h3 className="text-base sm:text-lg font-bold text-white">Recent Purchases</h3>
-            <Link to="/admin/payments" className="text-neon-cyan text-xs sm:text-sm hover:underline">View all</Link>
+            <Link
+              to="/admin/payments"
+              className="text-neon-cyan text-xs sm:text-sm hover:underline"
+            >
+              View all
+            </Link>
           </div>
           {recentPurchases.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
-              {recentPurchases.slice(0, 5).map((purchase: any) => (
-                <div key={purchase.id} className="flex items-center justify-between py-1.5 sm:py-2 border-b border-white/5 last:border-0">
+              {recentPurchases.slice(0, 5).map((purchase) => (
+                <div
+                  key={purchase.id}
+                  className="flex items-center justify-between py-1.5 sm:py-2 border-b border-white/5 last:border-0"
+                >
                   <div className="min-w-0 flex-1 pr-2">
-                    <p className="text-white text-xs sm:text-sm truncate">{purchase.user?.name || purchase.user?.email || 'Unknown'}</p>
-                    <p className="text-slate-500 text-[10px] sm:text-xs truncate">{purchase.podcast?.title}</p>
+                    <p className="text-white text-xs sm:text-sm truncate">
+                      {purchase.user?.name || purchase.user?.email || 'Unknown'}
+                    </p>
+                    <p className="text-slate-500 text-[10px] sm:text-xs truncate">
+                      {purchase.podcast?.title}
+                    </p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-neon-green text-xs sm:text-sm font-mono">₹{parseFloat(purchase.amount).toFixed(0)}</p>
-                    <p className="text-slate-500 text-[10px] sm:text-xs">{formatDate(purchase.createdAt)}</p>
+                    <p className="text-neon-green text-xs sm:text-sm font-mono">
+                      ₹{parseFloat(purchase.amount).toFixed(0)}
+                    </p>
+                    <p className="text-slate-500 text-[10px] sm:text-xs">
+                      {formatDate(purchase.createdAt)}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -505,21 +767,36 @@ export const AdminOverview: React.FC = () => {
         </motion.div>
 
         {/* Recent Users */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }}
-          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-4 sm:p-5"
+        >
           <div className="flex justify-between items-center mb-3 sm:mb-4">
             <h3 className="text-base sm:text-lg font-bold text-white">Recent Users</h3>
-            <Link to="/admin/users" className="text-neon-cyan text-xs sm:text-sm hover:underline">View all</Link>
+            <Link to="/admin/users" className="text-neon-cyan text-xs sm:text-sm hover:underline">
+              View all
+            </Link>
           </div>
           {recentUsers.length > 0 ? (
             <div className="space-y-2 sm:space-y-3">
-              {recentUsers.slice(0, 5).map((u: any) => (
-                <div key={u.id} className="flex items-center gap-3 py-1.5 sm:py-2 border-b border-white/5 last:border-0">
+              {recentUsers.slice(0, 5).map((u) => (
+                <div
+                  key={u.id}
+                  className="flex items-center gap-3 py-1.5 sm:py-2 border-b border-white/5 last:border-0"
+                >
                   {u.avatarUrl ? (
-                    <img src={u.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                    <img
+                      src={u.avatarUrl}
+                      alt=""
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-neon-cyan/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-neon-cyan text-xs font-bold">{(u.name || u.email)?.[0]?.toUpperCase()}</span>
+                      <span className="text-neon-cyan text-xs font-bold">
+                        {(u.name || u.email)?.[0]?.toUpperCase()}
+                      </span>
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
@@ -527,7 +804,9 @@ export const AdminOverview: React.FC = () => {
                     <p className="text-slate-500 text-[10px] sm:text-xs truncate">{u.email}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${u.role === 'admin' ? 'bg-neon-purple/20 text-neon-purple' : 'bg-slate-700 text-slate-400'}`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${u.role === 'admin' ? 'bg-neon-purple/20 text-neon-purple' : 'bg-slate-700 text-slate-400'}`}
+                    >
                       {u.role}
                     </span>
                     <p className="text-slate-500 text-[10px] mt-0.5">{formatDate(u.createdAt)}</p>

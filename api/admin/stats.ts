@@ -27,7 +27,8 @@ export default async function handler(req: Request) {
   try {
     const user = await verifyAuth(req);
     userId = user.id;
-  } catch {
+  } catch (error) {
+    console.error('Auth verification failed:', error);
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 

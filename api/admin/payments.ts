@@ -1,7 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
-import { eq, desc, sql, and, gte, lte } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -25,21 +26,16 @@ export default async function handler(req: Request) {
     });
   }
 
-  const userId = req.headers.get('x-user-id');
-
-  if (!userId) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers,
-    });
-  }
-
-  const [admin] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
-  if (!admin || admin.role !== 'admin') {
-    return new Response(JSON.stringify({ error: 'Admin access required' }), {
-      status: 403,
-      headers,
-    });
+  try {
+    const user = await verifyAuth(req);
+    if (user.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+        status: 403,
+        headers,
+      });
+    }
+  } catch {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   try {
@@ -129,11 +125,15 @@ export default async function handler(req: Request) {
       result = merchOrders;
     } else {
       // Combine and sort by date
-      result = [...purchases, ...subscriptions.map(s => ({
-        ...s,
-        amount: s.plan?.price || '0',
-        currency: 'INR',
-      })), ...merchOrders]
+      result = [
+        ...purchases,
+        ...subscriptions.map((s) => ({
+          ...s,
+          amount: s.plan?.price || '0',
+          currency: 'INR',
+        })),
+        ...merchOrders,
+      ]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, limit);
     }

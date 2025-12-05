@@ -1,18 +1,21 @@
 // Client-side API functions for podcasts
-import type { Podcast, Category, Tag } from '../db/schema';
+import type { Podcast, Category } from '../db/schema';
+import { useAuthStore } from '../stores/authStore';
 
 // Get all published podcasts with filters
-export async function getPodcasts(filters: {
-  categoryId?: string;
-  tagId?: string;
-  isFree?: boolean;
-  search?: string;
-  status?: string;
-  limit?: number;
-  offset?: number;
-} = {}): Promise<Podcast[]> {
+export async function getPodcasts(
+  filters: {
+    categoryId?: string;
+    tagId?: string;
+    isFree?: boolean;
+    search?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<Podcast[]> {
   const params = new URLSearchParams();
-  
+
   if (filters.categoryId) params.set('categoryId', filters.categoryId);
   if (filters.tagId) params.set('tagId', filters.tagId);
   if (filters.isFree !== undefined) params.set('isFree', String(filters.isFree));
@@ -40,47 +43,27 @@ export async function getCategories(): Promise<Category[]> {
   return response.json();
 }
 
-// Get all tags
-export async function getTags(): Promise<Tag[]> {
-  const response = await fetch('/api/tags');
-  if (!response.ok) throw new Error('Failed to fetch tags');
-  return response.json();
-}
-
-// Download podcast (for subscribers/purchasers)
-export async function downloadPodcast(slug: string, userId: string): Promise<{ url: string; expiresAt: string }> {
-  const response = await fetch(`/api/podcasts/${slug}/download`, {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'X-User-Id': userId,
-    },
-  });
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to get download link' }));
-    throw new Error(error.error || error.message || 'Failed to get download link');
-  }
-  
-  return response.json();
-}
-
 // Track play progress
-export async function updatePlayProgress(podcastId: string, progress: number, userId: string, completed: boolean = false): Promise<void> {
+export async function updatePlayProgress(
+  podcastId: string,
+  progress: number,
+  userId: string,
+  completed: boolean = false
+): Promise<void> {
   await fetch('/api/podcasts/progress', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId,
+      ...useAuthStore.getState().getAuthHeaders(),
     },
     body: JSON.stringify({ podcastId, progress, completed }),
   });
 }
 
 // Get play history
-export async function getPlayHistory(userId: string): Promise<any[]> {
+export async function getPlayHistory(): Promise<any[]> {
   const response = await fetch('/api/users/history', {
-    headers: { 'X-User-Id': userId },
+    headers: { ...useAuthStore.getState().getAuthHeaders() },
   });
   if (!response.ok) return [];
   return response.json();
