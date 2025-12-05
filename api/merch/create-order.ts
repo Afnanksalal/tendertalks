@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, inArray } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 function getDb() {
   const sql = neon(process.env.DATABASE_URL!);
@@ -55,6 +56,14 @@ export default async function handler(req: Request) {
   }
 
   try {
+    let userId: string;
+    try {
+      const authUser = await verifyAuth(req);
+      userId = authUser.id;
+    } catch {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+    }
+
     const db = getDb();
 
     // Check if merch feature is enabled
@@ -85,14 +94,13 @@ export default async function handler(req: Request) {
       country?: string;
     }
 
-    const { userId, items, total, shippingAddress } = (await req.json()) as {
-      userId: string;
+    const { items, total, shippingAddress } = (await req.json()) as {
       items: OrderItem[];
       total: number;
       shippingAddress: ShippingAddress;
     };
 
-    if (!userId || !items?.length) {
+    if (!items?.length) {
       return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400, headers });
     }
 

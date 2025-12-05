@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, ShoppingBag, CreditCard, ChevronRight, Plus, Minus, Loader2 } from 'lucide-react';
+import {
+  X,
+  Trash2,
+  ShoppingBag,
+  CreditCard,
+  ChevronRight,
+  Plus,
+  Minus,
+  Loader2,
+} from 'lucide-react';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -9,7 +18,7 @@ import toast from 'react-hot-toast';
 
 export const CartDrawer: React.FC = () => {
   const { items, isOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, getAuthHeaders } = useAuthStore();
   const { settings } = useSettingsStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -23,7 +32,9 @@ export const CartDrawer: React.FC = () => {
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, settings.feature_merch]);
 
   // Don't render if merch is disabled
@@ -43,9 +54,9 @@ export const CartDrawer: React.FC = () => {
       // Create order
       const response = await fetch('/api/merch/create-order', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': user.id,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           userId: user.id,
@@ -59,13 +70,13 @@ export const CartDrawer: React.FC = () => {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || data.details || 'Failed to create order');
       }
 
       const { orderId, amount, key } = data;
-      
+
       if (!key) {
         throw new Error('Payment gateway configuration error');
       }
@@ -86,9 +97,9 @@ export const CartDrawer: React.FC = () => {
           try {
             await fetch('/api/merch/verify-payment', {
               method: 'POST',
-              headers: { 
+              headers: {
                 'Content-Type': 'application/json',
-                'X-User-Id': user.id,
+                ...getAuthHeaders(),
               },
               body: JSON.stringify({
                 ...paymentResponse,
@@ -173,7 +184,11 @@ export const CartDrawer: React.FC = () => {
                   >
                     <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-800 rounded-lg overflow-hidden flex-shrink-0">
                       {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full bg-slate-700" />
                       )}
@@ -181,7 +196,9 @@ export const CartDrawer: React.FC = () => {
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div>
                         <h3 className="text-white font-bold text-sm mb-1 truncate">{item.name}</h3>
-                        <p className="text-neon-cyan font-mono text-xs">₹{parseFloat(item.price).toFixed(0)}</p>
+                        <p className="text-neon-cyan font-mono text-xs">
+                          ₹{parseFloat(item.price).toFixed(0)}
+                        </p>
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <div className="flex items-center gap-1 bg-slate-950 rounded-lg border border-white/5">
@@ -191,7 +208,9 @@ export const CartDrawer: React.FC = () => {
                           >
                             <Minus size={14} />
                           </button>
-                          <span className="text-xs font-bold text-white w-6 text-center">{item.quantity}</span>
+                          <span className="text-xs font-bold text-white w-6 text-center">
+                            {item.quantity}
+                          </span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             className="p-1.5 text-slate-400 hover:text-white transition-colors touch-feedback"
@@ -217,7 +236,9 @@ export const CartDrawer: React.FC = () => {
               <div className="p-4 md:p-6 bg-slate-950/80 border-t border-white/5 backdrop-blur-md">
                 <div className="flex justify-between items-end mb-4 md:mb-6">
                   <div>
-                    <span className="text-slate-400 text-xs font-mono uppercase block mb-1">Total</span>
+                    <span className="text-slate-400 text-xs font-mono uppercase block mb-1">
+                      Total
+                    </span>
                     <span className="text-[10px] text-slate-500">Tax included</span>
                   </div>
                   <span className="text-2xl md:text-3xl font-display font-bold text-white">
@@ -233,7 +254,9 @@ export const CartDrawer: React.FC = () => {
                   {isCheckingOut ? (
                     <Loader2 size={18} className="animate-spin" />
                   ) : (
-                    <>Checkout <ChevronRight size={18} /></>
+                    <>
+                      Checkout <ChevronRight size={18} />
+                    </>
                   )}
                 </button>
 

@@ -24,9 +24,9 @@ export async function syncUser(data: {
 }
 
 // Get user subscription status
-export async function getUserSubscription(userId: string) {
+export async function getUserSubscription(authHeaders: Record<string, string>) {
   const response = await fetch(`${API_BASE}/subscription`, {
-    headers: { 'X-User-Id': userId },
+    headers: authHeaders,
   });
 
   if (!response.ok) {
@@ -37,9 +37,9 @@ export async function getUserSubscription(userId: string) {
 }
 
 // Get user purchases
-export async function getUserPurchases(userId: string) {
+export async function getUserPurchases(authHeaders: Record<string, string>) {
   const response = await fetch(`${API_BASE}/purchases`, {
-    headers: { 'X-User-Id': userId },
+    headers: authHeaders,
   });
 
   if (!response.ok) {
@@ -50,9 +50,9 @@ export async function getUserPurchases(userId: string) {
 }
 
 // Get user downloads
-export async function getUserDownloads(userId: string) {
+export async function getUserDownloads(authHeaders: Record<string, string>) {
   const response = await fetch(`${API_BASE}/downloads`, {
-    headers: { 'X-User-Id': userId },
+    headers: authHeaders,
   });
 
   if (!response.ok) {
@@ -64,7 +64,7 @@ export async function getUserDownloads(userId: string) {
 
 // Update user profile
 export async function updateUserProfile(
-  userId: string,
+  authHeaders: Record<string, string>,
   data: {
     name?: string;
     avatarUrl?: string;
@@ -72,9 +72,9 @@ export async function updateUserProfile(
 ) {
   const response = await fetch(`${API_BASE}/profile`, {
     method: 'PATCH',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId,
+      ...authHeaders,
     },
     body: JSON.stringify(data),
   });
@@ -87,9 +87,9 @@ export async function updateUserProfile(
 }
 
 // Get play history
-export async function getPlayHistory(userId: string) {
+export async function getPlayHistory(authHeaders: Record<string, string>) {
   const response = await fetch(`${API_BASE}/history`, {
-    headers: { 'X-User-Id': userId },
+    headers: authHeaders,
   });
 
   if (!response.ok) {
@@ -100,12 +100,12 @@ export async function getPlayHistory(userId: string) {
 }
 
 // Cancel subscription
-export async function cancelSubscription(userId: string) {
+export async function cancelSubscription(authHeaders: Record<string, string>) {
   const response = await fetch(`${API_BASE}/subscription/cancel`, {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId,
+      ...authHeaders,
     },
   });
 

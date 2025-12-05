@@ -42,10 +42,13 @@ export interface ChangeSubscriptionResponse {
 }
 
 // Create new subscription
-export async function createSubscription(userId: string, planId: string): Promise<CreateSubscriptionResponse> {
+export async function createSubscription(
+  authHeaders: Record<string, string>,
+  planId: string
+): Promise<CreateSubscriptionResponse> {
   const response = await fetch('/api/subscriptions/create', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify({ planId }),
   });
 
@@ -58,16 +61,19 @@ export async function createSubscription(userId: string, planId: string): Promis
 }
 
 // Verify subscription payment
-export async function verifySubscription(userId: string, data: {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-  planId: string;
-  action?: 'new' | 'upgrade' | 'downgrade';
-}): Promise<{ success: boolean; subscription?: SubscriptionWithDetails; message: string }> {
+export async function verifySubscription(
+  authHeaders: Record<string, string>,
+  data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    planId: string;
+    action?: 'new' | 'upgrade' | 'downgrade';
+  }
+): Promise<{ success: boolean; subscription?: SubscriptionWithDetails; message: string }> {
   const response = await fetch('/api/subscriptions/verify', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify(data),
   });
 
@@ -80,10 +86,13 @@ export async function verifySubscription(userId: string, data: {
 }
 
 // Change subscription (upgrade/downgrade)
-export async function changeSubscription(userId: string, newPlanId: string): Promise<ChangeSubscriptionResponse> {
+export async function changeSubscription(
+  authHeaders: Record<string, string>,
+  newPlanId: string
+): Promise<ChangeSubscriptionResponse> {
   const response = await fetch('/api/subscriptions/change', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify({ newPlanId }),
   });
 
@@ -96,7 +105,10 @@ export async function changeSubscription(userId: string, newPlanId: string): Pro
 }
 
 // Cancel subscription
-export async function cancelSubscription(userId: string, options?: { immediate?: boolean; reason?: string }): Promise<{
+export async function cancelSubscription(
+  authHeaders: Record<string, string>,
+  options?: { immediate?: boolean; reason?: string }
+): Promise<{
   success: boolean;
   message: string;
   effectiveDate?: string;
@@ -106,7 +118,7 @@ export async function cancelSubscription(userId: string, options?: { immediate?:
 }> {
   const response = await fetch('/api/subscriptions/cancel', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify(options || {}),
   });
 
@@ -119,14 +131,18 @@ export async function cancelSubscription(userId: string, options?: { immediate?:
 }
 
 // Reactivate cancelled subscription
-export async function reactivateSubscription(userId: string): Promise<{ success: boolean; message: string }> {
+export async function reactivateSubscription(
+  authHeaders: Record<string, string>
+): Promise<{ success: boolean; message: string }> {
   const response = await fetch('/api/subscriptions/reactivate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to reactivate subscription' }));
+    const error = await response
+      .json()
+      .catch(() => ({ error: 'Failed to reactivate subscription' }));
     throw new Error(error.error || 'Failed to reactivate subscription');
   }
 
@@ -134,14 +150,17 @@ export async function reactivateSubscription(userId: string): Promise<{ success:
 }
 
 // Request refund
-export async function requestRefund(userId: string, data: {
-  subscriptionId?: string;
-  purchaseId?: string;
-  reason?: string;
-}): Promise<{ success: boolean; message: string }> {
+export async function requestRefund(
+  authHeaders: Record<string, string>,
+  data: {
+    subscriptionId?: string;
+    purchaseId?: string;
+    reason?: string;
+  }
+): Promise<{ success: boolean; message: string }> {
   const response = await fetch('/api/refunds/request', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify(data),
   });
 
@@ -154,9 +173,11 @@ export async function requestRefund(userId: string, data: {
 }
 
 // Get user subscription
-export async function getUserSubscription(userId: string): Promise<SubscriptionWithDetails | null> {
+export async function getUserSubscription(
+  authHeaders: Record<string, string>
+): Promise<SubscriptionWithDetails | null> {
   const response = await fetch('/api/users/subscription', {
-    headers: { 'X-User-Id': userId },
+    headers: authHeaders,
   });
   if (!response.ok) return null;
   return response.json();

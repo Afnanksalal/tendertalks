@@ -2,8 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  User, Mail, Camera, Loader2, CreditCard, Calendar,
-  AlertTriangle, RefreshCw, ArrowRight, Clock, X
+  User,
+  Mail,
+  Camera,
+  Loader2,
+  CreditCard,
+  Calendar,
+  AlertTriangle,
+  RefreshCw,
+  ArrowRight,
+  Clock,
+  X,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useUserStore } from '../stores/userStore';
@@ -18,7 +27,7 @@ const IMAGE_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.gif';
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export const SettingsPage: React.FC = () => {
-  const { user, isLoading: authLoading, updateProfile } = useAuthStore();
+  const { user, isLoading: authLoading, updateProfile, getAuthHeaders } = useAuthStore();
   const { subscription, fetchSubscription, hasActiveSubscription } = useUserStore();
   const [name, setName] = useState(user?.name || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -66,7 +75,9 @@ export const SettingsPage: React.FC = () => {
       // Upload to Supabase Storage
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const path = `${user.id}/${Date.now()}.${ext}`;
-      const { url, error } = await uploadFile(STORAGE_BUCKETS.AVATARS, path, file, { upsert: true });
+      const { url, error } = await uploadFile(STORAGE_BUCKETS.AVATARS, path, file, {
+        upsert: true,
+      });
 
       if (error) {
         throw error;
@@ -90,7 +101,7 @@ export const SettingsPage: React.FC = () => {
   // Remove avatar
   const handleRemoveAvatar = async () => {
     if (!user) return;
-    
+
     setIsUploadingAvatar(true);
     try {
       await updateProfile({ avatarUrl: null });
@@ -132,7 +143,10 @@ export const SettingsPage: React.FC = () => {
     if (!subscription) return;
     setIsCancelling(true);
     try {
-      const result = await cancelSubscription(user.id, { immediate, reason: cancelReason });
+      const result = await cancelSubscription(getAuthHeaders(), {
+        immediate,
+        reason: cancelReason,
+      });
       toast.success(result.message);
       setShowCancelModal(false);
       setCancelReason('');
@@ -148,7 +162,7 @@ export const SettingsPage: React.FC = () => {
     if (!subscription) return;
     setIsReactivating(true);
     try {
-      const result = await reactivateSubscription(user.id);
+      const result = await reactivateSubscription(getAuthHeaders());
       toast.success(result.message);
       await fetchSubscription();
     } catch (error: any) {
@@ -162,7 +176,7 @@ export const SettingsPage: React.FC = () => {
     if (!subscription) return;
     setIsRequestingRefund(true);
     try {
-      const result = await requestRefund(user.id, {
+      const result = await requestRefund(getAuthHeaders(), {
         subscriptionId: subscription.id,
         reason: refundReason,
       });
@@ -188,7 +202,7 @@ export const SettingsPage: React.FC = () => {
           {/* Profile Section */}
           <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
             <h2 className="text-lg font-bold text-white mb-6">Profile</h2>
-            
+
             {/* Avatar Section */}
             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6 pb-6 border-b border-white/5">
               <div className="relative group">
@@ -200,30 +214,30 @@ export const SettingsPage: React.FC = () => {
                   onChange={handleAvatarSelect}
                   className="hidden"
                 />
-                
+
                 {/* Avatar display */}
                 <div className="relative">
                   {avatarPreview || user.avatarUrl ? (
-                    <img 
-                      src={avatarPreview || user.avatarUrl || ''} 
-                      alt="" 
-                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-white/10" 
+                    <img
+                      src={avatarPreview || user.avatarUrl || ''}
+                      alt=""
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-white/10"
                     />
                   ) : (
                     <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-neon-cyan/20 flex items-center justify-center border-2 border-neon-cyan/30">
                       <User size={40} className="text-neon-cyan" />
                     </div>
                   )}
-                  
+
                   {/* Loading overlay */}
                   {isUploadingAvatar && (
                     <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
                       <Loader2 className="w-6 h-6 text-neon-cyan animate-spin" />
                     </div>
                   )}
-                  
+
                   {/* Camera button */}
-                  <button 
+                  <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingAvatar}
                     className="absolute bottom-0 right-0 w-9 h-9 bg-neon-cyan text-black rounded-full flex items-center justify-center hover:bg-neon-cyan/90 transition-colors shadow-lg disabled:opacity-50"
@@ -232,7 +246,7 @@ export const SettingsPage: React.FC = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="text-center sm:text-left flex-1">
                 <p className="text-white font-medium text-lg">{user.name || 'User'}</p>
                 <p className="text-sm text-slate-400 mb-3">{user.email}</p>
@@ -289,7 +303,10 @@ export const SettingsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-white">Subscription</h2>
               {!hasActiveSubscription() && (
-                <Link to="/pricing" className="text-sm text-neon-cyan hover:underline flex items-center gap-1">
+                <Link
+                  to="/pricing"
+                  className="text-sm text-neon-cyan hover:underline flex items-center gap-1"
+                >
                   View Plans <ArrowRight size={14} />
                 </Link>
               )}
@@ -307,18 +324,25 @@ export const SettingsPage: React.FC = () => {
                       <div>
                         <p className="text-white font-medium">{subscription.plan?.name}</p>
                         <p className="text-slate-400 text-sm">
-                          ₹{parseFloat(subscription.plan?.price || '0').toLocaleString()}/{subscription.plan?.interval}
+                          ₹{parseFloat(subscription.plan?.price || '0').toLocaleString()}/
+                          {subscription.plan?.interval}
                         </p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      subscription.cancelAtPeriodEnd 
-                        ? 'bg-amber-500/20 text-amber-400'
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        subscription.cancelAtPeriodEnd
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : subscription.status === 'pending_downgrade'
+                            ? 'bg-amber-500/20 text-amber-400'
+                            : 'bg-neon-green/20 text-neon-green'
+                      }`}
+                    >
+                      {subscription.cancelAtPeriodEnd
+                        ? 'Cancelling'
                         : subscription.status === 'pending_downgrade'
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-neon-green/20 text-neon-green'
-                    }`}>
-                      {subscription.cancelAtPeriodEnd ? 'Cancelling' : subscription.status === 'pending_downgrade' ? 'Downgrading' : 'Active'}
+                          ? 'Downgrading'
+                          : 'Active'}
                     </span>
                   </div>
 
@@ -326,7 +350,12 @@ export const SettingsPage: React.FC = () => {
                   <div className="flex items-center gap-2 text-sm text-slate-400 mb-3">
                     <Calendar size={14} />
                     <span>
-                      {subscription.cancelAtPeriodEnd ? 'Access until' : 'Renews'}: {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      {subscription.cancelAtPeriodEnd ? 'Access until' : 'Renews'}:{' '}
+                      {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
                     </span>
                     <span className="text-slate-600">·</span>
                     <span>{subscription.daysRemaining} days left</span>
@@ -336,7 +365,8 @@ export const SettingsPage: React.FC = () => {
                   {subscription.pendingPlan && (
                     <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-3">
                       <p className="text-amber-400 text-sm">
-                        Switching to <strong>{subscription.pendingPlan.name}</strong> on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                        Switching to <strong>{subscription.pendingPlan.name}</strong> on{' '}
+                        {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                       </p>
                     </div>
                   )}
@@ -346,7 +376,9 @@ export const SettingsPage: React.FC = () => {
                     <div className="p-3 bg-neon-cyan/10 border border-neon-cyan/20 rounded-lg mb-3">
                       <div className="flex items-center gap-2 text-neon-cyan text-sm">
                         <Clock size={14} />
-                        <span>Refund eligible for {subscription.daysUntilRefundExpires} more days</span>
+                        <span>
+                          Refund eligible for {subscription.daysUntilRefundExpires} more days
+                        </span>
                       </div>
                     </div>
                   )}
@@ -367,8 +399,8 @@ export const SettingsPage: React.FC = () => {
                   </Link>
 
                   {subscription.cancelAtPeriodEnd ? (
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       size="sm"
                       onClick={handleReactivate}
                       isLoading={isReactivating}
@@ -377,8 +409,8 @@ export const SettingsPage: React.FC = () => {
                       Reactivate
                     </Button>
                   ) : (
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowCancelModal(true)}
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
@@ -388,8 +420,8 @@ export const SettingsPage: React.FC = () => {
                   )}
 
                   {subscription.canRequestRefund && !subscription.hasPendingRefund && (
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowRefundModal(true)}
                       className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
@@ -432,11 +464,17 @@ export const SettingsPage: React.FC = () => {
               <div className="flex items-center justify-between py-3 border-b border-white/5">
                 <div>
                   <p className="text-white font-medium">Account Type</p>
-                  <p className="text-sm text-slate-400">{user.role === 'admin' ? 'Administrator' : 'Member'}</p>
+                  <p className="text-sm text-slate-400">
+                    {user.role === 'admin' ? 'Administrator' : 'Member'}
+                  </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  user.role === 'admin' ? 'bg-neon-purple/20 text-neon-purple' : 'bg-slate-800 text-slate-400'
-                }`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    user.role === 'admin'
+                      ? 'bg-neon-purple/20 text-neon-purple'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
                   {user.role}
                 </span>
               </div>
@@ -446,14 +484,20 @@ export const SettingsPage: React.FC = () => {
                   <p className="text-sm text-slate-400">View payment history and refund requests</p>
                 </div>
                 <Link to="/billing">
-                  <Button variant="outline" size="sm">View History</Button>
+                  <Button variant="outline" size="sm">
+                    View History
+                  </Button>
                 </Link>
               </div>
               <div className="flex items-center justify-between py-3">
                 <div>
                   <p className="text-white font-medium">Member Since</p>
                   <p className="text-sm text-slate-400">
-                    {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {new Date(user.createdAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
                   </p>
                 </div>
               </div>
@@ -473,7 +517,7 @@ export const SettingsPage: React.FC = () => {
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
           />
           <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md my-auto shadow-2xl"
@@ -485,10 +529,11 @@ export const SettingsPage: React.FC = () => {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white">Cancel Subscription</h3>
                 </div>
-                
+
                 <p className="text-slate-400 text-sm sm:text-base mb-4">
-                  Your subscription will remain active until {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}. 
-                  After that, you'll lose access to premium content.
+                  Your subscription will remain active until{' '}
+                  {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}. After that,
+                  you'll lose access to premium content.
                 </p>
 
                 <textarea
@@ -500,10 +545,14 @@ export const SettingsPage: React.FC = () => {
                 />
 
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button variant="ghost" onClick={() => setShowCancelModal(false)} className="flex-1 order-2 sm:order-1">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowCancelModal(false)}
+                    className="flex-1 order-2 sm:order-1"
+                  >
                     Keep Subscription
                   </Button>
-                  <Button 
+                  <Button
                     variant="danger"
                     onClick={() => handleCancelSubscription(false)}
                     isLoading={isCancelling}
@@ -529,7 +578,7 @@ export const SettingsPage: React.FC = () => {
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
           />
           <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md my-auto shadow-2xl"
@@ -541,10 +590,10 @@ export const SettingsPage: React.FC = () => {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white">Request Refund</h3>
                 </div>
-                
+
                 <p className="text-slate-400 text-sm sm:text-base mb-4">
-                  You're within the {subscription?.refundWindowDays}-day refund window. 
-                  Our team will review your request within 2-3 business days.
+                  You're within the {subscription?.refundWindowDays}-day refund window. Our team
+                  will review your request within 2-3 business days.
                 </p>
 
                 <div className="p-3 bg-slate-800/50 rounded-xl mb-4">
@@ -563,10 +612,14 @@ export const SettingsPage: React.FC = () => {
                 />
 
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button variant="ghost" onClick={() => setShowRefundModal(false)} className="flex-1 order-2 sm:order-1">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowRefundModal(false)}
+                    className="flex-1 order-2 sm:order-1"
+                  >
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleRequestRefund}
                     isLoading={isRequestingRefund}
                     className="flex-1 order-1 sm:order-2"

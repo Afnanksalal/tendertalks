@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Zap, Loader2, Download, Wifi, Headphones, ArrowUp, ArrowDown, Share2 } from 'lucide-react';
+import {
+  Check,
+  Star,
+  Zap,
+  Loader2,
+  Download,
+  Wifi,
+  Headphones,
+  ArrowUp,
+  ArrowDown,
+  Share2,
+} from 'lucide-react';
 import { useUserStore } from '../stores/userStore';
 import { useAuthStore } from '../stores/authStore';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -10,20 +21,28 @@ import toast from 'react-hot-toast';
 import { SEO } from '../components/SEO';
 
 export const PricingPage: React.FC = () => {
-  const { pricingPlans, fetchPricingPlans, subscription, hasActiveSubscription, fetchSubscription } = useUserStore();
-  const { user } = useAuthStore();
+  const {
+    pricingPlans,
+    fetchPricingPlans,
+    subscription,
+    hasActiveSubscription,
+    fetchSubscription,
+  } = useUserStore();
+  const { user, getAuthHeaders } = useAuthStore();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const handleSharePlan = async (plan: typeof pricingPlans[0]) => {
+  const handleSharePlan = async (plan: (typeof pricingPlans)[0]) => {
     const baseUrl = window.location.origin;
     const url = `${baseUrl}/pricing?plan=${plan.slug}`;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: `${plan.name} Plan | TenderTalks`,
-          text: plan.description || `Subscribe to ${plan.name} for ₹${parseFloat(plan.price)}/${plan.interval}`,
+          text:
+            plan.description ||
+            `Subscribe to ${plan.name} for ₹${parseFloat(plan.price)}/${plan.interval}`,
           url,
         });
       } catch (err) {
@@ -67,7 +86,7 @@ export const PricingPage: React.FC = () => {
     try {
       // Check if user has active subscription (upgrade/downgrade)
       if (hasActiveSubscription() && subscription) {
-        const result = await changeSubscription(user.id, planId);
+        const result = await changeSubscription(getAuthHeaders(), planId);
 
         if (!result.requiresPayment) {
           // Downgrade scheduled or upgrade with full credit
@@ -90,7 +109,7 @@ export const PricingPage: React.FC = () => {
           theme: { color: '#00F0FF' },
           handler: async (response) => {
             try {
-              await verifySubscription(user.id, {
+              await verifySubscription(getAuthHeaders(), {
                 ...response,
                 planId,
                 action: 'upgrade',
@@ -105,7 +124,7 @@ export const PricingPage: React.FC = () => {
         });
       } else {
         // New subscription
-        const result = await createSubscription(user.id, planId);
+        const result = await createSubscription(getAuthHeaders(), planId);
 
         if (result.isFree || result.success) {
           toast.success('Subscription activated!');
@@ -126,7 +145,7 @@ export const PricingPage: React.FC = () => {
           theme: { color: '#00F0FF' },
           handler: async (response) => {
             try {
-              await verifySubscription(user.id, {
+              await verifySubscription(getAuthHeaders(), {
                 ...response,
                 planId,
                 action: 'new',
@@ -147,15 +166,15 @@ export const PricingPage: React.FC = () => {
     }
   };
 
-  const getButtonState = (plan: typeof pricingPlans[0]) => {
+  const getButtonState = (plan: (typeof pricingPlans)[0]) => {
     const isCurrentPlan = subscription?.planId === plan.id;
     const planPrice = parseFloat(plan.price);
     const currentPrice = parseFloat(subscription?.plan?.price || '0');
-    
+
     if (isCurrentPlan) {
       return { text: 'Current Plan', disabled: true, icon: null, variant: 'current' };
     }
-    
+
     if (planPrice === 0) {
       return { text: 'Start Free', disabled: false, icon: null, variant: 'free' };
     }
@@ -173,7 +192,7 @@ export const PricingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] pt-28 md:pt-36 pb-20 px-4 relative overflow-hidden">
-      <SEO 
+      <SEO
         title="Pricing Plans"
         description="Choose your TenderTalks subscription plan. Get unlimited access to premium podcasts, downloads, and exclusive content."
         url="/pricing"
@@ -188,7 +207,7 @@ export const PricingPage: React.FC = () => {
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-16 md:mb-20">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl sm:text-5xl md:text-6xl font-display font-bold text-white mb-4 md:mb-6"
@@ -198,13 +217,14 @@ export const PricingPage: React.FC = () => {
               Full Access
             </span>
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="text-slate-400 max-w-xl mx-auto text-base md:text-lg"
           >
-            Join the inner circle. Get exclusive content, higher audio quality, and download for offline listening.
+            Join the inner circle. Get exclusive content, higher audio quality, and download for
+            offline listening.
           </motion.p>
         </div>
 
@@ -224,12 +244,13 @@ export const PricingPage: React.FC = () => {
                   )}
                   {subscription.pendingPlan && (
                     <span className="text-amber-400 ml-2">
-                      → Switching to {subscription.pendingPlan.name} on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                      → Switching to {subscription.pendingPlan.name} on{' '}
+                      {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                     </span>
                   )}
                 </p>
                 <p className="text-slate-400 text-sm mt-1">
-                  {subscription.daysRemaining} days remaining · 
+                  {subscription.daysRemaining} days remaining ·
                   {subscription.canRequestRefund && (
                     <span className="text-neon-cyan ml-1">
                       Refund eligible for {subscription.daysUntilRefundExpires} more days
@@ -237,8 +258,8 @@ export const PricingPage: React.FC = () => {
                   )}
                 </p>
               </div>
-              <a 
-                href="/settings" 
+              <a
+                href="/settings"
                 className="text-sm text-neon-cyan hover:underline whitespace-nowrap"
               >
                 Manage Subscription →
@@ -261,8 +282,8 @@ export const PricingPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 className={`relative flex flex-col p-6 md:p-8 rounded-2xl border transition-all duration-300 ${
-                  isRecommended 
-                    ? 'bg-slate-900/80 border-neon-cyan/50 shadow-[0_0_40px_rgba(0,240,255,0.1)] md:-translate-y-4' 
+                  isRecommended
+                    ? 'bg-slate-900/80 border-neon-cyan/50 shadow-[0_0_40px_rgba(0,240,255,0.1)] md:-translate-y-4'
                     : 'bg-slate-900/40 border-white/10 hover:border-white/20'
                 }`}
               >
@@ -297,12 +318,15 @@ export const PricingPage: React.FC = () => {
 
                 {/* Plan Header */}
                 <div className="mb-6 pt-2">
-                  <h3 className={`text-xl font-bold mb-3 ${isRecommended ? 'text-neon-cyan' : 'text-white'}`}>
+                  <h3
+                    className={`text-xl font-bold mb-3 ${isRecommended ? 'text-neon-cyan' : 'text-white'}`}
+                  >
                     {plan.name}
                   </h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl md:text-5xl font-display font-bold text-white">
-                      {plan.currency === 'INR' ? '₹' : '$'}{price.toFixed(0)}
+                      {plan.currency === 'INR' ? '₹' : '$'}
+                      {price.toFixed(0)}
                     </span>
                     <span className="text-slate-500 text-sm">/{plan.interval}</span>
                   </div>
@@ -315,9 +339,13 @@ export const PricingPage: React.FC = () => {
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features?.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                      <div className={`mt-0.5 p-1 rounded-full flex-shrink-0 ${
-                        isRecommended ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-slate-800 text-slate-400'
-                      }`}>
+                      <div
+                        className={`mt-0.5 p-1 rounded-full flex-shrink-0 ${
+                          isRecommended
+                            ? 'bg-neon-cyan/20 text-neon-cyan'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
                         <Check size={12} />
                       </div>
                       <span>{feature}</span>
@@ -351,10 +379,10 @@ export const PricingPage: React.FC = () => {
                     buttonState.variant === 'upgrade'
                       ? 'bg-neon-green text-black hover:bg-neon-green/90'
                       : buttonState.variant === 'downgrade'
-                      ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
-                      : isRecommended
-                      ? 'bg-neon-cyan text-black hover:bg-neon-cyan/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]'
-                      : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
+                        ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
+                        : isRecommended
+                          ? 'bg-neon-cyan text-black hover:bg-neon-cyan/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]'
+                          : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
                   }`}
                 >
                   {loadingPlan === plan.id ? (
@@ -381,7 +409,7 @@ export const PricingPage: React.FC = () => {
           <h2 className="text-2xl font-display font-bold text-white text-center mb-10">
             What's Included
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
