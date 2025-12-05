@@ -342,6 +342,10 @@ export const AdminOverview: React.FC = () => {
     return `${days}d ago`;
   };
 
+  const maxRevenue = React.useMemo(() => {
+    return Math.max(...(charts?.revenueByDay.map((d) => d.revenue) || [1]), 1);
+  }, [charts?.revenueByDay]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -349,8 +353,6 @@ export const AdminOverview: React.FC = () => {
       </div>
     );
   }
-
-  const maxRevenue = Math.max(...(charts?.revenueByDay.map((d) => d.revenue) || [1]), 1);
 
   return (
     <div>

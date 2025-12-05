@@ -114,24 +114,33 @@ export const PodcastEditor: React.FC = () => {
     }
   }, [isEditing, currentPodcast]);
 
-  const handleChange = (field: keyof PodcastFormData, value: string | number | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
-  };
+  const handleChange = React.useCallback(
+    (field: keyof PodcastFormData, value: string | number | boolean) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      setErrors((prev) => {
+        if (prev[field]) {
+          return { ...prev, [field]: '' };
+        }
+        return prev;
+      });
+    },
+    []
+  );
 
   // Handle media type change - clear media file if type changes
-  const handleMediaTypeChange = (type: 'audio' | 'video') => {
-    if (type !== formData.mediaType) {
-      setMediaFile(null);
-      handleChange('mediaUrl', '');
-      // Keep thumbnail when switching types - it's useful for both
-    }
-    handleChange('mediaType', type);
-  };
+  const handleMediaTypeChange = React.useCallback(
+    (type: 'audio' | 'video') => {
+      if (type !== formData.mediaType) {
+        setMediaFile(null);
+        handleChange('mediaUrl', '');
+        // Keep thumbnail when switching types - it's useful for both
+      }
+      handleChange('mediaType', type);
+    },
+    [formData.mediaType, handleChange]
+  );
 
-  const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailSelect = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -148,68 +157,10 @@ export const PodcastEditor: React.FC = () => {
 
     setThumbnailFile(file);
     setThumbnailPreview(URL.createObjectURL(file));
-  };
-
-  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isAudio = AUDIO_MIME_TYPES.includes(file.type);
-    const isVideo = VIDEO_MIME_TYPES.includes(file.type);
-
-    // Validate file type matches selected media type
-    if (formData.mediaType === 'audio' && !isAudio) {
-      toast.error('Please select a valid audio file (MP3, WAV, OGG, M4A, AAC, FLAC)');
-      return;
-    }
-
-    if (formData.mediaType === 'video' && !isVideo) {
-      toast.error('Please select a valid video file (MP4, WebM, MOV, AVI, MKV)');
-      return;
-    }
-
-    // File size limits
-    const maxSize = formData.mediaType === 'video' ? 500 : 100; // MB
-    if (file.size > maxSize * 1024 * 1024) {
-      toast.error(`File must be less than ${maxSize}MB`);
-      return;
-    }
-
-    setMediaFile(file);
-    if (errors.media) {
-      setErrors((prev) => ({ ...prev, media: '' }));
-    }
-
-    // Auto-extract duration from media file
-    extractDuration(file);
-  };
-
-  // Extract duration from audio/video file
-  const extractDuration = (file: File) => {
-    const url = URL.createObjectURL(file);
-    const media =
-      formData.mediaType === 'video'
-        ? document.createElement('video')
-        : document.createElement('audio');
-
-    media.preload = 'metadata';
-    media.onloadedmetadata = () => {
-      URL.revokeObjectURL(url);
-      const durationInSeconds = Math.round(media.duration);
-      if (durationInSeconds && !isNaN(durationInSeconds)) {
-        handleChange('duration', durationInSeconds);
-        toast.success(`Duration detected: ${formatDurationDisplay(durationInSeconds)}`);
-      }
-    };
-    media.onerror = () => {
-      URL.revokeObjectURL(url);
-      // Could not extract duration from file
-    };
-    media.src = url;
-  };
+  }, []);
 
   // Format duration for display
-  const formatDurationDisplay = (seconds: number) => {
+  const formatDurationDisplay = React.useCallback((seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
@@ -217,17 +168,82 @@ export const PodcastEditor: React.FC = () => {
       return `${hrs}h ${mins}m ${secs}s`;
     }
     return `${mins}m ${secs}s`;
-  };
+  }, []);
 
-  const clearThumbnail = () => {
+  // Extract duration from audio/video file
+  const extractDuration = React.useCallback(
+    (file: File) => {
+      const url = URL.createObjectURL(file);
+      const media =
+        formData.mediaType === 'video'
+          ? document.createElement('video')
+          : document.createElement('audio');
+
+      media.preload = 'metadata';
+      media.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        const durationInSeconds = Math.round(media.duration);
+        if (durationInSeconds && !isNaN(durationInSeconds)) {
+          handleChange('duration', durationInSeconds);
+          toast.success(`Duration detected: ${formatDurationDisplay(durationInSeconds)}`);
+        }
+      };
+      media.onerror = () => {
+        URL.revokeObjectURL(url);
+        // Could not extract duration from file
+      };
+      media.src = url;
+    },
+    [formData.mediaType, handleChange, formatDurationDisplay]
+  );
+
+  const handleMediaSelect = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const isAudio = AUDIO_MIME_TYPES.includes(file.type);
+      const isVideo = VIDEO_MIME_TYPES.includes(file.type);
+
+      // Validate file type matches selected media type
+      if (formData.mediaType === 'audio' && !isAudio) {
+        toast.error('Please select a valid audio file (MP3, WAV, OGG, M4A, AAC, FLAC)');
+        return;
+      }
+
+      if (formData.mediaType === 'video' && !isVideo) {
+        toast.error('Please select a valid video file (MP4, WebM, MOV, AVI, MKV)');
+        return;
+      }
+
+      // File size limits
+      const maxSize = formData.mediaType === 'video' ? 500 : 100; // MB
+      if (file.size > maxSize * 1024 * 1024) {
+        toast.error(`File must be less than ${maxSize}MB`);
+        return;
+      }
+
+      setMediaFile(file);
+      setErrors((prev) => {
+        if (prev.media) return { ...prev, media: '' };
+        return prev;
+      });
+
+      // Auto-extract duration from media file
+      extractDuration(file);
+    },
+    [formData.mediaType, extractDuration]
+  );
+
+  const clearThumbnail = React.useCallback(() => {
     setThumbnailFile(null);
     setThumbnailPreview('');
     handleChange('thumbnailUrl', '');
-  };
+  }, [handleChange]);
 
-  const clearMediaFile = () => {
+  const clearMediaFile = React.useCallback(() => {
     setMediaFile(null);
-  };
+  }, []);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};

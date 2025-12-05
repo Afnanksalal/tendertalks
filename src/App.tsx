@@ -24,9 +24,6 @@ import { DashboardPage } from './pages/Dashboard';
 import { StorePage } from './pages/Store';
 import { PlaylistsPage } from './pages/Playlists';
 import { PlaylistDetailPage } from './pages/PlaylistDetail';
-import { SettingsPage } from './pages/Settings';
-import { DownloadsPage } from './pages/Downloads';
-import { BillingPage } from './pages/Billing';
 import { AuthCallback } from './pages/AuthCallback';
 import { NotFoundPage } from './pages/NotFound';
 import { MaintenancePage } from './pages/Maintenance';
@@ -37,20 +34,51 @@ import { TermsOfServicePage } from './pages/legal/TermsOfService';
 import { RefundPolicyPage } from './pages/legal/RefundPolicy';
 
 // Admin pages
-import { AdminLayout, AdminOverview } from './pages/admin/AdminDashboard';
-import { PodcastManager } from './pages/admin/PodcastManager';
-import { PodcastEditor } from './pages/admin/PodcastEditor';
-import { PlaylistManager } from './pages/admin/PlaylistManager';
-import { PlaylistEditor } from './pages/admin/PlaylistEditor';
-import { BlogManager } from './pages/admin/BlogManager';
-import { UsersManager } from './pages/admin/UsersManager';
-import { PaymentsManager } from './pages/admin/PaymentsManager';
-import { RefundsManager } from './pages/admin/RefundsManager';
-import ProductsManager from './pages/admin/ProductsManager';
-import PlansManager from './pages/admin/PlansManager';
-import SettingsManager from './pages/admin/SettingsManager';
-import SubscriptionsManager from './pages/admin/SubscriptionsManager';
-import InvoicesManager from './pages/admin/InvoicesManager';
+// Admin pages (Lazy loaded)
+const AdminLayout = lazy(() =>
+  import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminLayout }))
+);
+const AdminOverview = lazy(() =>
+  import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminOverview }))
+);
+const PodcastManager = lazy(() =>
+  import('./pages/admin/PodcastManager').then((m) => ({ default: m.PodcastManager }))
+);
+const PodcastEditor = lazy(() =>
+  import('./pages/admin/PodcastEditor').then((m) => ({ default: m.PodcastEditor }))
+);
+const PlaylistManager = lazy(() =>
+  import('./pages/admin/PlaylistManager').then((m) => ({ default: m.PlaylistManager }))
+);
+const PlaylistEditor = lazy(() =>
+  import('./pages/admin/PlaylistEditor').then((m) => ({ default: m.PlaylistEditor }))
+);
+const BlogManager = lazy(() =>
+  import('./pages/admin/BlogManager').then((m) => ({ default: m.BlogManager }))
+);
+const UsersManager = lazy(() =>
+  import('./pages/admin/UsersManager').then((m) => ({ default: m.UsersManager }))
+);
+const PaymentsManager = lazy(() =>
+  import('./pages/admin/PaymentsManager').then((m) => ({ default: m.PaymentsManager }))
+);
+const RefundsManager = lazy(() =>
+  import('./pages/admin/RefundsManager').then((m) => ({ default: m.RefundsManager }))
+);
+const ProductsManager = lazy(() => import('./pages/admin/ProductsManager'));
+const PlansManager = lazy(() => import('./pages/admin/PlansManager'));
+const SettingsManager = lazy(() => import('./pages/admin/SettingsManager'));
+const SubscriptionsManager = lazy(() => import('./pages/admin/SubscriptionsManager'));
+const InvoicesManager = lazy(() => import('./pages/admin/InvoicesManager'));
+
+// Heavy user pages (Lazy loaded)
+const SettingsPage = lazy(() =>
+  import('./pages/Settings').then((m) => ({ default: m.SettingsPage }))
+);
+const DownloadsPage = lazy(() =>
+  import('./pages/Downloads').then((m) => ({ default: m.DownloadsPage }))
+);
+const BillingPage = lazy(() => import('./pages/Billing').then((m) => ({ default: m.BillingPage })));
 
 // Blog pages
 import { BlogPage } from './pages/Blog';
@@ -152,7 +180,9 @@ const AppContent: React.FC = () => {
           path="/settings"
           element={
             <ProtectedRoute>
-              <SettingsPage />
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
+              </Suspense>
             </ProtectedRoute>
           }
         />
@@ -161,7 +191,9 @@ const AppContent: React.FC = () => {
           element={
             <ProtectedRoute>
               <FeatureGuard feature="feature_subscriptions">
-                <BillingPage />
+                <Suspense fallback={<PageLoader />}>
+                  <BillingPage />
+                </Suspense>
               </FeatureGuard>
             </ProtectedRoute>
           }
@@ -171,7 +203,9 @@ const AppContent: React.FC = () => {
           element={
             <ProtectedRoute>
               <FeatureGuard feature="feature_downloads">
-                <DownloadsPage />
+                <Suspense fallback={<PageLoader />}>
+                  <DownloadsPage />
+                </Suspense>
               </FeatureGuard>
             </ProtectedRoute>
           }
@@ -181,18 +215,76 @@ const AppContent: React.FC = () => {
           path="/admin"
           element={
             <ProtectedRoute requireAdmin>
-              <AdminLayout />
+              <Suspense fallback={<PageLoader />}>
+                <AdminLayout />
+              </Suspense>
             </ProtectedRoute>
           }
         >
-          <Route index element={<AdminOverview />} />
-          <Route path="podcasts" element={<PodcastManager />} />
-          <Route path="podcasts/new" element={<PodcastEditor />} />
-          <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
-          <Route path="playlists" element={<PlaylistManager />} />
-          <Route path="playlists/new" element={<PlaylistEditor />} />
-          <Route path="playlists/:id/edit" element={<PlaylistEditor />} />
-          <Route path="blogs" element={<BlogManager />} />
+          <Route
+            index
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <AdminOverview />
+              </Suspense>
+            }
+          />
+          <Route
+            path="podcasts"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PodcastManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="podcasts/new"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PodcastEditor />
+              </Suspense>
+            }
+          />
+          <Route
+            path="podcasts/:id/edit"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PodcastEditor />
+              </Suspense>
+            }
+          />
+          <Route
+            path="playlists"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PlaylistManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="playlists/new"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PlaylistEditor />
+              </Suspense>
+            }
+          />
+          <Route
+            path="playlists/:id/edit"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PlaylistEditor />
+              </Suspense>
+            }
+          />
+          <Route
+            path="blogs"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <BlogManager />
+              </Suspense>
+            }
+          />
           <Route
             path="blogs/new"
             element={
@@ -209,14 +301,70 @@ const AppContent: React.FC = () => {
               </Suspense>
             }
           />
-          <Route path="users" element={<UsersManager />} />
-          <Route path="payments" element={<PaymentsManager />} />
-          <Route path="invoices" element={<InvoicesManager />} />
-          <Route path="refunds" element={<RefundsManager />} />
-          <Route path="products" element={<ProductsManager />} />
-          <Route path="plans" element={<PlansManager />} />
-          <Route path="subscriptions" element={<SubscriptionsManager />} />
-          <Route path="settings" element={<SettingsManager />} />
+          <Route
+            path="users"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <UsersManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="payments"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PaymentsManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="invoices"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <InvoicesManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="refunds"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <RefundsManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="products"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ProductsManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="plans"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PlansManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="subscriptions"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <SubscriptionsManager />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <SettingsManager />
+              </Suspense>
+            }
+          />
         </Route>
 
         {/* 404 Catch-all */}

@@ -4,7 +4,10 @@
   "framework": "vite",
   "regions": ["bom1"],
   "rewrites": [
-    { "source": "/api/admin/podcasts/:id/publish", "destination": "/api/admin/podcasts/[id]/publish" },
+    {
+      "source": "/api/admin/podcasts/:id/publish",
+      "destination": "/api/admin/podcasts/[id]/publish"
+    },
     { "source": "/api/admin/podcasts/:id", "destination": "/api/admin/podcasts/[id]" },
     { "source": "/api/admin/blogs/:id/publish", "destination": "/api/admin/blogs/[id]/publish" },
     { "source": "/api/admin/blogs/:id", "destination": "/api/admin/blogs/[id]" },
@@ -17,23 +20,40 @@
     { "source": "/api/blogs/:slug/metadata", "destination": "/api/blogs/[slug]/metadata" },
     { "source": "/api/blogs/:slug", "destination": "/api/blogs/[slug]" },
     { "source": "/api/merch/:slug/metadata", "destination": "/api/merch/[slug]/metadata" },
-    { "source": "/api/pricing-plans/:slug/metadata", "destination": "/api/pricing-plans/[slug]/metadata" },
+    {
+      "source": "/api/pricing-plans/:slug/metadata",
+      "destination": "/api/pricing-plans/[slug]/metadata"
+    },
     { "source": "/api/rss", "destination": "/api/rss" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    },
+    {
+      "source": "/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    },
     {
       "source": "/api/og-image",
       "headers": [
         { "key": "Content-Type", "value": "image/png" },
-        { "key": "Cache-Control", "value": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800"
+        }
       ]
     },
     {
       "source": "/api/rss",
       "headers": [
         { "key": "Content-Type", "value": "application/rss+xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400"
+        }
       ]
     },
     {
@@ -42,7 +62,10 @@
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-User-Id, Authorization" },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-User-Id, Authorization"
+        },
         { "key": "Cache-Control", "value": "no-store, max-age=0" }
       ]
     },
@@ -58,15 +81,11 @@
     },
     {
       "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
       "source": "/(favicon\\.svg|og-image\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.json)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
     }
   ]
 }
