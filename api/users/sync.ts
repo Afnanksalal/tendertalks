@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -10,7 +11,10 @@ const db = drizzle(sql_client, { schema });
 function sanitizeString(str: string | null | undefined, maxLength: number = 255): string | null {
   if (!str) return null;
   // Remove any potential XSS vectors and limit length
-  return str.trim().slice(0, maxLength).replace(/<[^>]*>/g, '');
+  return str
+    .trim()
+    .slice(0, maxLength)
+    .replace(/<[^>]*>/g, '');
 }
 
 // Email validation
@@ -41,6 +45,8 @@ export default async function handler(req: Request) {
   }
 
   try {
+    const authUser = await verifyAuth(req);
+
     // Limit request body size
     const contentLength = req.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > 10000) {
@@ -52,6 +58,13 @@ export default async function handler(req: Request) {
 
     const body = await req.json();
     const { id, email, name, avatarUrl } = body;
+
+    if (id !== authUser.id) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: ID mismatch' }), {
+        status: 403,
+        headers,
+      });
+    }
 
     if (!id) {
       return new Response(JSON.stringify({ error: 'User ID is required' }), {
@@ -87,11 +100,7 @@ export default async function handler(req: Request) {
     const sanitizedName = sanitizeString(name, 100);
     const sanitizedAvatarUrl = sanitizeString(avatarUrl, 500);
 
-    const existing = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.id, id))
-      .limit(1);
+    const existing = await db.select().from(schema.users).where(eq(schema.users.id, id)).limit(1);
 
     let user: schema.User;
 
@@ -130,18 +139,15 @@ export default async function handler(req: Request) {
   } catch (error) {
     console.error('Error syncing user:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-    
+
     if (errorMessage.includes('unique') || errorMessage.includes('duplicate')) {
-      return new Response(
-        JSON.stringify({ error: 'A user with this email already exists' }),
-        { status: 409, headers }
-      );
+      return new Response(JSON.stringify({ error: 'A user with this email already exists' }), {
+        status: 409,
+        headers,
+      });
     }
-    
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers }
-    );
+
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 500, headers });
   }
 }
 

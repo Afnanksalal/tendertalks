@@ -6,6 +6,7 @@ import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FeatureGuard } from './components/FeatureGuard';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Loader2 } from 'lucide-react';
 
 // Layout
@@ -51,8 +52,12 @@ import InvoicesManager from './pages/admin/InvoicesManager';
 import { BlogPage } from './pages/Blog';
 
 // Lazy loaded components (heavy dependencies)
-const BlogEditor = lazy(() => import('./pages/admin/BlogEditor').then(m => ({ default: m.BlogEditor })));
-const BlogDetailPage = lazy(() => import('./pages/BlogDetail').then(m => ({ default: m.BlogDetailPage })));
+const BlogEditor = lazy(() =>
+  import('./pages/admin/BlogEditor').then((m) => ({ default: m.BlogEditor }))
+);
+const BlogDetailPage = lazy(() =>
+  import('./pages/BlogDetail').then((m) => ({ default: m.BlogDetailPage }))
+);
 
 // Loading fallback
 const PageLoader = () => (
@@ -84,34 +89,117 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-[#030014] text-white">
       <CustomCursor />
       <Navbar />
-      
+
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/browse" element={<BrowsePage />} />
         <Route path="/podcast/:slug" element={<PodcastDetailPage />} />
-        <Route path="/pricing" element={<FeatureGuard feature="feature_subscriptions"><PricingPage /></FeatureGuard>} />
-        <Route path="/store" element={<FeatureGuard feature="feature_merch"><StorePage /></FeatureGuard>} />
-        <Route path="/blog" element={<FeatureGuard feature="feature_blog"><BlogPage /></FeatureGuard>} />
-        <Route path="/blog/:slug" element={<FeatureGuard feature="feature_blog"><Suspense fallback={<PageLoader />}><BlogDetailPage /></Suspense></FeatureGuard>} />
+        <Route
+          path="/pricing"
+          element={
+            <FeatureGuard feature="feature_subscriptions">
+              <PricingPage />
+            </FeatureGuard>
+          }
+        />
+        <Route
+          path="/store"
+          element={
+            <FeatureGuard feature="feature_merch">
+              <StorePage />
+            </FeatureGuard>
+          }
+        />
+        <Route
+          path="/blog"
+          element={
+            <FeatureGuard feature="feature_blog">
+              <BlogPage />
+            </FeatureGuard>
+          }
+        />
+        <Route
+          path="/blog/:slug"
+          element={
+            <FeatureGuard feature="feature_blog">
+              <Suspense fallback={<PageLoader />}>
+                <BlogDetailPage />
+              </Suspense>
+            </FeatureGuard>
+          }
+        />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        
+
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/refund-policy" element={<RefundPolicyPage />} />
-        
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/billing" element={<FeatureGuard feature="feature_subscriptions"><BillingPage /></FeatureGuard>} />
-        <Route path="/downloads" element={<FeatureGuard feature="feature_downloads"><DownloadsPage /></FeatureGuard>} />
-        
-        <Route path="/admin" element={<AdminLayout />}>
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/billing"
+          element={
+            <ProtectedRoute>
+              <FeatureGuard feature="feature_subscriptions">
+                <BillingPage />
+              </FeatureGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/downloads"
+          element={
+            <ProtectedRoute>
+              <FeatureGuard feature="feature_downloads">
+                <DownloadsPage />
+              </FeatureGuard>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<AdminOverview />} />
           <Route path="podcasts" element={<PodcastManager />} />
           <Route path="podcasts/new" element={<PodcastEditor />} />
           <Route path="podcasts/:id/edit" element={<PodcastEditor />} />
           <Route path="blogs" element={<BlogManager />} />
-          <Route path="blogs/new" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
-          <Route path="blogs/:id/edit" element={<Suspense fallback={<PageLoader />}><BlogEditor /></Suspense>} />
+          <Route
+            path="blogs/new"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <BlogEditor />
+              </Suspense>
+            }
+          />
+          <Route
+            path="blogs/:id/edit"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <BlogEditor />
+              </Suspense>
+            }
+          />
           <Route path="users" element={<UsersManager />} />
           <Route path="payments" element={<PaymentsManager />} />
           <Route path="invoices" element={<InvoicesManager />} />
@@ -128,7 +216,7 @@ const AppContent: React.FC = () => {
 
       <Footer />
       <CartDrawer />
-      
+
       <Toaster
         position="bottom-right"
         toastOptions={{
@@ -158,7 +246,7 @@ function App() {
     if (loader) {
       loader.remove();
     }
-    
+
     // Initialize auth and fetch settings
     initialize();
     fetchSettings();
@@ -174,7 +262,7 @@ function App() {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

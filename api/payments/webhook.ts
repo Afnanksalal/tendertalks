@@ -15,10 +15,17 @@ async function verifyWebhookSignature(body: string, signature: string): Promise<
     const data = encoder.encode(body);
     const key = encoder.encode(RAZORPAY_WEBHOOK_SECRET);
 
-    const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      key,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
     const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, data);
     const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
-      .map((b) => b.toString(16).padStart(2, '0')).join('');
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
 
     return expectedSignature === signature;
   } catch (error) {
@@ -30,7 +37,8 @@ async function verifyWebhookSignature(body: string, signature: string): Promise<
 // Helper to safely update payment history
 async function updatePaymentHistory(orderId: string, data: Record<string, unknown>) {
   try {
-    await db.update(schema.paymentHistory)
+    await db
+      .update(schema.paymentHistory)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(schema.paymentHistory.razorpayOrderId, orderId));
   } catch (e) {
@@ -40,7 +48,7 @@ async function updatePaymentHistory(orderId: string, data: Record<string, unknow
 
 // Log webhook event for debugging
 async function logWebhookEvent(eventType: string, payload: unknown, status: string) {
-  console.log(`[Webhook] ${eventType} - ${status}`, JSON.stringify(payload).slice(0, 500));
+  console.warn(`[Webhook] ${eventType} - ${status}`, JSON.stringify(payload).slice(0, 500));
 }
 
 export default async function handler(req: Request) {
@@ -69,14 +77,13 @@ export default async function handler(req: Request) {
     await logWebhookEvent(eventType, payload, 'received');
 
     switch (eventType) {
-
       // ============================================
       // PAYMENT EVENTS
       // ============================================
       case 'payment.authorized': {
         const payment = payload.payment.entity;
         const orderId = payment.order_id;
-        
+
         await updatePaymentHistory(orderId, {
           status: 'authorized',
           razorpayPaymentId: payment.id,
@@ -86,7 +93,9 @@ export default async function handler(req: Request) {
             bank: payment.bank,
             wallet: payment.wallet,
             vpa: payment.vpa,
-            card: payment.card ? { last4: payment.card.last4, network: payment.card.network } : null,
+            card: payment.card
+              ? { last4: payment.card.last4, network: payment.card.network }
+              : null,
           }),
         });
         break;
@@ -111,12 +120,14 @@ export default async function handler(req: Request) {
         });
 
         // Update purchase if exists
-        await db.update(schema.purchases)
+        await db
+          .update(schema.purchases)
           .set({ status: 'completed', razorpayPaymentId: paymentId, updatedAt: now })
           .where(eq(schema.purchases.razorpayOrderId, orderId));
 
         // Update merch order if exists
-        await db.update(schema.merchOrders)
+        await db
+          .update(schema.merchOrders)
           .set({ status: 'paid', razorpayPaymentId: paymentId, updatedAt: now })
           .where(eq(schema.merchOrders.razorpayOrderId, orderId));
 
@@ -139,7 +150,8 @@ export default async function handler(req: Request) {
           }),
         });
 
-        await db.update(schema.purchases)
+        await db
+          .update(schema.purchases)
           .set({ status: 'failed', updatedAt: now })
           .where(eq(schema.purchases.razorpayOrderId, orderId));
 
@@ -156,14 +168,16 @@ export default async function handler(req: Request) {
         const amount = refund.amount / 100;
 
         // Find payment record
-        const [paymentRecord] = await db.select()
+        const [paymentRecord] = await db
+          .select()
           .from(schema.paymentHistory)
           .where(eq(schema.paymentHistory.razorpayPaymentId, paymentId))
           .limit(1);
 
         if (paymentRecord) {
           // Check if refund request exists, if not create one
-          const [existingRefund] = await db.select()
+          const [existingRefund] = await db
+            .select()
             .from(schema.refundRequests)
             .where(eq(schema.refundRequests.razorpayRefundId, refundId))
             .limit(1);
@@ -190,12 +204,14 @@ export default async function handler(req: Request) {
         const amount = refund.amount / 100;
 
         // Update refund request
-        await db.update(schema.refundRequests)
+        await db
+          .update(schema.refundRequests)
           .set({ status: 'processed', processedAt: now, updatedAt: now })
           .where(eq(schema.refundRequests.razorpayRefundId, refundId));
 
         // Update payment history
-        const [paymentRecord] = await db.select()
+        const [paymentRecord] = await db
+          .select()
           .from(schema.paymentHistory)
           .where(eq(schema.paymentHistory.razorpayPaymentId, paymentId))
           .limit(1);
@@ -213,13 +229,15 @@ export default async function handler(req: Request) {
 
           // Update related records
           if (paymentRecord.refType === 'purchase' && paymentRecord.refId) {
-            await db.update(schema.purchases)
+            await db
+              .update(schema.purchases)
               .set({ status: 'refunded', updatedAt: now })
               .where(eq(schema.purchases.id, paymentRecord.refId));
           }
 
           if (paymentRecord.refType === 'subscription' && paymentRecord.refId) {
-            await db.update(schema.subscriptions)
+            await db
+              .update(schema.subscriptions)
               .set({ status: 'cancelled', cancelledAt: now, updatedAt: now })
               .where(eq(schema.subscriptions.id, paymentRecord.refId));
           }
@@ -231,11 +249,12 @@ export default async function handler(req: Request) {
         const refund = payload.refund.entity;
         const refundId = refund.id;
 
-        await db.update(schema.refundRequests)
-          .set({ 
-            status: 'rejected', 
+        await db
+          .update(schema.refundRequests)
+          .set({
+            status: 'rejected',
             adminNotes: `Refund failed: ${refund.error?.description || 'Unknown error'}`,
-            updatedAt: now 
+            updatedAt: now,
           })
           .where(eq(schema.refundRequests.razorpayRefundId, refundId));
         break;
@@ -245,15 +264,15 @@ export default async function handler(req: Request) {
         const refund = payload.refund.entity;
         const refundId = refund.id;
 
-        await db.update(schema.refundRequests)
-          .set({ 
+        await db
+          .update(schema.refundRequests)
+          .set({
             adminNotes: `Refund speed changed to: ${refund.speed}`,
-            updatedAt: now 
+            updatedAt: now,
           })
           .where(eq(schema.refundRequests.razorpayRefundId, refundId));
         break;
       }
-
 
       // ============================================
       // ORDER EVENTS
@@ -277,18 +296,20 @@ export default async function handler(req: Request) {
         const razorpaySubId = subscription.id;
 
         // Find subscription by razorpay ID
-        const [sub] = await db.select()
+        const [sub] = await db
+          .select()
           .from(schema.subscriptions)
           .where(eq(schema.subscriptions.razorpaySubscriptionId, razorpaySubId))
           .limit(1);
 
         if (sub) {
           const periodEnd = new Date(subscription.current_end * 1000);
-          await db.update(schema.subscriptions)
-            .set({ 
-              status: 'active', 
+          await db
+            .update(schema.subscriptions)
+            .set({
+              status: 'active',
               currentPeriodEnd: periodEnd,
-              updatedAt: now 
+              updatedAt: now,
             })
             .where(eq(schema.subscriptions.id, sub.id));
         }
@@ -297,7 +318,7 @@ export default async function handler(req: Request) {
 
       case 'subscription.authenticated': {
         const subscription = payload.subscription.entity;
-        console.log('Subscription authenticated:', subscription.id);
+        console.warn('Subscription authenticated:', subscription.id);
         break;
       }
 
@@ -306,7 +327,8 @@ export default async function handler(req: Request) {
         const razorpaySubId = subscription.id;
         const paymentId = subscription.payment_id;
 
-        const [sub] = await db.select()
+        const [sub] = await db
+          .select()
           .from(schema.subscriptions)
           .where(eq(schema.subscriptions.razorpaySubscriptionId, razorpaySubId))
           .limit(1);
@@ -315,12 +337,14 @@ export default async function handler(req: Request) {
           const periodStart = new Date(subscription.current_start * 1000);
           const periodEnd = new Date(subscription.current_end * 1000);
 
-          await db.update(schema.subscriptions)
+          await db
+            .update(schema.subscriptions)
             .set({
               status: 'active',
               razorpayPaymentId: paymentId,
               currentPeriodStart: periodStart,
               currentPeriodEnd: periodEnd,
+              cancelAtPeriodEnd: false,
               updatedAt: now,
             })
             .where(eq(schema.subscriptions.id, sub.id));
@@ -349,8 +373,9 @@ export default async function handler(req: Request) {
         const subscription = payload.subscription.entity;
         const razorpaySubId = subscription.id;
 
-        await db.update(schema.subscriptions)
-          .set({ status: 'pending_downgrade', updatedAt: now })
+        await db
+          .update(schema.subscriptions)
+          .set({ status: 'paused', updatedAt: now })
           .where(eq(schema.subscriptions.razorpaySubscriptionId, razorpaySubId));
         break;
       }
@@ -359,7 +384,8 @@ export default async function handler(req: Request) {
         const subscription = payload.subscription.entity;
         const razorpaySubId = subscription.id;
 
-        await db.update(schema.subscriptions)
+        await db
+          .update(schema.subscriptions)
           .set({ status: 'paused', updatedAt: now })
           .where(eq(schema.subscriptions.razorpaySubscriptionId, razorpaySubId));
         break;
@@ -369,7 +395,8 @@ export default async function handler(req: Request) {
         const subscription = payload.subscription.entity;
         const razorpaySubId = subscription.id;
 
-        await db.update(schema.subscriptions)
+        await db
+          .update(schema.subscriptions)
           .set({ status: 'cancelled', cancelledAt: now, updatedAt: now })
           .where(eq(schema.subscriptions.razorpaySubscriptionId, razorpaySubId));
         break;
@@ -379,7 +406,8 @@ export default async function handler(req: Request) {
         const subscription = payload.subscription.entity;
         const razorpaySubId = subscription.id;
 
-        await db.update(schema.subscriptions)
+        await db
+          .update(schema.subscriptions)
           .set({ status: 'expired', updatedAt: now })
           .where(eq(schema.subscriptions.razorpaySubscriptionId, razorpaySubId));
         break;
@@ -389,13 +417,15 @@ export default async function handler(req: Request) {
         const subscription = payload.subscription.entity;
         const razorpaySubId = subscription.id;
 
-        const [sub] = await db.select()
+        const [sub] = await db
+          .select()
           .from(schema.subscriptions)
           .where(eq(schema.subscriptions.razorpaySubscriptionId, razorpaySubId))
           .limit(1);
 
         if (sub) {
-          await db.update(schema.subscriptions)
+          await db
+            .update(schema.subscriptions)
             .set({
               currentPeriodEnd: new Date(subscription.current_end * 1000),
               updatedAt: now,
@@ -404,7 +434,6 @@ export default async function handler(req: Request) {
         }
         break;
       }
-
 
       // ============================================
       // INVOICE EVENTS
@@ -415,7 +444,8 @@ export default async function handler(req: Request) {
         const paymentId = invoice.payment_id;
 
         if (subscriptionId) {
-          const [sub] = await db.select()
+          const [sub] = await db
+            .select()
             .from(schema.subscriptions)
             .where(eq(schema.subscriptions.razorpaySubscriptionId, subscriptionId))
             .limit(1);
@@ -445,7 +475,7 @@ export default async function handler(req: Request) {
 
       case 'invoice.partially_paid': {
         const invoice = payload.invoice.entity;
-        console.log('Invoice partially paid:', invoice.id, invoice.amount_paid);
+        console.warn('Invoice partially paid:', invoice.id, invoice.amount_paid);
         break;
       }
 
@@ -455,7 +485,8 @@ export default async function handler(req: Request) {
 
         if (subscriptionId) {
           // Mark subscription as paused due to payment failure
-          await db.update(schema.subscriptions)
+          await db
+            .update(schema.subscriptions)
             .set({ status: 'paused', updatedAt: now })
             .where(eq(schema.subscriptions.razorpaySubscriptionId, subscriptionId));
         }
@@ -467,25 +498,25 @@ export default async function handler(req: Request) {
       // ============================================
       case 'payment_link.paid': {
         const paymentLink = payload.payment_link.entity;
-        console.log('Payment link paid:', paymentLink.id, paymentLink.amount);
+        console.warn('Payment link paid:', paymentLink.id, paymentLink.amount);
         break;
       }
 
       case 'payment_link.partially_paid': {
         const paymentLink = payload.payment_link.entity;
-        console.log('Payment link partially paid:', paymentLink.id);
+        console.warn('Payment link partially paid:', paymentLink.id);
         break;
       }
 
       case 'payment_link.expired': {
         const paymentLink = payload.payment_link.entity;
-        console.log('Payment link expired:', paymentLink.id);
+        console.warn('Payment link expired:', paymentLink.id);
         break;
       }
 
       case 'payment_link.cancelled': {
         const paymentLink = payload.payment_link.entity;
-        console.log('Payment link cancelled:', paymentLink.id);
+        console.warn('Payment link cancelled:', paymentLink.id);
         break;
       }
 
@@ -494,13 +525,13 @@ export default async function handler(req: Request) {
       // ============================================
       case 'transfer.processed': {
         const transfer = payload.transfer.entity;
-        console.log('Transfer processed:', transfer.id, transfer.amount);
+        console.warn('Transfer processed:', transfer.id, transfer.amount);
         break;
       }
 
       case 'transfer.failed': {
         const transfer = payload.transfer.entity;
-        console.log('Transfer failed:', transfer.id, transfer.error?.description);
+        console.warn('Transfer failed:', transfer.id, transfer.error?.description);
         break;
       }
 
@@ -509,7 +540,7 @@ export default async function handler(req: Request) {
       // ============================================
       case 'settlement.processed': {
         const settlement = payload.settlement.entity;
-        console.log('Settlement processed:', settlement.id, settlement.amount);
+        console.warn('Settlement processed:', settlement.id, settlement.amount);
         break;
       }
 
@@ -518,34 +549,36 @@ export default async function handler(req: Request) {
       // ============================================
       case 'payment.dispute.created': {
         const dispute = payload.dispute?.entity || payload.payment?.entity;
-        console.log('Dispute created:', dispute?.id);
+        console.warn('Dispute created:', dispute?.id);
         // TODO: Notify admin about dispute
         break;
       }
 
       case 'payment.dispute.won': {
         const dispute = payload.dispute?.entity;
-        console.log('Dispute won:', dispute?.id);
+        console.warn('Dispute won:', dispute?.id);
         break;
       }
 
       case 'payment.dispute.lost': {
         const dispute = payload.dispute?.entity;
-        console.log('Dispute lost:', dispute?.id);
+        console.warn('Dispute lost:', dispute?.id);
         // TODO: Handle lost dispute - may need to update records
         break;
       }
 
       default:
-        console.log('Unhandled webhook event:', eventType);
+        console.warn('Unhandled webhook event:', eventType);
     }
 
     await logWebhookEvent(eventType, payload, 'processed');
     return new Response(JSON.stringify({ received: true }), { status: 200, headers });
-
   } catch (error) {
     console.error('Webhook processing error:', error);
-    return new Response(JSON.stringify({ received: true, error: 'Processing error logged' }), { status: 200, headers });
+    return new Response(JSON.stringify({ received: true, error: 'Processing error logged' }), {
+      status: 200,
+      headers,
+    });
   }
 }
 
