@@ -21,7 +21,7 @@ interface Payment {
 }
 
 export const PaymentsManager: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, getAuthHeaders } = useAuthStore();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -39,7 +39,7 @@ export const PaymentsManager: React.FC = () => {
       if (filter !== 'all') params.set('type', filter);
 
       const response = await fetch(`/api/admin/payments?${params}`, {
-        headers: { 'X-User-Id': user!.id },
+        headers: getAuthHeaders(),
       });
       if (response.ok) {
         const data = await response.json();
@@ -68,15 +68,19 @@ export const PaymentsManager: React.FC = () => {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'purchase': return 'Podcast Purchase';
-      case 'subscription': return 'Subscription';
-      case 'merch': return 'Merch Order';
-      default: return type;
+      case 'purchase':
+        return 'Podcast Purchase';
+      case 'subscription':
+        return 'Subscription';
+      case 'merch':
+        return 'Merch Order';
+      default:
+        return type;
     }
   };
 
   const totalRevenue = payments
-    .filter(p => ['completed', 'paid', 'active'].includes(p.status))
+    .filter((p) => ['completed', 'paid', 'active'].includes(p.status))
     .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
 
   return (
@@ -85,7 +89,8 @@ export const PaymentsManager: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-display font-bold text-white">Payments</h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
-            Total: <span className="text-neon-green font-mono">₹{totalRevenue.toLocaleString()}</span>
+            Total:{' '}
+            <span className="text-neon-green font-mono">₹{totalRevenue.toLocaleString()}</span>
           </p>
         </div>
       </div>

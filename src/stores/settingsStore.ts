@@ -5,6 +5,7 @@ interface FeatureSettings {
   feature_merch: boolean;
   feature_subscriptions: boolean;
   feature_downloads: boolean;
+  feature_playlists: boolean;
   feature_newsletter: boolean;
   site_name: string;
   site_tagline: string;
@@ -24,6 +25,7 @@ const defaultSettings: FeatureSettings = {
   feature_merch: true,
   feature_subscriptions: true,
   feature_downloads: true,
+  feature_playlists: true,
   feature_newsletter: true,
   site_name: 'TenderTalks',
   site_tagline: 'AI, Tech & Human Connection',
@@ -37,7 +39,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   fetchSettings: async () => {
     if (get().isLoaded) return;
-    
+
     set({ isLoading: true });
     try {
       const res = await fetch('/api/settings');
@@ -49,6 +51,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             feature_merch: data.feature_merch === 'true',
             feature_subscriptions: data.feature_subscriptions === 'true',
             feature_downloads: data.feature_downloads === 'true',
+            feature_playlists: data.feature_playlists === 'true',
             feature_newsletter: data.feature_newsletter === 'true',
             site_name: data.site_name || 'TenderTalks',
             site_tagline: data.site_tagline || 'AI, Tech & Human Connection',
@@ -77,6 +80,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             feature_merch: data.feature_merch === 'true',
             feature_subscriptions: data.feature_subscriptions === 'true',
             feature_downloads: data.feature_downloads === 'true',
+            feature_playlists: data.feature_playlists === 'true',
             feature_newsletter: data.feature_newsletter === 'true',
             site_name: data.site_name || 'TenderTalks',
             site_tagline: data.site_tagline || 'AI, Tech & Human Connection',

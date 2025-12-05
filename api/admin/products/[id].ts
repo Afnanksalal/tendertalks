@@ -19,16 +19,20 @@ export default async function handler(req: Request) {
     return new Response(null, { status: 204, headers });
   }
 
+  let userId: string;
   try {
-    const user = await verifyAuth(req);
-    if (user.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
-        status: 403,
-        headers,
-      });
-    }
+    const authUser = await verifyAuth(req);
+    userId = authUser.id;
   } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+  }
+
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+  if (!user || user.role !== 'admin') {
+    return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      status: 403,
+      headers,
+    });
   }
 
   const url = new URL(req.url);

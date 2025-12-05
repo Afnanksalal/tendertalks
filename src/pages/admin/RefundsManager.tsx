@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  CreditCard, Loader2, CheckCircle, XCircle, Clock, 
-  AlertTriangle, DollarSign, User, Calendar
+import {
+  CreditCard,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  DollarSign,
+  User,
+  Calendar,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
@@ -31,7 +38,7 @@ interface RefundRequest {
 }
 
 export const RefundsManager: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, getAuthHeaders } = useAuthStore();
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -53,7 +60,7 @@ export const RefundsManager: React.FC = () => {
       if (filter !== 'all') params.set('status', filter);
 
       const response = await fetch(`/api/admin/refunds?${params}`, {
-        headers: { 'X-User-Id': user!.id },
+        headers: getAuthHeaders(),
       });
       if (response.ok) {
         const data = await response.json();
@@ -66,25 +73,30 @@ export const RefundsManager: React.FC = () => {
     }
   };
 
-  const handleAction = async (refundId: string, action: string, notes?: string, razorpayId?: string) => {
+  const handleAction = async (
+    refundId: string,
+    action: string,
+    notes?: string,
+    razorpayId?: string
+  ) => {
     setProcessingId(refundId);
     try {
       const response = await fetch('/api/admin/refunds', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': user!.id 
+          ...getAuthHeaders(),
         },
-        body: JSON.stringify({ 
-          refundId, 
-          action, 
+        body: JSON.stringify({
+          refundId,
+          action,
           adminNotes: notes || adminNotes,
           razorpayRefundId: razorpayId || razorpayRefundId,
         }),
       });
 
       const result = await response.json();
-      
+
       if (response.ok) {
         toast.success(result.message);
         setSelectedRefund(null);
@@ -116,16 +128,20 @@ export const RefundsManager: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'processed': return <CheckCircle size={16} className="text-neon-green" />;
-      case 'rejected': return <XCircle size={16} className="text-red-400" />;
-      case 'approved': return <AlertTriangle size={16} className="text-blue-400" />;
-      default: return <Clock size={16} className="text-amber-400" />;
+      case 'processed':
+        return <CheckCircle size={16} className="text-neon-green" />;
+      case 'rejected':
+        return <XCircle size={16} className="text-red-400" />;
+      case 'approved':
+        return <AlertTriangle size={16} className="text-blue-400" />;
+      default:
+        return <Clock size={16} className="text-amber-400" />;
     }
   };
 
-  const pendingCount = refunds.filter(r => r.refund.status === 'pending').length;
+  const pendingCount = refunds.filter((r) => r.refund.status === 'pending').length;
   const totalRefunded = refunds
-    .filter(r => r.refund.status === 'processed')
+    .filter((r) => r.refund.status === 'processed')
     .reduce((sum, r) => sum + parseFloat(r.refund.amount || '0'), 0);
 
   return (
@@ -138,7 +154,8 @@ export const RefundsManager: React.FC = () => {
               Pending: <span className="text-amber-400 font-mono">{pendingCount}</span>
             </p>
             <p className="text-slate-400 text-xs sm:text-sm">
-              Refunded: <span className="text-neon-green font-mono">₹{totalRefunded.toLocaleString()}</span>
+              Refunded:{' '}
+              <span className="text-neon-green font-mono">₹{totalRefunded.toLocaleString()}</span>
             </p>
           </div>
         </div>
@@ -198,7 +215,9 @@ export const RefundsManager: React.FC = () => {
                         <span className="text-white text-sm sm:text-base font-medium truncate">
                           {item.user?.name || item.user?.email || 'Unknown User'}
                         </span>
-                        <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold ${getStatusBadge(item.refund.status)}`}>
+                        <span
+                          className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold ${getStatusBadge(item.refund.status)}`}
+                        >
                           {item.refund.status}
                         </span>
                       </div>
@@ -206,7 +225,9 @@ export const RefundsManager: React.FC = () => {
                         {item.refund.subscriptionId ? 'Subscription Refund' : 'Purchase Refund'}
                       </p>
                       {item.refund.reason && (
-                        <p className="text-slate-400 text-xs sm:text-sm mt-1.5 sm:mt-2 italic line-clamp-2">"{item.refund.reason}"</p>
+                        <p className="text-slate-400 text-xs sm:text-sm mt-1.5 sm:mt-2 italic line-clamp-2">
+                          "{item.refund.reason}"
+                        </p>
                       )}
                     </div>
                   </div>
@@ -225,11 +246,15 @@ export const RefundsManager: React.FC = () => {
                       <Calendar size={10} className="sm:hidden" />
                       <Calendar size={12} className="hidden sm:block" />
                       {new Date(item.refund.createdAt).toLocaleDateString('en-IN', {
-                        day: 'numeric', month: 'short', year: 'numeric'
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
                       })}
                     </span>
                     {item.refund.razorpayRefundId && (
-                      <span className="font-mono truncate max-w-[100px] sm:max-w-none">{item.refund.razorpayRefundId}</span>
+                      <span className="font-mono truncate max-w-[100px] sm:max-w-none">
+                        {item.refund.razorpayRefundId}
+                      </span>
                     )}
                   </div>
 
@@ -276,7 +301,9 @@ export const RefundsManager: React.FC = () => {
 
               {item.refund.adminNotes && (
                 <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-slate-800/50 rounded-lg">
-                  <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">Admin Notes</p>
+                  <p className="text-[10px] sm:text-xs text-slate-500 mb-0.5 sm:mb-1">
+                    Admin Notes
+                  </p>
                   <p className="text-xs sm:text-sm text-slate-300">{item.refund.adminNotes}</p>
                 </div>
               )}
@@ -300,10 +327,10 @@ export const RefundsManager: React.FC = () => {
             }}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
           />
-          
+
           {/* Modal Container */}
           <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg my-auto shadow-2xl"
@@ -322,34 +349,44 @@ export const RefundsManager: React.FC = () => {
                   <XCircle size={20} />
                 </button>
               </div>
-              
+
               {/* Content */}
               <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto space-y-4">
                 {/* Summary Card */}
                 <div className="p-3 sm:p-4 bg-slate-800/50 rounded-xl space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 text-sm">User</span>
-                    <span className="text-white text-sm truncate ml-2 max-w-[180px]">{selectedRefund.user?.email}</span>
+                    <span className="text-white text-sm truncate ml-2 max-w-[180px]">
+                      {selectedRefund.user?.email}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 text-sm">Amount</span>
-                    <span className="text-neon-green font-mono font-bold">₹{parseFloat(selectedRefund.refund.amount).toLocaleString()}</span>
+                    <span className="text-neon-green font-mono font-bold">
+                      ₹{parseFloat(selectedRefund.refund.amount).toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 text-sm">Type</span>
-                    <span className="text-white text-sm">{selectedRefund.refund.subscriptionId ? 'Subscription' : 'Purchase'}</span>
+                    <span className="text-white text-sm">
+                      {selectedRefund.refund.subscriptionId ? 'Subscription' : 'Purchase'}
+                    </span>
                   </div>
                 </div>
 
                 {selectedRefund.refund.reason && (
                   <div>
                     <p className="text-xs sm:text-sm text-slate-400 mb-1.5">Customer Reason</p>
-                    <p className="text-white text-sm bg-slate-800/50 p-3 rounded-xl">{selectedRefund.refund.reason}</p>
+                    <p className="text-white text-sm bg-slate-800/50 p-3 rounded-xl">
+                      {selectedRefund.refund.reason}
+                    </p>
                   </div>
                 )}
 
                 <div>
-                  <label className="text-xs sm:text-sm text-slate-400 mb-1.5 block">Admin Notes</label>
+                  <label className="text-xs sm:text-sm text-slate-400 mb-1.5 block">
+                    Admin Notes
+                  </label>
                   <textarea
                     value={adminNotes}
                     onChange={(e) => setAdminNotes(e.target.value)}
@@ -361,7 +398,9 @@ export const RefundsManager: React.FC = () => {
 
                 {selectedRefund.refund.status === 'approved' && (
                   <div>
-                    <label className="text-xs sm:text-sm text-slate-400 mb-1.5 block">Razorpay Refund ID</label>
+                    <label className="text-xs sm:text-sm text-slate-400 mb-1.5 block">
+                      Razorpay Refund ID
+                    </label>
                     <input
                       type="text"
                       value={razorpayRefundId}

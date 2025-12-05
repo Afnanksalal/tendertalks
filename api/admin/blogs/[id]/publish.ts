@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../../../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAuth } from '../../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -22,14 +23,20 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-  if (!userId) {
+  let userId: string;
+  try {
+    const authUser = await verifyAuth(req);
+    userId = authUser.id;
+  } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
   if (!user || user.role !== 'admin') {
-    return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers });
+    return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      status: 403,
+      headers,
+    });
   }
 
   const url = new URL(req.url);
@@ -60,7 +67,10 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify(blog), { status: 200, headers });
   } catch (error) {
     console.error('Error publishing blog:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers,
+    });
   }
 }
 

@@ -49,19 +49,21 @@ export default async function handler(req: Request) {
 
   let adminId: string;
   try {
-    const user = await verifyAuth(req);
-    if (user.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
-        status: 403,
-        headers,
-      });
-    }
-    adminId = user.id;
+    const authUser = await verifyAuth(req);
+    adminId = authUser.id;
   } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   const db = getDb();
+
+  const [admin] = await db.select().from(schema.users).where(eq(schema.users.id, adminId)).limit(1);
+  if (!admin || admin.role !== 'admin') {
+    return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      status: 403,
+      headers,
+    });
+  }
 
   try {
     const { paymentId, amount, reason, processImmediately = false } = await req.json();

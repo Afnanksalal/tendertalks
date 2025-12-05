@@ -15,7 +15,7 @@ interface User {
 }
 
 export const UsersManager: React.FC = () => {
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, getAuthHeaders } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -33,7 +33,7 @@ export const UsersManager: React.FC = () => {
       if (search) params.set('search', search);
 
       const response = await fetch(`/api/admin/users?${params}`, {
-        headers: { 'X-User-Id': currentUser!.id },
+        headers: getAuthHeaders(),
       });
       if (response.ok) {
         const data = await response.json();
@@ -64,7 +64,7 @@ export const UsersManager: React.FC = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': currentUser!.id,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           targetUserId: userId,
@@ -74,7 +74,7 @@ export const UsersManager: React.FC = () => {
 
       if (response.ok) {
         const updated = await response.json();
-        setUsers(users.map(u => u.id === userId ? updated : u));
+        setUsers(users.map((u) => (u.id === userId ? updated : u)));
         toast.success(`User role updated to ${updated.role}`);
       } else {
         toast.error('Failed to update user');
@@ -138,11 +138,13 @@ export const UsersManager: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      u.role === 'admin' 
-                        ? 'bg-neon-purple/20 text-neon-purple' 
-                        : 'bg-slate-700 text-slate-300'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-bold ${
+                        u.role === 'admin'
+                          ? 'bg-neon-purple/20 text-neon-purple'
+                          : 'bg-slate-700 text-slate-300'
+                      }`}
+                    >
                       {u.role}
                     </span>
                     <button
@@ -169,11 +171,21 @@ export const UsersManager: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">User</th>
-                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">Email</th>
-                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3 hidden lg:table-cell">Joined</th>
-                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">Role</th>
-                  <th className="text-right text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">Actions</th>
+                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">
+                    User
+                  </th>
+                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">
+                    Email
+                  </th>
+                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3 hidden lg:table-cell">
+                    Joined
+                  </th>
+                  <th className="text-left text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">
+                    Role
+                  </th>
+                  <th className="text-right text-slate-400 text-xs font-medium uppercase tracking-wider px-4 py-3">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -205,11 +217,13 @@ export const UsersManager: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        u.role === 'admin' 
-                          ? 'bg-neon-purple/20 text-neon-purple' 
-                          : 'bg-slate-700 text-slate-300'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-bold ${
+                          u.role === 'admin'
+                            ? 'bg-neon-purple/20 text-neon-purple'
+                            : 'bg-slate-700 text-slate-300'
+                        }`}
+                      >
                         {u.role}
                       </span>
                     </td>

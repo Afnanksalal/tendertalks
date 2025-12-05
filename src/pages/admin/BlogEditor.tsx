@@ -189,7 +189,7 @@ const CODE_LANGUAGES = [
 export const BlogEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuthStore();
+  const { user, isAdmin, getAuthHeaders } = useAuthStore();
   const { tags, fetchTags } = usePodcastStore();
   const { createBlog, updateBlog } = useBlogStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -233,7 +233,7 @@ export const BlogEditor: React.FC = () => {
   useEffect(() => {
     if (isEditing && id && user) {
       setIsLoading(true);
-      fetch(`/api/admin/blogs/${id}`, { headers: { 'X-User-Id': user.id } })
+      fetch(`/api/admin/blogs/${id}`, { headers: getAuthHeaders() })
         .then((r) => r.json())
         .then((d) => {
           if (d.error) {

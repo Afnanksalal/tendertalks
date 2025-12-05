@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Mic2, User, LogOut, Settings, LayoutDashboard, ChevronRight, ShoppingBag, Wrench } from 'lucide-react';
+import {
+  Menu,
+  X,
+  Mic2,
+  User,
+  LogOut,
+  Settings,
+  LayoutDashboard,
+  ChevronRight,
+  ShoppingBag,
+  Wrench,
+} from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useCartStore } from '../../stores/cartStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -12,7 +23,7 @@ export const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuthStore();
@@ -33,16 +44,19 @@ export const Navbar: React.FC = () => {
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   // Build nav links based on feature toggles
   const navLinks = [
     { name: 'Browse', path: '/browse', enabled: true },
+    { name: 'Playlists', path: '/playlists', enabled: settings.feature_playlists },
     { name: 'Blog', path: '/blog', enabled: settings.feature_blog },
     { name: 'Store', path: '/store', enabled: settings.feature_merch },
     { name: 'Pricing', path: '/pricing', enabled: settings.feature_subscriptions },
-  ].filter(link => link.enabled);
+  ].filter((link) => link.enabled);
 
   const handleSignOut = async () => {
     await signOut();
@@ -56,20 +70,27 @@ export const Navbar: React.FC = () => {
         <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-black text-center py-1.5 px-4 text-sm font-medium flex items-center justify-center gap-2">
           <Wrench size={14} />
           <span>Maintenance mode is active. Only admins can access the site.</span>
-          <Link to="/admin/settings" className="underline hover:no-underline ml-1">Manage</Link>
+          <Link to="/admin/settings" className="underline hover:no-underline ml-1">
+            Manage
+          </Link>
         </div>
       )}
-      
-      <nav className={`fixed left-0 right-0 z-50 transition-all duration-300 ${settings.maintenance_mode && isAdmin ? 'top-8' : 'top-0'} ${scrolled ? 'py-2' : 'py-3'}`}>
+
+      <nav
+        className={`fixed left-0 right-0 z-50 transition-all duration-300 ${settings.maintenance_mode && isAdmin ? 'top-8' : 'top-0'} ${scrolled ? 'py-2' : 'py-3'}`}
+      >
         <div className="max-w-6xl mx-auto px-4">
-          <div className={`
+          <div
+            className={`
             relative px-4 md:px-6 py-3 rounded-2xl flex items-center justify-between gap-4
             transition-all duration-300
-            ${scrolled 
-              ? 'bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-lg' 
-              : 'bg-slate-900/50 backdrop-blur-md border border-white/5'}
-          `}>
-            
+            ${
+              scrolled
+                ? 'bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-lg'
+                : 'bg-slate-900/50 backdrop-blur-md border border-white/5'
+            }
+          `}
+          >
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group">
               <div className="bg-gradient-to-tr from-slate-800 to-slate-900 border border-white/10 p-1.5 rounded-lg group-hover:border-neon-cyan/50 transition-colors">
@@ -122,7 +143,7 @@ export const Navbar: React.FC = () => {
                   )}
                 </button>
               )}
-              
+
               {user ? (
                 <div className="relative">
                   <button
@@ -130,7 +151,11 @@ export const Navbar: React.FC = () => {
                     className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors"
                   >
                     {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-white/10" />
+                      <img
+                        src={user.avatarUrl}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover border border-white/10"
+                      />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-neon-cyan/20 flex items-center justify-center border border-neon-cyan/30">
                         <User size={16} className="text-neon-cyan" />
@@ -186,13 +211,13 @@ export const Navbar: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <button 
+                  <button
                     onClick={() => setShowAuthModal(true)}
                     className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
                   >
                     Sign In
                   </button>
-                  <button 
+                  <button
                     onClick={() => setShowAuthModal(true)}
                     className="px-4 py-2 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-sm font-bold hover:bg-neon-cyan/20 transition-all"
                   >
@@ -258,7 +283,10 @@ export const Navbar: React.FC = () => {
                     Tender<span className="text-whale-400">Talks</span>
                   </span>
                 </Link>
-                <button onClick={() => setIsOpen(false)} className="p-1.5 text-slate-500 hover:text-white transition-colors">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 text-slate-500 hover:text-white transition-colors"
+                >
                   <X size={22} />
                 </button>
               </div>
@@ -274,17 +302,20 @@ export const Navbar: React.FC = () => {
                         to={link.path}
                         onClick={() => setIsOpen(false)}
                         className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                          isActive 
-                            ? 'bg-whale-600/20 text-white border border-whale-500/30' 
+                          isActive
+                            ? 'bg-whale-600/20 text-white border border-whale-500/30'
                             : 'text-slate-300 hover:bg-white/5 hover:text-white'
                         }`}
                       >
                         <span className="font-medium">{link.name}</span>
-                        <ChevronRight size={16} className={isActive ? 'text-neon-cyan' : 'text-slate-600'} />
+                        <ChevronRight
+                          size={16}
+                          className={isActive ? 'text-neon-cyan' : 'text-slate-600'}
+                        />
                       </Link>
                     );
                   })}
-                  
+
                   {user && (
                     <>
                       <div className="h-px bg-white/5 my-3" />
@@ -315,7 +346,10 @@ export const Navbar: React.FC = () => {
               <div className="p-5 border-t border-white/5">
                 {user ? (
                   <button
-                    onClick={() => { handleSignOut(); setIsOpen(false); }}
+                    onClick={() => {
+                      handleSignOut();
+                      setIsOpen(false);
+                    }}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 text-red-400 rounded-xl font-medium"
                   >
                     <LogOut size={18} />
@@ -323,7 +357,10 @@ export const Navbar: React.FC = () => {
                   </button>
                 ) : (
                   <button
-                    onClick={() => { setShowAuthModal(true); setIsOpen(false); }}
+                    onClick={() => {
+                      setShowAuthModal(true);
+                      setIsOpen(false);
+                    }}
                     className="w-full py-3 bg-neon-cyan text-black font-bold rounded-xl"
                   >
                     Get Started

@@ -1,6 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, Package, Save, X, Loader2, AlertTriangle, Upload, Image as ImageIcon, DollarSign, Hash, FileText, Tag, ToggleLeft, ToggleRight } from 'lucide-react';
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Package,
+  Save,
+  X,
+  Loader2,
+  AlertTriangle,
+  Upload,
+  Image as ImageIcon,
+  DollarSign,
+  Hash,
+  FileText,
+  Tag,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -24,7 +41,7 @@ interface MerchItem {
 }
 
 export default function ProductsManager() {
-  const { user } = useAuthStore();
+  const { user, getAuthHeaders } = useAuthStore();
   const [products, setProducts] = useState<MerchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,17 +49,35 @@ export default function ProductsManager() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<{
-    name: string; description: string; price: string; category: 'clothing' | 'accessories' | 'digital';
-    imageUrl: string; stockQuantity: number; inStock: boolean; isActive: boolean;
+    name: string;
+    description: string;
+    price: string;
+    category: 'clothing' | 'accessories' | 'digital';
+    imageUrl: string;
+    stockQuantity: number;
+    inStock: boolean;
+    isActive: boolean;
   }>({
-    name: '', description: '', price: '', category: 'accessories',
-    imageUrl: '', stockQuantity: 0, inStock: true, isActive: true,
+    name: '',
+    description: '',
+    price: '',
+    category: 'accessories',
+    imageUrl: '',
+    stockQuantity: 0,
+    inStock: true,
+    isActive: true,
   });
-  const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string | null; name: string }>({ open: false, id: null, name: '' });
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    id: string | null;
+    name: string;
+  }>({ open: false, id: null, name: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetchProducts(); }, [user]);
+  useEffect(() => {
+    fetchProducts();
+  }, [user]);
 
   const fetchProducts = async () => {
     if (!user?.id) return;
@@ -50,7 +85,7 @@ export default function ProductsManager() {
     setError(null);
     try {
       const res = await fetch(`/api/admin/products?includeInactive=true`, {
-        headers: { 'X-User-Id': user.id },
+        headers: getAuthHeaders(),
       });
       if (!res.ok) throw new Error('Failed to fetch products');
       setProducts(await res.json());
@@ -65,19 +100,30 @@ export default function ProductsManager() {
     if (!user?.id) return;
     setSaving(true);
     try {
-      const res = await fetch(editingId ? `/api/admin/products/${editingId}` : `/api/admin/products`, {
-        method: editingId ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-User-Id': user.id },
-        body: JSON.stringify({ ...formData, price: parseFloat(formData.price) }),
-      });
-      if (res.ok) { fetchProducts(); resetForm(); }
-    } catch { /* Save failed silently */ }
+      const res = await fetch(
+        editingId ? `/api/admin/products/${editingId}` : `/api/admin/products`,
+        {
+          method: editingId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ ...formData, price: parseFloat(formData.price) }),
+        }
+      );
+      if (res.ok) {
+        fetchProducts();
+        resetForm();
+      }
+    } catch {
+      /* Save failed silently */
+    }
     setSaving(false);
   };
 
   const handleDelete = async () => {
     if (!user?.id || !deleteModal.id) return;
-    await fetch(`/api/admin/products/${deleteModal.id}`, { method: 'DELETE', headers: { 'X-User-Id': user.id } });
+    await fetch(`/api/admin/products/${deleteModal.id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
     setDeleteModal({ open: false, id: null, name: '' });
     fetchProducts();
   };
@@ -85,9 +131,14 @@ export default function ProductsManager() {
   const startEdit = (item: MerchItem) => {
     setEditingId(item.id);
     setFormData({
-      name: item.name, description: item.description || '', price: item.price,
-      category: item.category, imageUrl: item.imageUrl || '',
-      stockQuantity: item.stockQuantity, inStock: item.inStock, isActive: item.isActive,
+      name: item.name,
+      description: item.description || '',
+      price: item.price,
+      category: item.category,
+      imageUrl: item.imageUrl || '',
+      stockQuantity: item.stockQuantity,
+      inStock: item.inStock,
+      isActive: item.isActive,
     });
     setShowForm(true);
   };
@@ -95,11 +146,24 @@ export default function ProductsManager() {
   const resetForm = () => {
     setEditingId(null);
     setShowForm(false);
-    setFormData({ name: '', description: '', price: '', category: 'accessories', imageUrl: '', stockQuantity: 0, inStock: true, isActive: true });
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      category: 'accessories',
+      imageUrl: '',
+      stockQuantity: 0,
+      inStock: true,
+      isActive: true,
+    });
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-neon-cyan animate-spin" /></div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -108,7 +172,10 @@ export default function ProductsManager() {
         <h1 className="text-lg sm:text-2xl font-display font-bold text-white flex items-center gap-2 sm:gap-3">
           <Package size={18} className="text-neon-cyan" /> Products
         </h1>
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+        <Button
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
+        >
           <Plus size={16} />
           <span className="hidden sm:inline">Add Product</span>
           <span className="sm:hidden">Add</span>
@@ -116,8 +183,15 @@ export default function ProductsManager() {
       </div>
 
       {error && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-400">
-          {error} <button onClick={fetchProducts} className="ml-2 underline">Retry</button>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-400"
+        >
+          {error}{' '}
+          <button onClick={fetchProducts} className="ml-2 underline">
+            Retry
+          </button>
         </motion.div>
       )}
 
@@ -136,18 +210,22 @@ export default function ProductsManager() {
               Product Image
             </label>
             <div className="flex items-start gap-4">
-              <div 
+              <div
                 onClick={() => imageInputRef.current?.click()}
                 className={`w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden ${
-                  formData.imageUrl 
-                    ? 'border-neon-cyan/30 bg-neon-cyan/5' 
+                  formData.imageUrl
+                    ? 'border-neon-cyan/30 bg-neon-cyan/5'
                     : 'border-white/20 bg-slate-800/50 hover:border-neon-cyan/50 hover:bg-slate-800'
                 }`}
               >
                 {uploadingImage ? (
                   <Loader2 size={24} className="text-neon-cyan animate-spin" />
                 ) : formData.imageUrl ? (
-                  <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <img
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <Upload size={24} className="text-slate-500" />
                 )}
@@ -180,7 +258,7 @@ export default function ProductsManager() {
                 <input
                   placeholder="Or paste image URL..."
                   value={formData.imageUrl}
-                  onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
                 />
                 <p className="text-xs text-slate-500">Click to upload or paste URL</p>
@@ -198,7 +276,7 @@ export default function ProductsManager() {
               <input
                 placeholder="e.g., TenderTalks T-Shirt"
                 value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
                 required
               />
@@ -214,7 +292,7 @@ export default function ProductsManager() {
                 step="0.01"
                 min="0"
                 value={formData.price}
-                onChange={e => setFormData({...formData, price: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
                 required
               />
@@ -230,7 +308,7 @@ export default function ProductsManager() {
               </label>
               <Select
                 value={formData.category}
-                onChange={(value) => setFormData({...formData, category: value as any})}
+                onChange={(value) => setFormData({ ...formData, category: value as any })}
                 options={[
                   { value: 'clothing', label: '👕 Clothing' },
                   { value: 'accessories', label: '🎧 Accessories' },
@@ -248,7 +326,9 @@ export default function ProductsManager() {
                 type="number"
                 min="0"
                 value={formData.stockQuantity}
-                onChange={e => setFormData({...formData, stockQuantity: parseInt(e.target.value) || 0})}
+                onChange={(e) =>
+                  setFormData({ ...formData, stockQuantity: parseInt(e.target.value) || 0 })
+                }
                 className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none"
               />
             </div>
@@ -263,7 +343,7 @@ export default function ProductsManager() {
             <textarea
               placeholder="Describe your product..."
               value={formData.description}
-              onChange={e => setFormData({...formData, description: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="w-full bg-slate-800/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-neon-cyan/50 focus:outline-none resize-none"
             />
@@ -275,7 +355,7 @@ export default function ProductsManager() {
               <span className="text-xs sm:text-sm text-slate-300">In Stock</span>
               <button
                 type="button"
-                onClick={() => setFormData({...formData, inStock: !formData.inStock})}
+                onClick={() => setFormData({ ...formData, inStock: !formData.inStock })}
                 className="flex-shrink-0"
               >
                 {formData.inStock ? (
@@ -289,7 +369,7 @@ export default function ProductsManager() {
               <span className="text-xs sm:text-sm text-slate-300">Active (visible in store)</span>
               <button
                 type="button"
-                onClick={() => setFormData({...formData, isActive: !formData.isActive})}
+                onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
                 className="flex-shrink-0"
               >
                 {formData.isActive ? (
@@ -306,7 +386,11 @@ export default function ProductsManager() {
             <Button type="button" variant="ghost" onClick={resetForm} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" isLoading={saving} className="flex-1 flex items-center justify-center gap-2">
+            <Button
+              type="submit"
+              isLoading={saving}
+              className="flex-1 flex items-center justify-center gap-2"
+            >
               <Save size={18} />
               {editingId ? 'Update' : 'Create'} Product
             </Button>
@@ -315,7 +399,11 @@ export default function ProductsManager() {
       </Modal>
 
       {products.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-900/50 border border-white/10 rounded-xl p-8 sm:p-12 text-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-slate-900/50 border border-white/10 rounded-xl p-8 sm:p-12 text-center"
+        >
           <Package size={40} className="mx-auto mb-4 text-slate-600" />
           <p className="text-slate-400 mb-2">No products yet</p>
           <p className="text-slate-500 text-sm">Click "Add" to create your first product</p>
@@ -323,30 +411,59 @@ export default function ProductsManager() {
       ) : (
         <div className="space-y-3">
           {products.map((item, idx) => (
-            <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(idx * 0.03, 0.15) }}
-              className={`bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4 ${!item.isActive ? 'opacity-60' : ''}`}>
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(idx * 0.03, 0.15) }}
+              className={`bg-slate-900/50 border border-white/10 rounded-xl p-3 sm:p-4 ${!item.isActive ? 'opacity-60' : ''}`}
+            >
               <div className="flex items-center gap-3">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt="" className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
+                  <img
+                    src={item.imageUrl}
+                    alt=""
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover bg-slate-800 flex-shrink-0"
+                  />
                 ) : (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0"><Package size={20} className="text-slate-600" /></div>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                    <Package size={20} className="text-slate-600" />
+                  </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <h3 className="text-white font-medium text-sm sm:text-base truncate">{item.name}</h3>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex-shrink-0 ${item.isActive ? 'bg-neon-green/20 text-neon-green' : 'bg-slate-700 text-slate-400'}`}>
+                    <h3 className="text-white font-medium text-sm sm:text-base truncate">
+                      {item.name}
+                    </h3>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium flex-shrink-0 ${item.isActive ? 'bg-neon-green/20 text-neon-green' : 'bg-slate-700 text-slate-400'}`}
+                    >
                       {item.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <p className="text-slate-500 text-xs truncate mb-1.5">{item.slug} · <span className="capitalize">{item.category}</span></p>
+                  <p className="text-slate-500 text-xs truncate mb-1.5">
+                    {item.slug} · <span className="capitalize">{item.category}</span>
+                  </p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <p className="text-neon-green font-mono font-bold text-sm">₹{parseFloat(item.price).toLocaleString()}</p>
+                      <p className="text-neon-green font-mono font-bold text-sm">
+                        ₹{parseFloat(item.price).toLocaleString()}
+                      </p>
                       <p className="text-slate-500 text-xs">{item.stockQuantity} in stock</p>
                     </div>
                     <div className="flex items-center">
-                      <button onClick={() => startEdit(item)} className="p-1.5 sm:p-2 text-slate-400 hover:text-neon-cyan hover:bg-neon-cyan/10 rounded-lg transition-colors"><Edit2 size={14} /></button>
-                      <button onClick={() => setDeleteModal({ open: true, id: item.id, name: item.name })} className="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                      <button
+                        onClick={() => startEdit(item)}
+                        className="p-1.5 sm:p-2 text-slate-400 hover:text-neon-cyan hover:bg-neon-cyan/10 rounded-lg transition-colors"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteModal({ open: true, id: item.id, name: item.name })}
+                        className="p-1.5 sm:p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -375,7 +492,11 @@ export default function ProductsManager() {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="ghost" onClick={() => setDeleteModal({ open: false, id: null, name: '' })} className="flex-1">
+          <Button
+            variant="ghost"
+            onClick={() => setDeleteModal({ open: false, id: null, name: '' })}
+            className="flex-1"
+          >
             Cancel
           </Button>
           <Button variant="danger" onClick={handleDelete} className="flex-1">
