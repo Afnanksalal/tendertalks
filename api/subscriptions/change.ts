@@ -134,9 +134,11 @@ export default async function handler(req: Request) {
 
       if (amountToPay === 0) {
         const newPeriodEnd = new Date(now);
-        newPlan.interval === 'year'
-          ? newPeriodEnd.setFullYear(newPeriodEnd.getFullYear() + 1)
-          : newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+        if (newPlan.interval === 'year') {
+          newPeriodEnd.setFullYear(newPeriodEnd.getFullYear() + 1);
+        } else {
+          newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+        }
 
         await db
           .update(schema.subscriptions)

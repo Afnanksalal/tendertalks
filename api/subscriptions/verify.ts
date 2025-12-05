@@ -94,9 +94,11 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Plan not found' }), { status: 404, headers });
 
     const periodEnd = new Date(now);
-    plan.interval === 'year'
-      ? periodEnd.setFullYear(periodEnd.getFullYear() + 1)
-      : periodEnd.setMonth(periodEnd.getMonth() + 1);
+    if (plan.interval === 'year') {
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+    } else {
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+    }
 
     if (action === 'new' || action === 'upgrade') {
       await db
