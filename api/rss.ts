@@ -13,7 +13,7 @@ export default async function handler(req: Request) {
   try {
     // Fetch published podcasts
     const podcasts = await sql`
-      SELECT 
+      SELECT
         p.id, p.title, p.slug, p.description, p.thumbnail_url,
         p.duration, p.media_url, p.media_type, p.published_at,
         c.name as category_name
@@ -26,7 +26,7 @@ export default async function handler(req: Request) {
 
     // Fetch published blogs
     const blogs = await sql`
-      SELECT 
+      SELECT
         b.id, b.title, b.slug, b.excerpt, b.banner_url,
         b.read_time, b.published_at,
         u.name as author_name
@@ -46,13 +46,37 @@ export default async function handler(req: Request) {
       date: Date;
     }
 
-    const podcastFeedItems: FeedItem[] = podcasts.map((p: any) => {
+    interface PodcastRow {
+      id: string;
+      title: string;
+      slug: string;
+      description: string;
+      thumbnail_url: string | null;
+      duration: number | null;
+      media_url: string | null;
+      media_type: 'audio' | 'video';
+      published_at: string | null;
+      category_name: string | null;
+    }
+
+    interface BlogRow {
+      id: string;
+      title: string;
+      slug: string;
+      excerpt: string | null;
+      banner_url: string | null;
+      read_time: number | null;
+      published_at: string | null;
+      author_name: string | null;
+    }
+
+    const podcastFeedItems: FeedItem[] = (podcasts as unknown as PodcastRow[]).map((p) => {
       const pubDate = p.published_at ? new Date(p.published_at) : new Date();
       const pubDateStr = pubDate.toUTCString();
       const duration = p.duration ? formatDuration(p.duration) : '';
       const description = escapeXml(p.description || '');
       const title = escapeXml(p.title);
-      
+
       const xml = `
     <item>
       <title>[Podcast] ${title}</title>
@@ -65,17 +89,17 @@ export default async function handler(req: Request) {
       ${p.media_url ? `<enclosure url="${escapeXml(p.media_url)}" type="${p.media_type === 'video' ? 'video/mp4' : 'audio/mpeg'}" length="0" />` : ''}
       ${duration ? `<itunes:duration>${duration}</itunes:duration>` : ''}
     </item>`;
-      
+
       return { xml, date: pubDate };
     });
 
-    const blogFeedItems: FeedItem[] = blogs.map((b: any) => {
+    const blogFeedItems: FeedItem[] = (blogs as unknown as BlogRow[]).map((b) => {
       const pubDate = b.published_at ? new Date(b.published_at) : new Date();
       const pubDateStr = pubDate.toUTCString();
       const description = escapeXml(b.excerpt || '');
       const title = escapeXml(b.title);
       const author = b.author_name ? escapeXml(b.author_name) : 'TenderTalks';
-      
+
       const xml = `
     <item>
       <title>[Blog] ${title}</title>
@@ -88,18 +112,19 @@ export default async function handler(req: Request) {
       ${b.banner_url ? `<media:thumbnail url="${escapeXml(b.banner_url)}" />` : ''}
       ${b.read_time ? `<content:encoded><![CDATA[<p>${b.read_time} min read</p>]]></content:encoded>` : ''}
     </item>`;
-      
+
       return { xml, date: pubDate };
     });
 
     // Combine and sort by date (newest first)
-    const allItems = [...podcastFeedItems, ...blogFeedItems]
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
-    
-    const rssItems = allItems.map(item => item.xml).join('');
+    const allItems = [...podcastFeedItems, ...blogFeedItems].sort(
+      (a, b) => b.date.getTime() - a.date.getTime()
+    );
+
+    const rssItems = allItems.map((item) => item.xml).join('');
 
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" 
+<rss version="2.0"
   xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
   xmlns:content="http://purl.org/rss/1.0/modules/content/"
   xmlns:atom="http://www.w3.org/2005/Atom"
@@ -114,7 +139,7 @@ export default async function handler(req: Request) {
     <pubDate>${now}</pubDate>
     <ttl>60</ttl>
     <atom:link href="${baseUrl}/api/rss" rel="self" type="application/rss+xml" />
-    
+
     <itunes:author>Afnan &amp; Jenna</itunes:author>
     <itunes:summary>Exploring AI, Tech, and Human Connection. Future, unfiltered.</itunes:summary>
     <itunes:owner>
@@ -127,7 +152,7 @@ export default async function handler(req: Request) {
       <itunes:category text="Technology" />
     </itunes:category>
     <itunes:image href="${baseUrl}/api/og-image" />
-    
+
     <image>
       <url>${baseUrl}/favicon.svg</url>
       <title>TenderTalks</title>

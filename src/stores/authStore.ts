@@ -9,7 +9,7 @@ interface AuthState {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
-  
+
   // Actions
   initialize: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -31,22 +31,25 @@ export const useAuthStore = create<AuthState>()(
       initialize: async () => {
         try {
           set({ isLoading: true });
-          
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
+
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
+
           if (error) {
             console.error('Session error:', error);
             set({ session: null, user: null, isAdmin: false, isLoading: false });
             return;
           }
-          
+
           if (session?.user) {
-            const userData = await syncUserToDatabase(session.user);
-            set({ 
-              session, 
-              user: userData, 
+            const userData = await syncUserToDatabase(session.user, session.access_token);
+            set({
+              session,
+              user: userData,
               isAdmin: userData?.role === 'admin',
-              isLoading: false 
+              isLoading: false,
             });
           } else {
             set({ session: null, user: null, isAdmin: false, isLoading: false });
@@ -55,22 +58,22 @@ export const useAuthStore = create<AuthState>()(
           // Listen for auth changes - but avoid unnecessary re-syncs
           supabase.auth.onAuthStateChange(async (event, session) => {
             // Auth state changed event
-            
+
             // Skip INITIAL_SESSION as we already handled it above
             if (event === 'INITIAL_SESSION') {
               return;
             }
-            
+
             if (event === 'SIGNED_OUT') {
               set({ session: null, user: null, isAdmin: false });
             } else if (event === 'SIGNED_IN') {
               // Only sync on actual sign in, not on tab focus
               if (session?.user) {
-                const userData = await syncUserToDatabase(session.user);
-                set({ 
-                  session, 
-                  user: userData, 
-                  isAdmin: userData?.role === 'admin' 
+                const userData = await syncUserToDatabase(session.user, session.access_token);
+                set({
+                  session,
+                  user: userData,
+                  isAdmin: userData?.role === 'admin',
                 });
               }
             } else if (event === 'TOKEN_REFRESHED') {
@@ -80,11 +83,11 @@ export const useAuthStore = create<AuthState>()(
               }
             } else if (event === 'USER_UPDATED') {
               if (session?.user) {
-                const userData = await syncUserToDatabase(session.user);
-                set({ 
-                  session, 
-                  user: userData, 
-                  isAdmin: userData?.role === 'admin' 
+                const userData = await syncUserToDatabase(session.user, session.access_token);
+                set({
+                  session,
+                  user: userData,
+                  isAdmin: userData?.role === 'admin',
                 });
               }
             }
@@ -116,7 +119,7 @@ export const useAuthStore = create<AuthState>()(
           email,
           password,
         });
-        
+
         if (error) {
           // Provide user-friendly error messages
           if (error.message.includes('Invalid login credentials')) {
@@ -124,13 +127,13 @@ export const useAuthStore = create<AuthState>()(
           }
           throw error;
         }
-        
-        if (data.user) {
-          const userData = await syncUserToDatabase(data.user);
-          set({ 
-            session: data.session, 
-            user: userData, 
-            isAdmin: userData?.role === 'admin' 
+
+        if (data.user && data.session) {
+          const userData = await syncUserToDatabase(data.user, data.session.access_token);
+          set({
+            session: data.session,
+            user: userData,
+            isAdmin: userData?.role === 'admin',
           });
         }
       },
@@ -141,14 +144,14 @@ export const useAuthStore = create<AuthState>()(
           email,
           password,
           options: {
-            data: { 
+            data: {
               name,
               full_name: name,
             },
             emailRedirectTo: `${appUrl}/auth/callback`,
           },
         });
-        
+
         if (error) {
           if (error.message.includes('already registered')) {
             throw new Error('An account with this email already exists');
@@ -158,14 +161,14 @@ export const useAuthStore = create<AuthState>()(
 
         // If email confirmation is disabled, user is signed in immediately
         if (data.user && data.session) {
-          const userData = await syncUserToDatabase(data.user);
-          set({ 
-            session: data.session, 
-            user: userData, 
-            isAdmin: userData?.role === 'admin' 
+          const userData = await syncUserToDatabase(data.user, data.session.access_token);
+          set({
+            session: data.session,
+            user: userData,
+            isAdmin: userData?.role === 'admin',
           });
         }
-        
+
         // Return indication that confirmation email was sent
         if (data.user && !data.session) {
           throw new Error('Please check your email to confirm your account');
@@ -176,7 +179,7 @@ export const useAuthStore = create<AuthState>()(
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         set({ user: null, session: null, isAdmin: false });
-        
+
         // Clear persisted storage
         localStorage.removeItem('auth-storage');
       },
@@ -187,7 +190,7 @@ export const useAuthStore = create<AuthState>()(
 
         const response = await fetch('/api/users/profile', {
           method: 'PATCH',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'X-User-Id': user.id,
           },
@@ -198,7 +201,7 @@ export const useAuthStore = create<AuthState>()(
           const error = await response.json().catch(() => ({ error: 'Failed to update profile' }));
           throw new Error(error.error || 'Failed to update profile');
         }
-        
+
         const updatedUser = await response.json();
         set({ user: updatedUser });
       },
@@ -210,7 +213,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         user: state.user,
         isAdmin: state.isAdmin,
       }),
@@ -219,26 +222,29 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Sync Supabase Auth user to our Neon database
-async function syncUserToDatabase(supabaseUser: SupabaseUser): Promise<User> {
+async function syncUserToDatabase(supabaseUser: SupabaseUser, token: string): Promise<User> {
   try {
     const response = await fetch('/api/users/sync', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
         id: supabaseUser.id,
         email: supabaseUser.email,
-        name: supabaseUser.user_metadata?.name || 
-              supabaseUser.user_metadata?.full_name ||
-              supabaseUser.email?.split('@')[0],
-        avatarUrl: supabaseUser.user_metadata?.avatar_url ||
-                   supabaseUser.user_metadata?.picture,
+        name:
+          supabaseUser.user_metadata?.name ||
+          supabaseUser.user_metadata?.full_name ||
+          supabaseUser.email?.split('@')[0],
+        avatarUrl: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Failed to sync user:', errorData);
-      
+
       // Return a fallback user object
       return createFallbackUser(supabaseUser);
     }
@@ -256,11 +262,13 @@ function createFallbackUser(supabaseUser: SupabaseUser): User {
   return {
     id: supabaseUser.id,
     email: supabaseUser.email || '',
-    name: supabaseUser.user_metadata?.name || 
-          supabaseUser.user_metadata?.full_name ||
-          supabaseUser.email?.split('@')[0] || null,
-    avatarUrl: supabaseUser.user_metadata?.avatar_url ||
-               supabaseUser.user_metadata?.picture || null,
+    name:
+      supabaseUser.user_metadata?.name ||
+      supabaseUser.user_metadata?.full_name ||
+      supabaseUser.email?.split('@')[0] ||
+      null,
+    avatarUrl:
+      supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || null,
     role: 'user',
     createdAt: new Date(),
     updatedAt: new Date(),

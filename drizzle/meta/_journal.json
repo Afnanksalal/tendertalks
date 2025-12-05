@@ -36,6 +36,13 @@
       "when": 1764951059091,
       "tag": "0004_square_doorman",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1764954044262,
+      "tag": "0005_open_justin_hammer",
+      "breakpoints": true
     }
   ]
 }

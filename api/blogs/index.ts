@@ -62,9 +62,9 @@ export default async function handler(req: Request) {
       .offset(offset);
 
     // Get tags for each blog
-    const blogIds = result.map(r => r.blog.id);
-    let blogTagsMap: Record<string, any[]> = {};
-    
+    const blogIds = result.map((r) => r.blog.id);
+    const blogTagsMap: Record<string, schema.Tag[]> = {};
+
     if (blogIds.length > 0) {
       const blogTagsResult = await db
         .select({
@@ -75,7 +75,7 @@ export default async function handler(req: Request) {
         .innerJoin(schema.tags, eq(schema.blogTags.tagId, schema.tags.id))
         .where(inArray(schema.blogTags.blogId, blogIds));
 
-      blogTagsResult.forEach(bt => {
+      blogTagsResult.forEach((bt) => {
         if (!blogTagsMap[bt.blogId]) blogTagsMap[bt.blogId] = [];
         blogTagsMap[bt.blogId].push(bt.tag);
       });
@@ -89,7 +89,7 @@ export default async function handler(req: Request) {
     }));
 
     if (tagId) {
-      data = data.filter(blog => blog.tags.some((t: any) => t.id === tagId));
+      data = data.filter((blog) => blog.tags.some((t: schema.Tag) => t.id === tagId));
     }
 
     return new Response(JSON.stringify(data), { status: 200, headers });

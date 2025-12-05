@@ -22,6 +22,8 @@ import { PodcastDetailPage } from './pages/PodcastDetail';
 import { PricingPage } from './pages/Pricing';
 import { DashboardPage } from './pages/Dashboard';
 import { StorePage } from './pages/Store';
+import { PlaylistsPage } from './pages/Playlists';
+import { PlaylistDetailPage } from './pages/PlaylistDetail';
 import { SettingsPage } from './pages/Settings';
 import { DownloadsPage } from './pages/Downloads';
 import { BillingPage } from './pages/Billing';
@@ -94,6 +96,8 @@ const AppContent: React.FC = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/browse" element={<BrowsePage />} />
         <Route path="/podcast/:slug" element={<PodcastDetailPage />} />
+        <Route path="/playlists" element={<PlaylistsPage />} />
+        <Route path="/playlists/:id" element={<PlaylistDetailPage />} />
         <Route
           path="/pricing"
           element={

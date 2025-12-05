@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 function getDb() {
   const sql = neon(process.env.DATABASE_URL!);
@@ -50,6 +51,7 @@ export default async function handler(req: Request) {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
 
   try {
+    const authUser = await verifyAuth(req);
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -61,8 +63,9 @@ export default async function handler(req: Request) {
       userId,
     } = await req.json();
 
-    if (!userId)
-      return new Response(JSON.stringify({ error: 'User ID required' }), { status: 401, headers });
+    if (!userId || userId !== authUser.id) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+    }
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return new Response(JSON.stringify({ error: 'Missing payment details' }), {
         status: 400,

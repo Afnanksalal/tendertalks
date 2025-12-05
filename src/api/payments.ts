@@ -3,16 +3,17 @@ import type { Purchase, Subscription, PricingPlan } from '../db/schema';
 
 // Create order for purchase or subscription
 export async function createOrder(data: {
-  amount: number;
+  amount?: number;
   currency?: string;
   podcastId?: string;
   planId?: string;
-  type: 'purchase' | 'subscription';
+  playlistId?: string;
+  type: 'purchase' | 'subscription' | 'playlist';
   userId: string;
 }): Promise<{ orderId: string; amount: number; currency: string; key: string }> {
   const response = await fetch('/api/payments/create-order', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'X-User-Id': data.userId,
     },
@@ -32,14 +33,15 @@ export async function verifyPayment(data: {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  type: 'purchase' | 'subscription';
+  type?: 'purchase' | 'subscription' | 'playlist';
   podcastId?: string;
   planId?: string;
-  userId: string;
+  playlistId?: string;
+  userId?: string;
 }): Promise<{ success: boolean }> {
   const response = await fetch('/api/payments/verify', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'X-User-Id': data.userId,
     },
@@ -64,7 +66,9 @@ export async function getUserPurchases(userId: string): Promise<Purchase[]> {
 }
 
 // Get user subscription
-export async function getUserSubscription(userId: string): Promise<(Subscription & { plan?: PricingPlan }) | null> {
+export async function getUserSubscription(
+  userId: string
+): Promise<(Subscription & { plan?: PricingPlan }) | null> {
   const response = await fetch('/api/users/subscription', {
     headers: { 'X-User-Id': userId },
   });
@@ -83,7 +87,7 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
 export async function cancelSubscription(userId: string): Promise<{ success: boolean }> {
   const response = await fetch('/api/users/subscription/cancel', {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId,
     },

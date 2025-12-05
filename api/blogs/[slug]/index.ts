@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { createClient } from '@supabase/supabase-js';
 import * as schema from '../../../src/db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -70,15 +71,20 @@ export default async function handler(req: Request) {
 
     // Only show published blogs to public
     if (blog.status !== 'published') {
-      const userId = req.headers.get('x-user-id');
-      if (!userId) {
-        return new Response(JSON.stringify({ error: 'Blog not found' }), {
-          status: 404,
-          headers,
-        });
+      let userId: string;
+      try {
+        const user = await verifyAuth(req);
+        userId = user.id;
+      } catch {
+        return new Response(JSON.stringify({ error: 'Blog not found' }), { status: 404, headers });
       }
+
       // Check if user is admin
-      const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+      const [user] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, userId))
+        .limit(1);
       if (!user || user.role !== 'admin') {
         return new Response(JSON.stringify({ error: 'Blog not found' }), {
           status: 404,
@@ -94,15 +100,13 @@ export default async function handler(req: Request) {
       .innerJoin(schema.tags, eq(schema.blogTags.tagId, schema.tags.id))
       .where(eq(schema.blogTags.blogId, blog.id));
 
-    const tags = blogTagsResult.map(bt => bt.tag);
+    const tags = blogTagsResult.map((bt) => bt.tag);
 
     // Fetch content from Supabase storage
     let content = '';
     if (blog.contentPath) {
-      const { data, error } = await supabase.storage
-        .from('blogs')
-        .download(blog.contentPath);
-      
+      const { data, error } = await supabase.storage.from('blogs').download(blog.contentPath);
+
       if (!error && data) {
         content = await data.text();
       }
@@ -115,12 +119,15 @@ export default async function handler(req: Request) {
       .execute()
       .catch(() => {});
 
-    return new Response(JSON.stringify({
-      ...blog,
-      creator,
-      tags,
-      content,
-    }), { status: 200, headers });
+    return new Response(
+      JSON.stringify({
+        ...blog,
+        creator,
+        tags,
+        content,
+      }),
+      { status: 200, headers }
+    );
   } catch (error) {
     console.error('Error fetching blog:', error);
     return new Response(

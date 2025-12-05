@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { createClient } from '@supabase/supabase-js';
 import * as schema from '../../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -15,19 +16,17 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Helper to get signed URL for private media
 async function getMediaUrl(mediaUrl: string | null): Promise<string | null> {
   if (!mediaUrl) return null;
-  
+
   // Handle supabase://bucket/path format
   if (mediaUrl.startsWith('supabase://')) {
     const match = mediaUrl.match(/^supabase:\/\/([^/]+)\/(.+)$/);
     if (match) {
       const [, bucket, path] = match;
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(path, 7200); // 2 hours
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 7200); // 2 hours
       if (data && !error) return data.signedUrl;
     }
   }
-  
+
   // Handle existing public URLs from podcasts bucket - convert to signed
   if (mediaUrl.includes('supabase.co/storage') && mediaUrl.includes('/podcasts/')) {
     const urlMatch = mediaUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
@@ -39,7 +38,7 @@ async function getMediaUrl(mediaUrl: string | null): Promise<string | null> {
       if (data && !error) return data.signedUrl;
     }
   }
-  
+
   return mediaUrl;
 }
 
@@ -104,21 +103,30 @@ export default async function handler(req: Request) {
       .where(eq(schema.podcastTags.podcastId, result[0].podcast.id));
 
     // Check if user has access to get the media URL
-    const userId = req.headers.get('x-user-id');
+    let userId: string | null = null;
+    try {
+      const user = await verifyAuth(req);
+      userId = user.id;
+    } catch {
+      // User not authenticated, continue as guest
+    }
+
     let mediaUrl: string | null = null;
     const podcastData = result[0].podcast;
-    
+
     // Determine if user has access
     let hasAccess = podcastData.isFree;
-    
+
     if (!hasAccess && userId) {
       // Check subscription
       const [subscription] = await db
         .select()
         .from(schema.subscriptions)
-        .where(and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active')))
+        .where(
+          and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active'))
+        )
         .limit(1);
-      
+
       if (subscription) {
         hasAccess = true;
       } else {
@@ -126,19 +134,21 @@ export default async function handler(req: Request) {
         const [purchase] = await db
           .select()
           .from(schema.purchases)
-          .where(and(
-            eq(schema.purchases.userId, userId),
-            eq(schema.purchases.podcastId, podcastData.id),
-            eq(schema.purchases.status, 'completed')
-          ))
+          .where(
+            and(
+              eq(schema.purchases.userId, userId),
+              eq(schema.purchases.podcastId, podcastData.id),
+              eq(schema.purchases.status, 'completed')
+            )
+          )
           .limit(1);
-        
+
         if (purchase) {
           hasAccess = true;
         }
       }
     }
-    
+
     // Only provide media URL if user has access
     if (hasAccess && podcastData.mediaUrl) {
       mediaUrl = await getMediaUrl(podcastData.mediaUrl);

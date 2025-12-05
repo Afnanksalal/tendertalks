@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
+import { verifyAuth } from '../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -18,9 +19,11 @@ export default async function handler(req: Request) {
     return new Response(null, { status: 204, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-
-  if (!userId) {
+  let userId: string;
+  try {
+    const user = await verifyAuth(req);
+    userId = user.id;
+  } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers,
@@ -43,18 +46,15 @@ export default async function handler(req: Request) {
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const search = url.searchParams.get('search');
 
-      let query = db.select().from(schema.users);
+      let query = db.select().from(schema.users).$dynamic();
 
       if (search) {
         query = query.where(
           sql`${schema.users.email} ILIKE ${`%${search}%`} OR ${schema.users.name} ILIKE ${`%${search}%`}`
-        ) as any;
+        );
       }
 
-      const users = await query
-        .orderBy(desc(schema.users.createdAt))
-        .limit(limit)
-        .offset(offset);
+      const users = await query.orderBy(desc(schema.users.createdAt)).limit(limit).offset(offset);
 
       return new Response(JSON.stringify(users), { status: 200, headers });
     } catch (error) {
@@ -78,7 +78,7 @@ export default async function handler(req: Request) {
         });
       }
 
-      const updateData: Record<string, any> = { updatedAt: new Date() };
+      const updateData: Partial<schema.User> = { updatedAt: new Date() };
       if (role !== undefined) updateData.role = role;
 
       const [updated] = await db

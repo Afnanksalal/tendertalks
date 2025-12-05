@@ -2,7 +2,8 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { createClient } from '@supabase/supabase-js';
 import * as schema from '../../../src/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -13,11 +14,14 @@ const supabase = createClient(
 );
 
 function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    + '-' + Date.now().toString(36);
+  return (
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') +
+    '-' +
+    Date.now().toString(36)
+  );
 }
 
 function calculateReadTime(content: string): number {
@@ -38,13 +42,12 @@ export default async function handler(req: Request) {
     return new Response(null, { status: 204, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-
-  if (!userId) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers,
-    });
+  let userId: string;
+  try {
+    const user = await verifyAuth(req);
+    userId = user.id;
+  } catch {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
@@ -61,13 +64,17 @@ export default async function handler(req: Request) {
       const status = url.searchParams.get('status');
       const limit = parseInt(url.searchParams.get('limit') || '50');
 
-      let query = db.select().from(schema.blogs);
-      
+      const conditions: ReturnType<typeof eq>[] = [];
       if (status) {
-        query = query.where(eq(schema.blogs.status, status as any)) as any;
+        conditions.push(eq(schema.blogs.status, status as schema.Blog['status']));
       }
 
-      const result = await query.orderBy(desc(schema.blogs.createdAt)).limit(limit);
+      const result = await db
+        .select()
+        .from(schema.blogs)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(schema.blogs.createdAt))
+        .limit(limit);
 
       return new Response(JSON.stringify(result), { status: 200, headers });
     } catch (error) {
@@ -106,12 +113,10 @@ export default async function handler(req: Request) {
       let contentPath: string | null = null;
       if (content) {
         const path = `${slug}/content.md`;
-        const { error: uploadError } = await supabase.storage
-          .from('blogs')
-          .upload(path, content, {
-            contentType: 'text/markdown',
-            upsert: true,
-          });
+        const { error: uploadError } = await supabase.storage.from('blogs').upload(path, content, {
+          contentType: 'text/markdown',
+          upsert: true,
+        });
 
         if (uploadError) {
           console.error('Error uploading content:', uploadError);
@@ -141,9 +146,9 @@ export default async function handler(req: Request) {
 
       // Add tags
       if (tagIds.length > 0) {
-        await db.insert(schema.blogTags).values(
-          tagIds.map((tagId: string) => ({ blogId: blog.id, tagId }))
-        );
+        await db
+          .insert(schema.blogTags)
+          .values(tagIds.map((tagId: string) => ({ blogId: blog.id, tagId })));
       }
 
       return new Response(JSON.stringify(blog), { status: 201, headers });

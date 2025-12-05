@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { createClient } from '@supabase/supabase-js';
 import * as schema from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -30,14 +31,20 @@ export default async function handler(req: Request) {
     return new Response(null, { status: 204, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-  if (!userId) {
+  let userId: string;
+  try {
+    const user = await verifyAuth(req);
+    userId = user.id;
+  } catch {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
   if (!user || user.role !== 'admin') {
-    return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers });
+    return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      status: 403,
+      headers,
+    });
   }
 
   const url = new URL(req.url);
@@ -53,7 +60,7 @@ export default async function handler(req: Request) {
   if (req.method === 'GET') {
     try {
       const [blog] = await db.select().from(schema.blogs).where(eq(schema.blogs.id, id)).limit(1);
-      
+
       if (!blog) {
         return new Response(JSON.stringify({ error: 'Blog not found' }), { status: 404, headers });
       }
@@ -64,15 +71,13 @@ export default async function handler(req: Request) {
         .from(schema.blogTags)
         .where(eq(schema.blogTags.blogId, blog.id));
 
-      const tagIds = blogTagsResult.map(bt => bt.tagId);
+      const tagIds = blogTagsResult.map((bt) => bt.tagId);
 
       // Fetch content from storage
       let content = '';
       if (blog.contentPath) {
-        const { data, error } = await supabase.storage
-          .from('blogs')
-          .download(blog.contentPath);
-        
+        const { data, error } = await supabase.storage.from('blogs').download(blog.contentPath);
+
         if (!error && data) {
           content = await data.text();
         }
@@ -81,7 +86,10 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ ...blog, content, tagIds }), { status: 200, headers });
     } catch (error) {
       console.error('Error fetching blog:', error);
-      return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers,
+      });
     }
   }
 
@@ -91,12 +99,16 @@ export default async function handler(req: Request) {
       const body = await req.json();
       const { title, excerpt, content, bannerUrl, isFeatured, status, tagIds } = body;
 
-      const [existing] = await db.select().from(schema.blogs).where(eq(schema.blogs.id, id)).limit(1);
+      const [existing] = await db
+        .select()
+        .from(schema.blogs)
+        .where(eq(schema.blogs.id, id))
+        .limit(1);
       if (!existing) {
         return new Response(JSON.stringify({ error: 'Blog not found' }), { status: 404, headers });
       }
 
-      const updates: any = { updatedAt: new Date() };
+      const updates: Partial<schema.Blog> = { updatedAt: new Date() };
 
       if (title !== undefined) updates.title = title;
       if (excerpt !== undefined) updates.excerpt = excerpt;
@@ -112,16 +124,17 @@ export default async function handler(req: Request) {
       // Update content in storage
       if (content !== undefined) {
         const path = existing.contentPath || `${existing.slug}/content.md`;
-        const { error: uploadError } = await supabase.storage
-          .from('blogs')
-          .upload(path, content, {
-            contentType: 'text/markdown',
-            upsert: true,
-          });
+        const { error: uploadError } = await supabase.storage.from('blogs').upload(path, content, {
+          contentType: 'text/markdown',
+          upsert: true,
+        });
 
         if (uploadError) {
           console.error('Error uploading content:', uploadError);
-          return new Response(JSON.stringify({ error: 'Failed to upload content' }), { status: 500, headers });
+          return new Response(JSON.stringify({ error: 'Failed to upload content' }), {
+            status: 500,
+            headers,
+          });
         }
         updates.contentPath = path;
         updates.readTime = calculateReadTime(content);
@@ -137,16 +150,19 @@ export default async function handler(req: Request) {
       if (tagIds !== undefined) {
         await db.delete(schema.blogTags).where(eq(schema.blogTags.blogId, id));
         if (tagIds.length > 0) {
-          await db.insert(schema.blogTags).values(
-            tagIds.map((tagId: string) => ({ blogId: id, tagId }))
-          );
+          await db
+            .insert(schema.blogTags)
+            .values(tagIds.map((tagId: string) => ({ blogId: id, tagId })));
         }
       }
 
       return new Response(JSON.stringify(blog), { status: 200, headers });
     } catch (error) {
       console.error('Error updating blog:', error);
-      return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers,
+      });
     }
   }
 
@@ -180,7 +196,10 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ success: true }), { status: 200, headers });
     } catch (error) {
       console.error('Error deleting blog:', error);
-      return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers });
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers,
+      });
     }
   }
 

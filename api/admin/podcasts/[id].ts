@@ -3,33 +3,35 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { createClient } from '@supabase/supabase-js';
 import * as schema from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
 
 // Initialize Supabase client for storage operations
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
 // Helper to extract storage path from URL
 function extractStoragePath(url: string | null, bucket: string): string | null {
   if (!url) return null;
-  
+
   // Handle supabase:// format
   if (url.startsWith('supabase://')) {
     const parts = url.replace('supabase://', '').split('/');
     parts.shift(); // Remove bucket name
     return parts.join('/');
   }
-  
+
   // Handle public URL format
   const bucketPattern = `/storage/v1/object/public/${bucket}/`;
   const idx = url.indexOf(bucketPattern);
   if (idx !== -1) {
     return url.substring(idx + bucketPattern.length);
   }
-  
+
   return null;
 }
 
@@ -45,13 +47,12 @@ export default async function handler(req: Request) {
     return new Response(null, { status: 204, headers });
   }
 
-  const userId = req.headers.get('x-user-id');
-
-  if (!userId) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers,
-    });
+  let userId: string;
+  try {
+    const user = await verifyAuth(req);
+    userId = user.id;
+  } catch {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
@@ -115,8 +116,8 @@ export default async function handler(req: Request) {
         status,
       } = body;
 
-      const updateData: Record<string, any> = { updatedAt: new Date() };
-      
+      const updateData: Partial<schema.Podcast> = { updatedAt: new Date() };
+
       if (title !== undefined) updateData.title = title;
       if (description !== undefined) updateData.description = description;
       if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl;
@@ -162,14 +163,16 @@ export default async function handler(req: Request) {
       }
 
       // Delete associated files from Supabase storage
-      const deletePromises: Promise<any>[] = [];
+      const deletePromises: Promise<unknown>[] = [];
 
       // Delete thumbnail
       if (podcast.thumbnailUrl) {
         const thumbnailPath = extractStoragePath(podcast.thumbnailUrl, 'thumbnails');
         if (thumbnailPath) {
           deletePromises.push(
-            supabase.storage.from('thumbnails').remove([thumbnailPath])
+            supabase.storage
+              .from('thumbnails')
+              .remove([thumbnailPath])
               .then(({ error }) => {
                 if (error) console.error('Error deleting thumbnail:', error);
               })
@@ -182,7 +185,9 @@ export default async function handler(req: Request) {
         const mediaPath = extractStoragePath(podcast.mediaUrl, 'podcasts');
         if (mediaPath) {
           deletePromises.push(
-            supabase.storage.from('podcasts').remove([mediaPath])
+            supabase.storage
+              .from('podcasts')
+              .remove([mediaPath])
               .then(({ error }) => {
                 if (error) console.error('Error deleting media:', error);
               })

@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { createClient } from '@supabase/supabase-js';
 import * as schema from '../../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { verifyAuth } from '../../utils/auth';
 
 const sql_client = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql_client, { schema });
@@ -31,13 +32,12 @@ export default async function handler(req: Request) {
     });
   }
 
-  const userId = req.headers.get('x-user-id');
-
-  if (!userId) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers,
-    });
+  let userId: string;
+  try {
+    const user = await verifyAuth(req);
+    userId = user.id;
+  } catch {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
   }
 
   try {
@@ -47,9 +47,12 @@ export default async function handler(req: Request) {
       .from(schema.siteSettings)
       .where(eq(schema.siteSettings.key, 'feature_downloads'))
       .limit(1);
-    
+
     if (downloadsSetting && downloadsSetting.value === 'false') {
-      return new Response(JSON.stringify({ error: 'Downloads are currently disabled' }), { status: 403, headers });
+      return new Response(JSON.stringify({ error: 'Downloads are currently disabled' }), {
+        status: 403,
+        headers,
+      });
     }
 
     const url = new URL(req.url);
@@ -84,10 +87,9 @@ export default async function handler(req: Request) {
       })
       .from(schema.subscriptions)
       .innerJoin(schema.pricingPlans, eq(schema.subscriptions.planId, schema.pricingPlans.id))
-      .where(and(
-        eq(schema.subscriptions.userId, userId), 
-        eq(schema.subscriptions.status, 'active')
-      ))
+      .where(
+        and(eq(schema.subscriptions.userId, userId), eq(schema.subscriptions.status, 'active'))
+      )
       .limit(1);
 
     const planAllowsDownloads = subscription?.plan?.allowDownloads || false;
@@ -115,15 +117,24 @@ export default async function handler(req: Request) {
 
     if (!canDownload) {
       if (!hasContentAccess) {
-        return new Response(JSON.stringify({ error: 'Access denied. Purchase or subscribe to access this content.' }), {
+        return new Response(
+          JSON.stringify({ error: 'Access denied. Purchase or subscribe to access this content.' }),
+          {
+            status: 403,
+            headers,
+          }
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          error:
+            'Downloads not available for this content. Upgrade your plan for unlimited downloads.',
+        }),
+        {
           status: 403,
           headers,
-        });
-      }
-      return new Response(JSON.stringify({ error: 'Downloads not available for this content. Upgrade your plan for unlimited downloads.' }), {
-        status: 403,
-        headers,
-      });
+        }
+      );
     }
 
     if (!podcast.mediaUrl) {
@@ -141,10 +152,8 @@ export default async function handler(req: Request) {
       const match = podcast.mediaUrl.match(/^supabase:\/\/([^/]+)\/(.+)$/);
       if (match) {
         const [, bucket, path] = match;
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(path, 7200); // 2 hours expiry
-        
+        const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 7200); // 2 hours expiry
+
         if (error || !data) {
           console.error('Failed to create signed URL:', error);
           return new Response(JSON.stringify({ error: 'Failed to generate download URL' }), {
@@ -162,7 +171,7 @@ export default async function handler(req: Request) {
         const { data, error } = await supabase.storage
           .from(bucket)
           .createSignedUrl(decodeURIComponent(path), 7200);
-        
+
         if (data && !error) {
           downloadUrl = data.signedUrl;
         }

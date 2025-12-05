@@ -179,6 +179,15 @@ export default async function handler(req: Request) {
         status: 'pending',
         razorpayOrderId: razorpayOrder.id,
       });
+    } else if (type === 'playlist' && playlistId) {
+      await db.insert(schema.purchases).values({
+        userId,
+        playlistId,
+        amount: finalAmount.toString(),
+        currency,
+        status: 'pending',
+        razorpayOrderId: razorpayOrder.id,
+      });
     }
 
     return new Response(
