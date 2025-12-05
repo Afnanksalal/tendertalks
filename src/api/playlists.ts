@@ -48,13 +48,17 @@ export async function createPlaylist(
     coverUrl?: string;
     podcastIds?: string[];
   },
-  userId: string
+  _userId?: string // Deprecated, kept for signature compatibility but ignored
 ): Promise<Playlist | null> {
+  // Dynamic import to avoid circular dependencies if any, or just use the store directly if possible.
+  // Since this is a regular TS file, we can import the store.
+  const { useAuthStore } = await import('../stores/authStore');
+
   const response = await fetch('/api/playlists/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId,
+      ...useAuthStore.getState().getAuthHeaders(),
     },
     body: JSON.stringify(data),
   });

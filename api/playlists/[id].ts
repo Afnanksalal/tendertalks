@@ -74,17 +74,22 @@ export default async function handler(req: Request) {
     }
 
     // Auth check for PATCH and DELETE
+    let userId: string;
     try {
-      const user = await verifyAuth(req);
-      if (user.role !== 'admin') {
-        // Ideally check ownership too, but for now Admin only is consistent with other admin tools
-        return new Response(JSON.stringify({ error: 'Admin access required' }), {
-          status: 403,
-          headers,
-        });
-      }
+      const authUser = await verifyAuth(req);
+      userId = authUser.id;
     } catch {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+    }
+
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+
+    if (!user || user.role !== 'admin') {
+      // Ideally check ownership too, but for now Admin only is consistent with other admin tools
+      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+        status: 403,
+        headers,
+      });
     }
 
     if (req.method === 'PATCH') {

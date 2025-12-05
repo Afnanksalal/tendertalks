@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../../src/db/schema';
+import { eq } from 'drizzle-orm';
 
 import { verifyAuth } from '../utils/auth';
 
@@ -27,8 +28,17 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const user = await verifyAuth(req);
-    const userId = user.id;
+    const authUser = await verifyAuth(req);
+    const userId = authUser.id;
+
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+
+    if (!user || user.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+        status: 403,
+        headers,
+      });
+    }
 
     const { title, description, price, coverUrl, podcastIds } = await req.json();
 
